@@ -18,6 +18,15 @@ cfg = __C
 #
 __C.TRAIN = edict()
 
+# ==== Hier VRD ====\
+__C.HIER = edict()
+__C.HIER.EMBEDDING_LENGTH = 600
+__C.HIER.ORDER_DISTANCE_NORM = 2
+__C.HIER.NEGATIVE_LABEL_NUM = 330
+# ==================/
+
+
+
 # Initial learning rate
 __C.TRAIN.LEARNING_RATE = 0.001
 

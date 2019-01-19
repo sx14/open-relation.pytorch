@@ -24,14 +24,14 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data.sampler import Sampler
 
-from roi_data_layer.roidb import combined_roidb
-from roi_data_layer.roibatchLoader import roibatchLoader
-from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from model.utils.net_utils import weights_normal_init, save_net, load_net, \
+from lib.roi_data_layer.roidb import combined_roidb
+from lib.roi_data_layer.roibatchLoader import roibatchLoader
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
+from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
       adjust_learning_rate, save_checkpoint, clip_gradient
 
-from model.faster_rcnn.vgg16 import vgg16
-from model.faster_rcnn.resnet import resnet
+from lib.model.faster_rcnn.vgg16 import vgg16
+from lib.model.faster_rcnn.resnet import resnet
 
 def parse_args():
   """
@@ -58,13 +58,14 @@ def parse_args():
                       default=10000, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
-                      help='directory to save models', default="models",
+                      help='directory to save models', default="output",
                       type=str)
   parser.add_argument('--nw', dest='num_workers',
                       help='number of worker to load data',
                       default=0, type=int)
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
+                      default=True,
                       action='store_true')
   parser.add_argument('--ls', dest='large_scale',
                       help='whether use large imag scale',
@@ -148,6 +149,7 @@ class sampler(Sampler):
 if __name__ == '__main__':
 
   args = parse_args()
+  args.cuda = True
 
   print('Called with args:')
   print(args)
@@ -285,6 +287,7 @@ if __name__ == '__main__':
     if 'pooling_mode' in checkpoint.keys():
       cfg.POOLING_MODE = checkpoint['pooling_mode']
     print("loaded checkpoint %s" % (load_name))
+
 
   if args.mGPUs:
     fasterRCNN = nn.DataParallel(fasterRCNN)

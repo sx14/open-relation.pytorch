@@ -2,8 +2,6 @@
 
 ## Introduction
 
-### :boom: Good news! This repo supports pytorch-1.0 now!!! We borrowed some code and techniques from [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark). Just go to pytorch-1.0 branch!
-
 This project is a *faster* pytorch implementation of faster R-CNN, aimed to accelerating the training of faster R-CNN object detection models. Recently, there are a number of good implementations:
 
 * [rbgirshick/py-faster-rcnn](https://github.com/rbgirshick/py-faster-rcnn), developed based on Pycaffe + Numpy
@@ -32,9 +30,9 @@ During our implementing, we referred the above implementations, especailly [long
 
 - [x] Support both python2 and python3 (great thanks to [cclauss](https://github.com/cclauss)).
 - [x] Add deformable pooling layer (mainly supported by [Xander](https://github.com/xanderchf)).
-- [x] Support pytorch-0.4.0 (this branch).
+- [x] Support pytorch-0.4.0.
 - [x] Support tensorboardX.
-- [x] Support pytorch-1.0 (go to pytorch-1.0 branch).
+- [ ] Support pytorch-0.4.1 or higher.
 
 ## Other Implementations
 
@@ -50,7 +48,7 @@ During our implementing, we referred the above implementations, especailly [long
 
 ## Benchmarking
 
-We benchmark our code thoroughly on three datasets: pascal voc, coco and visual genome, using two different network architecture: vgg16 and resnet101. Below are the results:
+We benchmark our code thoroughly on three datasets: pascal voc, coco and imagenet-200, using two different network architecture: vgg16 and resnet101. Below are the results:
 
 1). PASCAL VOC 2007 (Train/Test: 07trainval/07test, scale=600, ROI Align)
 

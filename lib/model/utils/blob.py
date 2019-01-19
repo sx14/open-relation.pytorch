@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # --------------------------------------------------------
 # Fast R-CNN
 # Copyright (c) 2015 Microsoft
@@ -41,6 +42,8 @@ def prep_im_for_blob(im, pixel_means, target_size, max_size):
     im_shape = im.shape
     im_size_min = np.min(im_shape[0:2])
     im_size_max = np.max(im_shape[0:2])
+
+    # 短边统一为target_size, 给两条边都乘以相同的缩放比例
     im_scale = float(target_size) / float(im_size_min)
     # Prevent the biggest axis from being more than MAX_SIZE
     # if np.round(im_scale * im_size_max) > max_size:

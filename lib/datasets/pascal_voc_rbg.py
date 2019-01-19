@@ -9,18 +9,18 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from datasets.imdb import imdb
-import datasets.ds_utils as ds_utils
+from lib.datasets.imdb import imdb
+import lib.datasets.ds_utils as ds_utils
 import xml.etree.ElementTree as ET
 import numpy as np
 import scipy.sparse
 import scipy.io as sio
-import model.utils.cython_bbox
+import lib.model.utils.cython_bbox
 import pickle
 import subprocess
 import uuid
 from .voc_eval import voc_eval
-from model.utils.config import cfg
+from lib.model.utils.config import cfg
 import pdb
 
 
@@ -192,7 +192,7 @@ class pascal_voc(imdb):
     return comp_id
 
   def _get_voc_results_file_template(self):
-    # VOCdevkit/results/VOC2007/Main/<comp_id>_det_test_aeroplane.txt
+    #VOCdevkit2007/results/VOC2007/Main/<comp_id>_det_test_aeroplane.txt
     filename = self._get_comp_id() + '_det_' + self._image_set + '_{:s}.txt'
     path = os.path.join(
       self._devkit_path,

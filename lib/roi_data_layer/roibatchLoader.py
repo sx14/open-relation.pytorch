@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 """The data layer used during training to train a Fast R-CNN network.
 """
 
@@ -10,9 +10,9 @@ import torch.utils.data as data
 from PIL import Image
 import torch
 
-from model.utils.config import cfg
-from roi_data_layer.minibatch import get_minibatch, get_minibatch
-from model.rpn.bbox_transform import bbox_transform_inv, clip_boxes
+from lib.model.utils.config import cfg
+from lib.roi_data_layer.minibatch import get_minibatch, get_minibatch
+from lib.model.rpn.bbox_transform import bbox_transform_inv, clip_boxes
 
 import numpy as np
 import random
@@ -63,6 +63,8 @@ class roibatchLoader(data.Dataset):
     # get the anchor index for current sample index
     # here we set the anchor index to the last one
     # sample in this group
+
+    # get one image
     minibatch_db = [self._roidb[index_ratio]]
     blobs = get_minibatch(minibatch_db, self._num_classes)
     data = torch.from_numpy(blobs['data'])
@@ -89,6 +91,7 @@ class roibatchLoader(data.Dataset):
             if ratio < 1:
                 # this means that data_width << data_height, we need to crop the
                 # data_height
+                # 图片太高了
                 min_y = int(torch.min(gt_boxes[:,1]))
                 max_y = int(torch.max(gt_boxes[:,3]))
                 trim_size = int(np.floor(data_width / ratio))
@@ -125,6 +128,7 @@ class roibatchLoader(data.Dataset):
             else:
                 # this means that data_width >> data_height, we need to crop the
                 # data_width
+                # 图片太宽了
                 min_x = int(torch.min(gt_boxes[:,0]))
                 max_x = int(torch.max(gt_boxes[:,2]))
                 trim_size = int(np.ceil(data_height * ratio))

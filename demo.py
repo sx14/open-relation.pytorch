@@ -24,16 +24,16 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.datasets as dset
 from scipy.misc import imread
-from roi_data_layer.roidb import combined_roidb
-from roi_data_layer.roibatchLoader import roibatchLoader
-from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from model.rpn.bbox_transform import clip_boxes
-from model.nms.nms_wrapper import nms
-from model.rpn.bbox_transform import bbox_transform_inv
-from model.utils.net_utils import save_net, load_net, vis_detections
-from model.utils.blob import im_list_to_blob
-from model.faster_rcnn.vgg16 import vgg16
-from model.faster_rcnn.resnet import resnet
+from lib.roi_data_layer.roidb import combined_roidb
+from lib.roi_data_layer.roibatchLoader import roibatchLoader
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
+from lib.model.rpn.bbox_transform import clip_boxes
+from lib.model.nms.nms_wrapper import nms
+from lib.model.rpn.bbox_transform import bbox_transform_inv
+from lib.model.utils.net_utils import save_net, load_net, vis_detections
+from lib.model.utils.blob import im_list_to_blob
+from lib.model.faster_rcnn.vgg16 import vgg16
+from lib.model.faster_rcnn.resnet import resnet
 import pdb
 
 try:
@@ -55,18 +55,19 @@ def parse_args():
                       default='cfgs/vgg16.yml', type=str)
   parser.add_argument('--net', dest='net',
                       help='vgg16, res50, res101, res152',
-                      default='res101', type=str)
+                      default='vgg16', type=str)
   parser.add_argument('--set', dest='set_cfgs',
                       help='set config keys', default=None,
                       nargs=argparse.REMAINDER)
   parser.add_argument('--load_dir', dest='load_dir',
                       help='directory to load models',
-                      default="/srv/share/jyang375/models")
+                      default="models")
   parser.add_argument('--image_dir', dest='image_dir',
                       help='directory to load images for demo',
                       default="images")
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
+                      default=True,
                       action='store_true')
   parser.add_argument('--mGPUs', dest='mGPUs',
                       help='whether use multiple GPUs',
@@ -82,7 +83,7 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--checkepoch', dest='checkepoch',
                       help='checkepoch to load network',
-                      default=1, type=int)
+                      default=6, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
                       help='checkpoint to load network',
                       default=10021, type=int)
@@ -215,11 +216,12 @@ if __name__ == '__main__':
     num_boxes = num_boxes.cuda()
     gt_boxes = gt_boxes.cuda()
 
-  # make variable
-  im_data = Variable(im_data, volatile=True)
-  im_info = Variable(im_info, volatile=True)
-  num_boxes = Variable(num_boxes, volatile=True)
-  gt_boxes = Variable(gt_boxes, volatile=True)
+  with torch.no_grad():
+    # make variable
+    im_data = Variable(im_data)
+    im_info = Variable(im_info)
+    num_boxes = Variable(num_boxes)
+    gt_boxes = Variable(gt_boxes)
 
   if args.cuda > 0:
     cfg.CUDA = True

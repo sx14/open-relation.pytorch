@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # --------------------------------------------------------
 # Fast R-CNN
 # Copyright (c) 2015 Microsoft
@@ -13,13 +14,17 @@ from __future__ import print_function
 import numpy as np
 import numpy.random as npr
 from scipy.misc import imread
-from model.utils.config import cfg
-from model.utils.blob import prep_im_for_blob, im_list_to_blob
+from lib.model.utils.config import cfg
+from lib.model.utils.blob import prep_im_for_blob, im_list_to_blob
 import pdb
 def get_minibatch(roidb, num_classes):
   """Given a roidb, construct a minibatch sampled from it."""
   num_images = len(roidb)
   # Sample random scales to use for each image in this batch
+
+  # roidb 中包含了batch size张图片
+  # batch中的图片长宽比不同，但是同一个batch中的差不多（因为按照长宽比排序过）
+  # 随机取batch size个图片scale，即短边长度（从若干候选scale中）
   random_scale_inds = npr.randint(0, high=len(cfg.TRAIN.SCALES),
                   size=num_images)
   assert(cfg.TRAIN.BATCH_SIZE % num_images == 0), \
@@ -57,6 +62,7 @@ def _get_image_blob(roidb, scale_inds):
   """Builds an input blob from the images in the roidb at the specified
   scales.
   """
+  # 使用scale_ind
   num_images = len(roidb)
 
   processed_ims = []
@@ -75,6 +81,7 @@ def _get_image_blob(roidb, scale_inds):
     if roidb[i]['flipped']:
       im = im[:, ::-1, :]
     target_size = cfg.TRAIN.SCALES[scale_inds[i]]
+    # 同一个batch中的图片短边长要统一为target_size
     im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size,
                     cfg.TRAIN.MAX_SIZE)
     im_scales.append(im_scale)

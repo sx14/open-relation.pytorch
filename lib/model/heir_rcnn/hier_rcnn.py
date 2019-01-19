@@ -16,15 +16,32 @@ from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
 import time
 import pdb
 from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
+from label_hier.obj_hier import objnet
 
-class _fasterRCNN(nn.Module):
-    """ faster RCNN """
-    def __init__(self, label_vecs, class_agnostic):
-        super(_fasterRCNN, self).__init__()
-        # self.classes = classes
-        # self.n_classes = len(classes)
+class _OrderSimilarity(nn.Module):
+    def __init__(self, norm):
+        super(_OrderSimilarity, self).__init__()
+        self._norm = norm
+        self.act = nn.ReLU()
+
+    def forward(self, lab_vecs, vis_vecs):
+        partial_order_sims = torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])
+        for i in range(vis_vecs.size()[0]):
+            sub = lab_vecs - vis_vecs[i]
+            sub = self.act(sub)
+            partial_order_dis = sub.norm(p=self._norm, dim=1)
+            partial_order_sim = -partial_order_dis
+            partial_order_sims[i] = partial_order_sim
+        return partial_order_sims
+
+
+class _HierRCNN(nn.Module):
+    """ hier RCNN """
+    def __init__(self, classes, class_agnostic, label_vecs):
+        super(_HierRCNN, self).__init__()
         self.label_vecs = label_vecs
-        self.n_labels = len(label_vecs)
+        self.classes = classes
+        self.n_classes = len(classes)
         self.class_agnostic = class_agnostic
         # loss
         self.RCNN_loss_cls = 0
@@ -32,12 +49,31 @@ class _fasterRCNN(nn.Module):
 
         # define rpn
         self.RCNN_rpn = _RPN(self.dout_base_model)
-        self.RCNN_proposal_target = _ProposalTargetLayer(self.n_labels)
+        self.RCNN_proposal_target = _ProposalTargetLayer(self.n_classes)
         self.RCNN_roi_pool = _RoIPooling(cfg.POOLING_SIZE, cfg.POOLING_SIZE, 1.0/16.0)
         self.RCNN_roi_align = RoIAlignAvg(cfg.POOLING_SIZE, cfg.POOLING_SIZE, 1.0/16.0)
 
         self.grid_size = cfg.POOLING_SIZE * 2 if cfg.CROP_RESIZE_WITH_MAX_POOL else cfg.POOLING_SIZE
         self.RCNN_roi_crop = _RoICrop()
+
+        self.order_embedding = nn.Sequential(
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(4096, cfg.HIER.EMBEDDING_LENGTH))
+
+        self.order_score = _OrderSimilarity(cfg.HIER.ORDER_DISTANCE_NORM)
+
+    def _label2vec(self, rois_label):
+        rois_label_vecs = torch.zeros(rois_label.size(0), objnet.label_sum())
+        for i, label_ind in enumerate(rois_label):
+            label_node = objnet.get_node_by_index(label_ind)
+            hier_labels = label_node.all_hyper_inds()
+            rois_label_vecs[i][hier_labels] = 1
+        return rois_label_vecs
+
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
@@ -85,8 +121,12 @@ class _fasterRCNN(nn.Module):
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
-        # feed pooled features to top model
+        # feed pooled features to top model (fc7)
         pooled_feat = self._head_to_tail(pooled_feat)
+        vis_embedding = self.order_embedding(pooled_feat)
+
+
+
 
         # compute bbox offset
         bbox_pred = self.RCNN_bbox_pred(pooled_feat)
@@ -96,16 +136,23 @@ class _fasterRCNN(nn.Module):
             bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
             bbox_pred = bbox_pred_select.squeeze(1)
 
+        # order embedding here ================\
+        # fc7 -> emb_vec
         # compute object classification probability
-        cls_score = self.RCNN_cls_score(pooled_feat)
+        cls_score = self.order_score(self.label_vecs, vis_embedding)
         cls_prob = F.softmax(cls_score, 1)
+        # order embedding here ================/
+
 
         RCNN_loss_cls = 0
         RCNN_loss_bbox = 0
 
         if self.training:
             # classification loss
-            RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+            # RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+            rois_label_vec = self._label2vec(rois_label)
+            RCNN_loss_cls = F.binary_cross_entropy(cls_score, rois_label_vec)
+
 
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import random
 import torch
 import torch.nn as nn
@@ -7,24 +6,22 @@ from torch.autograd import Variable
 import torchvision.models as models
 from torch.autograd import Variable
 import numpy as np
-from lib.model.utils.config import cfg
-from lib.model.rpn.rpn import _RPN
-from lib.model.roi_pooling.modules.roi_pool import _RoIPooling
-from lib.model.roi_crop.modules.roi_crop import _RoICrop
-from lib.model.roi_align.modules.roi_align import RoIAlignAvg
-from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
+from model.utils.config import cfg
+from model.rpn.rpn import _RPN
+from model.roi_pooling.modules.roi_pool import _RoIPooling
+from model.roi_crop.modules.roi_crop import _RoICrop
+from model.roi_align.modules.roi_align import RoIAlignAvg
+from model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
 import time
 import pdb
-from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
+from model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
 
 class _fasterRCNN(nn.Module):
     """ faster RCNN """
-    def __init__(self, label_vecs, class_agnostic):
+    def __init__(self, classes, class_agnostic):
         super(_fasterRCNN, self).__init__()
-        # self.classes = classes
-        # self.n_classes = len(classes)
-        self.label_vecs = label_vecs
-        self.n_labels = len(label_vecs)
+        self.classes = classes
+        self.n_classes = len(classes)
         self.class_agnostic = class_agnostic
         # loss
         self.RCNN_loss_cls = 0
@@ -32,7 +29,7 @@ class _fasterRCNN(nn.Module):
 
         # define rpn
         self.RCNN_rpn = _RPN(self.dout_base_model)
-        self.RCNN_proposal_target = _ProposalTargetLayer(self.n_labels)
+        self.RCNN_proposal_target = _ProposalTargetLayer(self.n_classes)
         self.RCNN_roi_pool = _RoIPooling(cfg.POOLING_SIZE, cfg.POOLING_SIZE, 1.0/16.0)
         self.RCNN_roi_align = RoIAlignAvg(cfg.POOLING_SIZE, cfg.POOLING_SIZE, 1.0/16.0)
 
@@ -135,7 +132,5 @@ class _fasterRCNN(nn.Module):
         normal_init(self.RCNN_bbox_pred, 0, 0.001, cfg.TRAIN.TRUNCATED)
 
     def create_architecture(self):
-        # 初始化原始VGG16
         self._init_modules()
-        # 初始化Faster-RCNN部分网络权重
         self._init_weights()

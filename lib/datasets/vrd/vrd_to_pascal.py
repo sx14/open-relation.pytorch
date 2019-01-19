@@ -46,7 +46,8 @@ def gen_ImageSets(vrd_root, vrd_pascal_root):
         org_img_names = os.listdir(img_root)
         # ATTENTION: only JPEG image is legal
         img_names = filter(lambda id: id.endswith('jpg'), org_img_names)
-        img_names = map(lambda img_name: img_name.split['.'][0], img_names)
+        img_names = filter(lambda id: os.path.exists(os.path.join(img_root, id)), img_names)
+        img_names = map(lambda img_name: img_name.split('.')[0], img_names)
         datasets[ds_name] = img_names
 
     # split 200 images from trainset as valset

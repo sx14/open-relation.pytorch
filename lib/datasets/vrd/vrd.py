@@ -37,7 +37,7 @@ except NameError:
 
 
 
-class VRD(imdb):
+class vrd(imdb):
     def __init__(self, image_set, year, devkit_path=None):
         imdb.__init__(self, 'voc_' + year + '_' + image_set)
         self._year = year

@@ -15,6 +15,7 @@ from lib.datasets.pascal_voc import pascal_voc
 from lib.datasets.coco import coco
 from lib.datasets.imagenet import imagenet
 from lib.datasets.vg import vg
+from lib.datasets.vrd.vrd import vrd
 
 import numpy as np
 
@@ -22,7 +23,8 @@ import numpy as np
 for year in ['2007', '2012']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'voc_{}_{}'.format(year, split)
-    __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+    # __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+    __sets[name] = (lambda split=split, year=year: vrd(split, year))
 
 # Set up coco_2014_<split>
 for year in ['2014']:

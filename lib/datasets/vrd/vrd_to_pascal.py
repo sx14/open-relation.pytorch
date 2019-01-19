@@ -4,6 +4,7 @@ import json
 import numpy as np
 import cv2
 from to_pascal_format import output_pascal_format
+from path_config import vrd_root, vrd_pascal_root
 
 def gen_JPEGImages(vrd_root, vrd_pascal_root):
     # output path
@@ -130,12 +131,7 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
     print('Preparing Annotations done.')
 
 
-
 if __name__ == '__main__':
-
-    vrd_root = '/media/sunx/Data/linux-workspace/python-workspace/dataset/VRD'
-    vrd_pascal_root = '/media/sunx/Data/linux-workspace/python-workspace/dataset/VRD_pascal/VOC2007'
-
     gen_JPEGImages(vrd_root, vrd_pascal_root)
     gen_ImageSets(vrd_root, vrd_pascal_root)
     gen_Annotations(vrd_root, vrd_pascal_root)

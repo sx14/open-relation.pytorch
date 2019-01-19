@@ -207,3 +207,6 @@ lib/pycocotools/_mask.c
 
 # img
 *.jpg
+
+# sunx
+path_config.py

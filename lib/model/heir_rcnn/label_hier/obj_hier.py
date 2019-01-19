@@ -2,7 +2,7 @@ import os
 from nltk.corpus import wordnet as wn
 from label_hier import LabelHier
 from label_hier import LabelNode
-
+from lib.datasets.vrd import path_config
 
 class ObjNet(LabelHier):
 
@@ -79,7 +79,7 @@ class ObjNet(LabelHier):
         LabelHier.__init__(self, pre_label_path)
 
 
-label_path = '/media/sunx/Data/linux-workspace/python-workspace/dataset/VRD/object_labels.txt'
+label_path = os.path.join(path_config.vrd_root, 'object_labels.txt')
 objnet = ObjNet(label_path)
 
 # if __name__ == '__main__':

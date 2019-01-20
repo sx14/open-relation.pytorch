@@ -70,7 +70,7 @@ class _HierRCNN(nn.Module):
         rois_label_vecs = torch.zeros(rois_label.size(0), objnet.label_sum())
         for i, label_ind in enumerate(rois_label):
             label_node = objnet.get_node_by_index(label_ind)
-            hier_labels = label_node.all_hyper_inds()
+            hier_labels = label_node.trans_hyper_inds()
             rois_label_vecs[i][hier_labels] = 1
         return rois_label_vecs
 

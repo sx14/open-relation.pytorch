@@ -8,8 +8,6 @@ class LabelNode(object):
         self._name = name
         self._hypers = []
 
-
-
     def __str__(self):
         return self._name
 
@@ -25,7 +23,7 @@ class LabelNode(object):
     def index(self):
         return self._index
 
-    def all_hyper_inds(self):
+    def trans_hyper_inds(self):
         hyper_inds = []
         unique_hyper_inds = set()
         h_paths = self.hyper_paths()
@@ -61,6 +59,25 @@ class LabelNode(object):
 
 
 class LabelHier:
+
+    def label2index(self):
+        l2i = dict()
+        for l in self._label2node:
+            l2i[l] = self._label2node[l].index()
+        return l2i
+
+    def index2label(self):
+        i2l = []
+        for n in self._index2node:
+            i2l.append(n.name())
+        return i2l
+
+    def raw2path(self):
+        r2p = dict()
+        for r in self._raw_labels:
+            rn = self.get_node_by_name(r)
+            r2p[r] = rn.trans_hyper_inds()
+        return r2p
 
     def label_sum(self):
         return len(self._index2node)
@@ -99,6 +116,8 @@ class LabelHier:
 
     def __init__(self, pre_label_path):
         self._raw_labels = self._load_raw_label(pre_label_path)
-        self._label2node = dict()
-        self._index2node = [LabelNode('background', -1)]
+        # self._raw_labels.insert(0, '__background__')
+        bk = LabelNode('__background__', 0)
+        self._label2node = {'__background__': bk}
+        self._index2node = [bk]
         self._construct_hier()

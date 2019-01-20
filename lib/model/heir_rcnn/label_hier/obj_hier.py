@@ -2,7 +2,7 @@ import os
 from nltk.corpus import wordnet as wn
 from label_hier import LabelHier
 from label_hier import LabelNode
-from lib.datasets.vrd import path_config
+from lib.datasets.vrd.path_config import vrd_root
 
 class ObjNet(LabelHier):
 
@@ -31,6 +31,9 @@ class ObjNet(LabelHier):
         raw2wn['post'] = ['post.n.04']
         return raw2wn
 
+    def raw2wn(self):
+        return self._raw_to_wn()
+
     def _create_label_nodes(self, raw2wn):
         # keep wn label unique
         wn_label_set = set()
@@ -57,7 +60,6 @@ class ObjNet(LabelHier):
             self._index2node.append(node)
             next_label_index += 1
 
-
     def _construct_hier(self):
         raw2wn = self._raw_to_wn()
         self._create_label_nodes(raw2wn)
@@ -79,7 +81,7 @@ class ObjNet(LabelHier):
         LabelHier.__init__(self, pre_label_path)
 
 
-label_path = os.path.join(path_config.vrd_root, 'object_labels.txt')
+label_path = os.path.join(vrd_root, 'object_labels.txt')
 objnet = ObjNet(label_path)
 
 # if __name__ == '__main__':

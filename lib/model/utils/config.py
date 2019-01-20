@@ -25,8 +25,6 @@ __C.HIER.ORDER_DISTANCE_NORM = 2
 __C.HIER.NEGATIVE_LABEL_NUM = 330
 # ==================/
 
-
-
 # Initial learning rate
 __C.TRAIN.LEARNING_RATE = 0.001
 

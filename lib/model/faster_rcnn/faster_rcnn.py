@@ -77,9 +77,9 @@ class _fasterRCNN(nn.Module):
             rois_outside_ws = None
             rpn_loss_cls = 0
             rpn_loss_bbox = 0
-            raw_rois = torch.zeros(gt_boxes.size)
-            raw_rois[1:] = gt_boxes
-            rois = Variable(raw_rois)
+            raw_rois = torch.zeros(gt_boxes.size())
+            raw_rois[0, :, 1:] = gt_boxes[:, 4]
+            rois = Variable(raw_rois).cuda()
 
         if cfg.POOLING_MODE == 'crop':
             # pdb.set_trace()

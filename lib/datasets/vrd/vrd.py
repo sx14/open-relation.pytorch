@@ -39,7 +39,7 @@ except NameError:
 
 class vrd(imdb):
     def __init__(self, image_set, year, devkit_path=None):
-        imdb.__init__(self, 'voc_' + year + '_' + image_set)
+        imdb.__init__(self, 'vrd_' + year + '_' + image_set)
         self._year = year
         self._image_set = image_set
         self._devkit_path = self._get_default_path() if devkit_path is None \
@@ -109,7 +109,7 @@ class vrd(imdb):
         """
         Return the default path where PASCAL VOC is expected to be installed.
         """
-        return os.path.join(cfg.DATA_DIR, 'VOCdevkit' + self._year)
+        return os.path.join(cfg.DATA_DIR, 'VRDdevkit' + self._year)
 
     def gt_roidb(self):
         """
@@ -365,7 +365,7 @@ class vrd(imdb):
 
 
 if __name__ == '__main__':
-    d = VRD('trainval', '2007')
+    d = vrd('trainval', '2007')
     res = d.roidb
     from IPython import embed;
 

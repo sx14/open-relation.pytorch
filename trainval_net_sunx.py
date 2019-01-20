@@ -30,7 +30,7 @@ from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
       adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.heir_rcnn.vgg16 import vgg16
+from lib.model.faster_rcnn.vgg16 import vgg16
 from lib.model.faster_rcnn.resnet import resnet
 
 def parse_args():
@@ -40,7 +40,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='pascal_voc', type=str)
+                      default='vrd', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -176,6 +176,10 @@ if __name__ == '__main__':
       args.imdb_name = "vg_150-50-50_minitrain"
       args.imdbval_name = "vg_150-50-50_minival"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
+  elif args.dataset == "vrd":
+      args.imdb_name = "vrd_2007_trainval"
+      args.imdbval_name = "vrd_2007_test"
+      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
 
   args.cfg_file = "cfgs/{}_ls.yml".format(args.net) if args.large_scale else "cfgs/{}.yml".format(args.net)
 

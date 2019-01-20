@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
+import h5py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,9 +38,10 @@ class _OrderSimilarity(nn.Module):
 
 class _HierRCNN(nn.Module):
     """ hier RCNN """
-    def __init__(self, classes, class_agnostic, label_vecs):
+    def __init__(self, classes, class_agnostic):
         super(_HierRCNN, self).__init__()
-        self.label_vecs = label_vecs
+        with h5py.File('data/pretrained_model/label_vec_vrd.h5', 'r') as f:
+            self.label_vecs = np.array(f['label_vec'])
         self.classes = classes
         self.n_classes = len(classes)
         self.class_agnostic = class_agnostic
@@ -57,7 +59,7 @@ class _HierRCNN(nn.Module):
         self.RCNN_roi_crop = _RoICrop()
 
         self.order_embedding = nn.Sequential(
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
             nn.ReLU(inplace=True),
@@ -77,7 +79,6 @@ class _HierRCNN(nn.Module):
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
-
         im_info = im_info.data
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data

@@ -6,15 +6,15 @@ from torch.autograd import Variable
 import torchvision.models as models
 from torch.autograd import Variable
 import numpy as np
-from model.utils.config import cfg
-from model.rpn.rpn import _RPN
-from model.roi_pooling.modules.roi_pool import _RoIPooling
-from model.roi_crop.modules.roi_crop import _RoICrop
-from model.roi_align.modules.roi_align import RoIAlignAvg
-from model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
+from lib.model.utils.config import cfg
+from lib.model.rpn.rpn import _RPN
+from lib.model.roi_pooling.modules.roi_pool import _RoIPooling
+from lib.model.roi_crop.modules.roi_crop import _RoICrop
+from lib.model.roi_align.modules.roi_align import RoIAlignAvg
+from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
 import time
 import pdb
-from model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
+from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
 
 class _fasterRCNN(nn.Module):
     """ faster RCNN """
@@ -36,7 +36,7 @@ class _fasterRCNN(nn.Module):
         self.grid_size = cfg.POOLING_SIZE * 2 if cfg.CROP_RESIZE_WITH_MAX_POOL else cfg.POOLING_SIZE
         self.RCNN_roi_crop = _RoICrop()
 
-    def forward(self, im_data, im_info, gt_boxes, num_boxes):
+    def forward(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
         batch_size = im_data.size(0)
 
         im_info = im_info.data
@@ -46,18 +46,30 @@ class _fasterRCNN(nn.Module):
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
-        # feed base feature map tp RPN to obtain rois
-        rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
 
-        # if it is training phrase, then use ground trubut bboxes for refining
-        if self.training:
-            roi_data = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
-            rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = roi_data
+        if use_rpn:
+            # feed base feature map tp RPN to obtain rois
+            rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
 
-            rois_label = Variable(rois_label.view(-1).long())
-            rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
-            rois_inside_ws = Variable(rois_inside_ws.view(-1, rois_inside_ws.size(2)))
-            rois_outside_ws = Variable(rois_outside_ws.view(-1, rois_outside_ws.size(2)))
+            # if it is training phrase, then use ground trubut bboxes for refining
+            if self.training:
+                roi_data = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
+                rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = roi_data
+
+                rois_label = Variable(rois_label.view(-1).long())
+                rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
+                rois_inside_ws = Variable(rois_inside_ws.view(-1, rois_inside_ws.size(2)))
+                rois_outside_ws = Variable(rois_outside_ws.view(-1, rois_outside_ws.size(2)))
+            else:
+                rois_label = None
+                rois_target = None
+                rois_inside_ws = None
+                rois_outside_ws = None
+                rpn_loss_cls = 0
+                rpn_loss_bbox = 0
+
+            rois = Variable(rois)
+            # do roi pooling based on predicted rois
         else:
             rois_label = None
             rois_target = None
@@ -65,9 +77,9 @@ class _fasterRCNN(nn.Module):
             rois_outside_ws = None
             rpn_loss_cls = 0
             rpn_loss_bbox = 0
-
-        rois = Variable(rois)
-        # do roi pooling based on predicted rois
+            raw_rois = torch.zeros(gt_boxes.size)
+            raw_rois[1:] = gt_boxes
+            rois = Variable(raw_rois)
 
         if cfg.POOLING_MODE == 'crop':
             # pdb.set_trace()

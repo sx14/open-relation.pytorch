@@ -46,7 +46,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='pascal_voc', type=str)
+                      default='vrd', type=str)
   parser.add_argument('--cfg', dest='cfg_file',
                       help='optional config file',
                       default='cfgs/vgg16.yml', type=str)
@@ -61,7 +61,8 @@ def parse_args():
                       type=str)
   parser.add_argument('--cuda', dest='cuda',
                       help='whether use CUDA',
-                      action='store_true')
+                      action='store_true',
+                      default=True)
   parser.add_argument('--ls', dest='large_scale',
                       help='whether use large imag scale',
                       action='store_true')
@@ -79,10 +80,10 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--checkepoch', dest='checkepoch',
                       help='checkepoch to load network',
-                      default=1, type=int)
+                      default=20, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
                       help='checkpoint to load network',
-                      default=10021, type=int)
+                      default=7547, type=int)
   parser.add_argument('--vis', dest='vis',
                       help='visualization mode',
                       action='store_true')
@@ -124,6 +125,10 @@ if __name__ == '__main__':
       args.imdb_name = "vg_150-50-50_minitrain"
       args.imdbval_name = "vg_150-50-50_minival"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+  elif args.dataset == "vrd":
+      args.imdb_name = "vrd_2007_trainval"
+      args.imdbval_name = "vrd_2007_test"
+      args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
 
   args.cfg_file = "cfgs/{}_ls.yml".format(args.net) if args.large_scale else "cfgs/{}.yml".format(args.net)
 
@@ -236,7 +241,7 @@ if __name__ == '__main__':
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+      rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn=False)
 
       scores = cls_prob.data
       boxes = rois.data[:, :, 1:5]

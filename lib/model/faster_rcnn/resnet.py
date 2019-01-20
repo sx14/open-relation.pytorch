@@ -2,8 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from model.utils.config import cfg
-from model.faster_rcnn.faster_rcnn import _fasterRCNN
+from lib.model.utils.config import cfg
+from lib.model.heir_rcnn.hier_rcnn import _HierRCNN
 
 import torch
 import torch.nn as nn
@@ -217,14 +217,14 @@ def resnet152(pretrained=False):
     model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
   return model
 
-class resnet(_fasterRCNN):
+class resnet(_HierRCNN):
   def __init__(self, classes, num_layers=101, pretrained=False, class_agnostic=False):
     self.model_path = 'data/pretrained_model/resnet101_caffe.pth'
     self.dout_base_model = 1024
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic
 
-    _fasterRCNN.__init__(self, classes, class_agnostic)
+    _HierRCNN.__init__(self, classes, class_agnostic)
 
   def _init_modules(self):
     resnet = resnet101()

@@ -10,6 +10,7 @@ from __future__ import print_function
 import _init_paths
 import os
 import sys
+import h5py
 import numpy as np
 import argparse
 import pprint
@@ -30,8 +31,8 @@ from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output
 from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
       adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.faster_rcnn.vgg16 import vgg16
-from lib.model.faster_rcnn.resnet import resnet
+from lib.model.heir_rcnn.vgg16 import vgg16
+from lib.model.heir_rcnn.resnet import resnet
 
 def parse_args():
   """
@@ -241,18 +242,18 @@ if __name__ == '__main__':
 
   # initilize the network here.
   if args.net == 'vgg16':
-    fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+    heirRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res101':
-    fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
+    heirRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res50':
-    fasterRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
+    heirRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res152':
-    fasterRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
+    heirRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
   else:
     print("network is not defined")
     pdb.set_trace()
 
-  fasterRCNN.create_architecture()
+  heirRCNN.create_architecture()
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
@@ -260,7 +261,7 @@ if __name__ == '__main__':
   #tr_momentum = args.momentum
 
   params = []
-  for key, value in dict(fasterRCNN.named_parameters()).items():
+  for key, value in dict(heirRCNN.named_parameters()).items():
     if value.requires_grad:
       if 'bias' in key:
         params += [{'params':[value],'lr':lr*(cfg.TRAIN.DOUBLE_BIAS + 1), \
@@ -276,7 +277,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
   if args.cuda:
-    fasterRCNN.cuda()
+    heirRCNN.cuda()
 
   if args.resume:
     load_name = os.path.join(output_dir,
@@ -285,7 +286,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
     args.start_epoch = checkpoint['epoch']
-    fasterRCNN.load_state_dict(checkpoint['model'])
+    heirRCNN.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr = optimizer.param_groups[0]['lr']
     if 'pooling_mode' in checkpoint.keys():
@@ -294,7 +295,7 @@ if __name__ == '__main__':
 
 
   if args.mGPUs:
-    fasterRCNN = nn.DataParallel(fasterRCNN)
+    heirRCNN = nn.DataParallel(heirRCNN)
 
   iters_per_epoch = int(train_size / args.batch_size)
 
@@ -304,7 +305,7 @@ if __name__ == '__main__':
 
   for epoch in range(args.start_epoch, args.max_epochs + 1):
     # setting to train mode
-    fasterRCNN.train()
+    heirRCNN.train()
     loss_temp = 0
     start = time.time()
 
@@ -320,11 +321,11 @@ if __name__ == '__main__':
       gt_boxes.data.resize_(data[2].size()).copy_(data[2])
       num_boxes.data.resize_(data[3].size()).copy_(data[3])
 
-      fasterRCNN.zero_grad()
+      heirRCNN.zero_grad()
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
+      rois_label = heirRCNN(im_data, im_info, gt_boxes, num_boxes)
 
       loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
            + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
@@ -334,7 +335,7 @@ if __name__ == '__main__':
       optimizer.zero_grad()
       loss.backward()
       if args.net == "vgg16":
-          clip_gradient(fasterRCNN, 10.)
+          clip_gradient(heirRCNN, 10.)
       optimizer.step()
 
       if step % args.disp_interval == 0:
@@ -380,7 +381,7 @@ if __name__ == '__main__':
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,
-      'model': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
+      'model': heirRCNN.module.state_dict() if args.mGPUs else heirRCNN.state_dict(),
       'optimizer': optimizer.state_dict(),
       'pooling_mode': cfg.POOLING_MODE,
       'class_agnostic': args.class_agnostic,

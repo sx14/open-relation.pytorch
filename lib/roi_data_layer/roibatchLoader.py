@@ -214,8 +214,6 @@ class roibatchLoader(data.Dataset):
         # num_boxes = 0
         gt_boxes = torch.from_numpy(blobs['gt_boxes'])
         num_boxes = gt_boxes.size(0)
-        if num_boxes == 0:
-            gt_boxes = torch.FloatTensor([1, 1, 1, 1, 0])
 
         return data, im_info, gt_boxes, num_boxes
 

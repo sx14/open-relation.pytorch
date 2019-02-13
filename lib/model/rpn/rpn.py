@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from __future__ import absolute_import
 import torch
 import torch.nn as nn
@@ -27,10 +29,13 @@ class _RPN(nn.Module):
         # define the convrelu layers processing input feature map
         self.RPN_Conv = nn.Conv2d(self.din, 512, 3, 1, 1, bias=True)
 
+        # 前景/背景 得分向量
+        # ATTENTION: 二维特征图上每一个点均对应 2 * 9个得分
         # define bg/fg classifcation score layer
         self.nc_score_out = len(self.anchor_scales) * len(self.anchor_ratios) * 2 # 2(bg/fg) * 9 (anchors)
         self.RPN_cls_score = nn.Conv2d(512, self.nc_score_out, 1, 1, 0)
 
+        # box 偏移量
         # define anchor box offset prediction layer
         self.nc_bbox_out = len(self.anchor_scales) * len(self.anchor_ratios) * 4 # 4(coords) * 9 (anchors)
         self.RPN_bbox_pred = nn.Conv2d(512, self.nc_bbox_out, 1, 1, 0)

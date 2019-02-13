@@ -64,7 +64,7 @@ def parse_args():
                       action='store_true',
                       default=True)
   parser.add_argument('--ls', dest='large_scale',
-                      help='whether use large imag scale',
+                      help='whether use large image scale',
                       action='store_true')
   parser.add_argument('--mGPUs', dest='mGPUs',
                       help='whether use multiple GPUs',

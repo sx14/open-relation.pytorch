@@ -19,6 +19,7 @@ except NameError:
 
 
 def im_list_to_blob(ims):
+    # 将resize后的图像转为输入网络的数据格式
     """Convert a list of images into a network input.
 
     Assumes images are already prepared (means subtracted, BGR order, ...).

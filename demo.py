@@ -1,3 +1,4 @@
+# coding: utf-8
 # --------------------------------------------------------
 # Tensorflow Faster R-CNN
 # Licensed under The MIT License [see LICENSE for details]
@@ -61,7 +62,7 @@ def parse_args():
                       nargs=argparse.REMAINDER)
   parser.add_argument('--load_dir', dest='load_dir',
                       help='directory to load models',
-                      default="models")
+                      default="output")
   parser.add_argument('--image_dir', dest='image_dir',
                       help='directory to load images for demo',
                       default="images")
@@ -124,9 +125,12 @@ def _get_image_blob(im):
   im_scale_factors = []
 
   for target_size in cfg.TEST.SCALES:
+    # TEST.SCALE 输入网络的图像短边长度
     im_scale = float(target_size) / float(im_size_min)
     # Prevent the biggest axis from being more than MAX_SIZE
+    # 如果resize后图像的长边超过最大尺寸
     if np.round(im_scale * im_size_max) > cfg.TEST.MAX_SIZE:
+      # 将图像按MAX_SIZE再次resize
       im_scale = float(cfg.TEST.MAX_SIZE) / float(im_size_max)
     im = cv2.resize(im_orig, None, None, fx=im_scale, fy=im_scale,
             interpolation=cv2.INTER_LINEAR)
@@ -137,6 +141,7 @@ def _get_image_blob(im):
   blob = im_list_to_blob(processed_ims)
 
   return blob, np.array(im_scale_factors)
+
 
 if __name__ == '__main__':
 
@@ -270,15 +275,20 @@ if __name__ == '__main__':
       # rgb -> bgr
       im = im_in[:,:,::-1]
 
+      # 准备输入网络的图像数据
       blobs, im_scales = _get_image_blob(im)
       assert len(im_scales) == 1, "Only single-image batch implemented"
+      # 网络输入
       im_blob = blobs
+      # 图像信息，图像高、宽、resize比例
       im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
 
       im_data_pt = torch.from_numpy(im_blob)
+      # 交换张量维度
       im_data_pt = im_data_pt.permute(0, 3, 1, 2)
       im_info_pt = torch.from_numpy(im_info_np)
 
+      # 张量装进预先定义好的Variable
       im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
       im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
       gt_boxes.data.resize_(1, 1, 5).zero_()

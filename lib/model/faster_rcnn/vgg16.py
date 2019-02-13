@@ -20,11 +20,16 @@ import pdb
 class vgg16(_fasterRCNN):
   # 继承Faster-RCNN
   def __init__(self, classes, pretrained=False, class_agnostic=False):
+    # 预训练VGG权重
     self.model_path = 'data/pretrained_model/vgg16_caffe.pth'
+    # 全图CNN特征通道数
     self.dout_base_model = 512
+    # 是否使用预训练权重
     self.pretrained = pretrained
+    # 是否使用类别无关box回归
     self.class_agnostic = class_agnostic
 
+    # 初始化faster-RCNN
     _fasterRCNN.__init__(self, classes, class_agnostic)
 
   def _init_modules(self):

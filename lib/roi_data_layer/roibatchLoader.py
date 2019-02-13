@@ -213,13 +213,10 @@ class roibatchLoader(data.Dataset):
         # gt_boxes = torch.FloatTensor([1,1,1,1,1])
         # num_boxes = 0
         gt_boxes = torch.from_numpy(blobs['gt_boxes'])
-        not_keep = (gt_boxes[:, 0] == gt_boxes[:, 2]) | (gt_boxes[:, 1] == gt_boxes[:, 3])
-        keep = torch.nonzero(not_keep == 0).view(-1)
-        if keep.numel() != 0:
-            gt_boxes = gt_boxes[keep]
-            num_boxes = min(gt_boxes.size(0), self.max_num_box)
-        else:
-            num_boxes = 0
+        num_boxes = gt_boxes.size(0)
+        if num_boxes == 0:
+            gt_boxes = torch.FloatTensor([1, 1, 1, 1, 0])
+
         return data, im_info, gt_boxes, num_boxes
 
   def __len__(self):

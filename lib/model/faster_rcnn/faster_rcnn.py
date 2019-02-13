@@ -36,7 +36,7 @@ class _fasterRCNN(nn.Module):
         self.grid_size = cfg.POOLING_SIZE * 2 if cfg.CROP_RESIZE_WITH_MAX_POOL else cfg.POOLING_SIZE
         self.RCNN_roi_crop = _RoICrop()
 
-    def forward(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
+    def forward(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=False):
         batch_size = im_data.size(0)
 
         im_info = im_info.data
@@ -45,7 +45,6 @@ class _fasterRCNN(nn.Module):
 
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
-
 
         if use_rpn:
             # feed base feature map tp RPN to obtain rois

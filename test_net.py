@@ -251,9 +251,9 @@ if __name__ == '__main__':
       boxes = rois.data[:, :, 1:5]
 
       N += 1
-      for i in range(scores[0].size()[0]):
+      for i in range(scores.size()[1]):
           pred_cls = np.argmax(scores[0][i].cpu().data.numpy())
-          gt_cls = gt_boxes[i, 4]
+          gt_cls = gt_boxes[0, i, 4].cpu().data.numpy()
           if pred_cls == gt_cls:
               TP += 1
 
@@ -340,3 +340,5 @@ if __name__ == '__main__':
 
   end = time.time()
   print("test time: %0.4fs" % (end - start))
+  
+  print("Rec Acc: %.4f" % (TP / N))

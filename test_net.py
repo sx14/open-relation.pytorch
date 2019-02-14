@@ -229,6 +229,10 @@ if __name__ == '__main__':
 
   fasterRCNN.eval()
   empty_array = np.transpose(np.array([[],[],[],[],[]]), (1,0))
+
+  TP = 0.0
+  N = 0.0
+
   for i in range(num_images):
 
       data = next(data_iter)
@@ -245,6 +249,13 @@ if __name__ == '__main__':
 
       scores = cls_prob.data
       boxes = rois.data[:, :, 1:5]
+
+      N += 1
+      for i in range(scores[0].size()[0]):
+          pred_cls = np.argmax(scores[0][i].cpu().data.numpy())
+          gt_cls = gt_boxes[i, 4]
+          if pred_cls == gt_cls:
+              TP += 1
 
       if cfg.TEST.BBOX_REG:
           # Apply bounding-box regression deltas

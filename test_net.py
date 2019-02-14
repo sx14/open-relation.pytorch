@@ -252,9 +252,9 @@ if __name__ == '__main__':
 
       for i in range(scores.size()[1]):
           test_count += 1
-          pred_cls = np.argmax(scores[0][i].cpu().data.numpy())
-          gt_cls = gt_boxes[0, i, 4].cpu().data.numpy()
-          if pred_cls == gt_cls:
+          pred_cate = np.argmax(scores[0][i].cpu().data.numpy())
+          gt_cate = gt_boxes[0, i, 4].cpu().data.numpy()
+          if pred_cate == gt_cate:
               test_pos += 1
 
       if cfg.TEST.BBOX_REG:

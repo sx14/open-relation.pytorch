@@ -6,6 +6,7 @@ from lib.datasets.vrd.path_config import vrd_root
 
 class ObjNet(LabelHier):
 
+
     def _raw_to_wn(self):
         raw2wn = dict()
         for vrd_label in self._raw_labels:
@@ -49,13 +50,13 @@ class ObjNet(LabelHier):
                             if w.name() not in wn_label_set:
                                 wn_label_set.add(w.name())
                                 # create new label node
-                                node = LabelNode(w.name(), next_label_index)
+                                node = LabelNode(w.name(), next_label_index, False)
                                 self._label2node[w.name()] = node
                                 self._index2node.append(node)
                                 next_label_index += 1
 
             # raw label is unique
-            node = LabelNode(raw_label, next_label_index)
+            node = LabelNode(raw_label, next_label_index, True)
             self._label2node[raw_label] = node
             self._index2node.append(node)
             next_label_index += 1
@@ -77,8 +78,8 @@ class ObjNet(LabelHier):
                     if h.name() in self._label2node:
                         node.append_hyper(self._label2node[h.name()])
 
-    def __init__(self, pre_label_path):
-        LabelHier.__init__(self, pre_label_path)
+    def __init__(self, raw_label_path):
+        LabelHier.__init__(self, raw_label_path)
 
 
 label_path = os.path.join(vrd_root, 'object_labels.txt')
@@ -86,5 +87,5 @@ objnet = ObjNet(label_path)
 
 # if __name__ == '__main__':
 #     a = ObjNet(label_path)
-#     n = a.get_node_by_name('pants')
+#     n = a.get_node_by_name('road')
 #     n.show_hyper_paths()

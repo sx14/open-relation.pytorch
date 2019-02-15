@@ -72,8 +72,3 @@ class ObjNet(LabelHier):
 raw_label_path = os.path.join(vg_root, 'object_labels.txt')
 raw2wn_path = os.path.join(vg_root, 'object_label2wn.txt')
 objnet = ObjNet(raw_label_path, raw2wn_path)
-
-# if __name__ == '__main__':
-#     a = ObjNet(raw_label_path, raw2wn_path)
-#     n = a.get_node_by_name('road')
-#     n.show_hyper_paths()

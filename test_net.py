@@ -230,8 +230,8 @@ if __name__ == '__main__':
   fasterRCNN.eval()
   empty_array = np.transpose(np.array([[],[],[],[],[]]), (1,0))
 
-  test_pos = 0.0
-  test_count = 0.0
+  TP_count = 0.0
+  N_count = 0.0
 
   for i in range(num_images):
 
@@ -251,11 +251,11 @@ if __name__ == '__main__':
       boxes = rois.data[:, :, 1:5]
 
       for i in range(scores.size()[1]):
-          test_count += 1
-          pred_cate = np.argmax(scores[0][i].cpu().data.numpy())
+          N_count += 1
+          pred_cate = np.argmax(scores[0][i][1:].cpu().data.numpy()) + 1
           gt_cate = gt_boxes[0, i, 4].cpu().data.numpy()
           if pred_cate == gt_cate:
-              test_pos += 1
+              TP_count += 1
 
       if cfg.TEST.BBOX_REG:
           # Apply bounding-box regression deltas
@@ -341,4 +341,4 @@ if __name__ == '__main__':
   end = time.time()
   print("test time: %0.4fs" % (end - start))
 
-  print("Rec Acc: %.4f" % (test_pos / test_count))
+  print("Rec Acc: %.4f" % (TP_count / N_count))

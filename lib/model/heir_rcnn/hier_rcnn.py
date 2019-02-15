@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-import random
 import h5py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
-import torchvision.models as models
 from torch.autograd import Variable
 import numpy as np
 from lib.model.utils.config import cfg
@@ -14,10 +11,8 @@ from lib.model.roi_pooling.modules.roi_pool import _RoIPooling
 from lib.model.roi_crop.modules.roi_crop import _RoICrop
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
-import time
-import pdb
-from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
-from label_hier.obj_hier import objnet
+from lib.model.utils.net_utils import _smooth_l1_loss, _affine_grid_gen
+from lib.model.heir_rcnn.label_hier.vrd.obj_hier import objnet
 
 class _OrderSimilarity(nn.Module):
     def __init__(self, norm):

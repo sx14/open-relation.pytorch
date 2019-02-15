@@ -1,6 +1,6 @@
 import os
-from label_hier import LabelHier
-from label_hier import LabelNode
+from lib.model.heir_rcnn.label_hier.label_hier import LabelHier
+from lib.model.heir_rcnn.label_hier.label_hier import LabelNode
 from lib.datasets.vrd import path_config
 
 class PreNet(LabelHier):

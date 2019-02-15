@@ -1,0 +1,1 @@
+vg_root = '/home/magus/dataset3/VG_pascal/VOC2007'

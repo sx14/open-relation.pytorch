@@ -1,38 +1,14 @@
 import os
 from nltk.corpus import wordnet as wn
-from label_hier import LabelHier
-from label_hier import LabelNode
-from lib.datasets.vrd.path_config import vrd_root
+from lib.model.heir_rcnn.label_hier.label_hier import LabelHier
+from lib.model.heir_rcnn.label_hier.label_hier import LabelNode
+from lib.datasets.vg2.path_config import vg_root
+
 
 class ObjNet(LabelHier):
 
-    def _raw_to_wn(self):
-        raw2wn = dict()
-        for vrd_label in self._raw_labels:
-            vrd_label = vrd_label.strip()
-            syns = wn.synsets(vrd_label)
-            if len(syns) > 0:
-                raw2wn[vrd_label] = [syns[0].name()]
-            else:
-                raw2wn[vrd_label] = ['']
-        # fix auto annotation
-        raw2wn['shoes'] = ['shoe.n.01']
-        raw2wn['bike'] = ['bicycle.n.01']
-        raw2wn['plate'] = ['plate.n.04']
-        raw2wn['trash can'] = ['ashcan.n.01']
-        raw2wn['traffic light'] = ['traffic_light.n.01']
-        raw2wn['truck'] = ['truck.n.01']
-        raw2wn['van'] = ['van.n.05']
-        raw2wn['mouse'] = ['mouse.n.04']
-        raw2wn['hydrant'] = ['fireplug.n.01']
-        raw2wn['pants'] = ['trouser.n.01']
-        raw2wn['jeans'] = ['trouser.n.01']
-        raw2wn['monitor'] = ['monitor.n.04']
-        raw2wn['post'] = ['post.n.04']
-        return raw2wn
-
     def raw2wn(self):
-        return self._raw_to_wn()
+        return self._raw2wn
 
     def _create_label_nodes(self, raw2wn):
         # keep wn label unique
@@ -49,19 +25,19 @@ class ObjNet(LabelHier):
                             if w.name() not in wn_label_set:
                                 wn_label_set.add(w.name())
                                 # create new label node
-                                node = LabelNode(w.name(), next_label_index)
+                                node = LabelNode(w.name(), next_label_index, False)
                                 self._label2node[w.name()] = node
                                 self._index2node.append(node)
                                 next_label_index += 1
 
             # raw label is unique
-            node = LabelNode(raw_label, next_label_index)
+            node = LabelNode(raw_label, next_label_index, True)
             self._label2node[raw_label] = node
             self._index2node.append(node)
             next_label_index += 1
 
     def _construct_hier(self):
-        raw2wn = self._raw_to_wn()
+        raw2wn = self._raw2wn
         self._create_label_nodes(raw2wn)
         # link the nodes
         for i in range(1, len(self._index2node)):
@@ -77,14 +53,27 @@ class ObjNet(LabelHier):
                     if h.name() in self._label2node:
                         node.append_hyper(self._label2node[h.name()])
 
-    def __init__(self, pre_label_path):
-        LabelHier.__init__(self, pre_label_path)
+    def _raw_to_wn(self, raw2wn_path):
+        vg_labels = self._load_raw_label(raw2wn_path)
+        raw2wn = dict()
+        raw_labels = []
+        for vg_label in vg_labels:
+            raw_label, wn_labels = vg_label.split('|')
+            raw_labels.append(raw_label)
+            wn_labels = wn_labels.split(' ')
+            raw2wn[raw_label] = wn_labels
+        return raw2wn
+
+    def __init__(self, raw_label_path, raw2wn_path):
+        self._raw2wn = self._raw_to_wn(raw2wn_path)
+        LabelHier.__init__(self, raw_label_path)
 
 
-label_path = os.path.join(vrd_root, 'object_labels.txt')
-objnet = ObjNet(label_path)
+raw_label_path = os.path.join(vg_root, 'object_labels.txt')
+raw2wn_path = os.path.join(vg_root, 'object_label2wn.txt')
+objnet = ObjNet(raw_label_path, raw2wn_path)
 
 # if __name__ == '__main__':
-#     a = ObjNet(label_path)
-#     n = a.get_node_by_name('pants')
+#     a = ObjNet(raw_label_path, raw2wn_path)
+#     n = a.get_node_by_name('road')
 #     n.show_hyper_paths()

@@ -40,7 +40,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vg2', type=str)
+                      default='vg', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -170,15 +170,15 @@ if __name__ == '__main__':
       args.imdb_name = "imagenet_train"
       args.imdbval_name = "imagenet_val"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '30']
-  elif args.dataset == "vg2":
+  elif args.dataset == "vg":
       # train sizes: train, smalltrain, minitrain
       # train scale: ['150-50-20', '150-50-50', '500-150-80', '750-250-150', '1750-700-450', '1600-400-20']
       # args.imdb_name = "vg_150-50-50_minitrain"
       # args.imdbval_name = "vg_150-50-50_minival"
       # args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
 
-      args.imdb_name = "vg2_2007_trainval"
-      args.imdbval_name = "vg2_2007_test"
+      args.imdb_name = "vg_2007_trainval"
+      args.imdbval_name = "vg_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
 
   elif args.dataset == "vrd":

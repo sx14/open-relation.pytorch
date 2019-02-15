@@ -2,7 +2,7 @@ import os
 from nltk.corpus import wordnet as wn
 from lib.model.heir_rcnn.label_hier.label_hier import LabelHier
 from lib.model.heir_rcnn.label_hier.label_hier import LabelNode
-from lib.datasets.vg2.path_config import vg_root
+from lib.datasets.vg.path_config import vg_root
 
 
 class ObjNet(LabelHier):

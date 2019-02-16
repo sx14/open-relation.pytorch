@@ -4,7 +4,7 @@ import json
 import numpy as np
 import cv2
 from to_pascal_format import output_pascal_format
-from path_config import vrd_root, vrd_pascal_root
+from path_config import vrd_root
 
 def gen_JPEGImages(vrd_root, vrd_pascal_root):
     # output path
@@ -134,6 +134,6 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
 
 
 if __name__ == '__main__':
-    gen_JPEGImages(vrd_root, vrd_pascal_root)
-    gen_ImageSets(vrd_root, vrd_pascal_root)
-    gen_Annotations(vrd_root, vrd_pascal_root)
+    gen_JPEGImages(vrd_root, vrd_root)
+    gen_ImageSets(vrd_root, vrd_root)
+    gen_Annotations(vrd_root, vrd_root)

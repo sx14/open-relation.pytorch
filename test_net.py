@@ -233,6 +233,8 @@ if __name__ == '__main__':
   TP_count = 0.0
   N_count = 0.0
 
+  obj_det_roidbs = {}
+
   for i in range(num_images):
 
       data = next(data_iter)
@@ -250,10 +252,10 @@ if __name__ == '__main__':
       scores = cls_prob.data
       boxes = rois.data[:, :, 1:5]
 
-      for i in range(scores.size()[1]):
+      for ppp in range(scores.size()[1]):
           N_count += 1
-          pred_cate = np.argmax(scores[0][i][1:].cpu().data.numpy()) + 1
-          gt_cate = gt_boxes[0, i, 4].cpu().data.numpy()
+          pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
+          gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
           if pred_cate == gt_cate:
               TP_count += 1
 
@@ -287,6 +289,8 @@ if __name__ == '__main__':
       if vis:
           im = cv2.imread(imdb.image_path_at(i))
           im2show = np.copy(im)
+
+
       for j in xrange(1, imdb.num_classes):
           inds = torch.nonzero(scores[:,j]>thresh).view(-1)
           # if there is det
@@ -306,9 +310,12 @@ if __name__ == '__main__':
             if vis:
               im2show = vis_detections(im2show, imdb.classes[j], cls_dets.cpu().numpy(), 0.3)
             all_boxes[j][i] = cls_dets.cpu().numpy()
+
           else:
             all_boxes[j][i] = empty_array
 
+
+      det_temp = []
       # Limit to max_per_image detections *over all classes*
       if max_per_image > 0:
           image_scores = np.hstack([all_boxes[j][i][:, -1]
@@ -318,6 +325,11 @@ if __name__ == '__main__':
               for j in xrange(1, imdb.num_classes):
                   keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
                   all_boxes[j][i] = all_boxes[j][i][keep, :]
+                  det_temp += all_boxes[j][i]
+      det_temp = np.array(det_temp)
+      det_temp = np.unique(det_temp)
+      img_id = roidb[i]['image'].split('/')[-1].split('.')[0]
+      obj_det_roidbs[img_id] = det_temp
 
       misc_toc = time.time()
       nms_time = misc_toc - misc_tic
@@ -342,3 +354,7 @@ if __name__ == '__main__':
   print("test time: %0.4fs" % (end - start))
 
   print("Rec Acc: %.4f" % (TP_count / N_count))
+
+  det_save_path = 'VRDdevkit2007/VOC2007/feature/object/det/test_box_label.bin'
+  with open(det_save_path, 'wb') as f:
+      pickle.dump(obj_det_roidbs, f)

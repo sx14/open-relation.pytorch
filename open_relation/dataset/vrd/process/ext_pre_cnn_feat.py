@@ -8,7 +8,6 @@ import pickle
 import numpy as np
 import caffe
 import cv2
-from lib.fast_rcnn.test import im_detect
 from open_relation.dataset.dataset_config import DatasetConfig
 from open_relation import global_config
 from open_relation.dataset.vrd.label_hier.obj_hier import objnet

@@ -115,8 +115,7 @@ def load_detector(dataset):
                              'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
 
     # initilize the network here.
-
-    fasterRCNN = vgg16(objnet.get_raw_labels(), pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = vgg16(['__background__'] + objnet.get_raw_labels(), pretrained=False, class_agnostic=args.class_agnostic)
     fasterRCNN.create_architecture()
 
     print("load checkpoint %s" % (load_name))
@@ -135,4 +134,5 @@ def load_detector(dataset):
         fasterRCNN.cuda()
 
     fasterRCNN.eval()
+    return fasterRCNN
 

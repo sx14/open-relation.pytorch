@@ -5,7 +5,7 @@ import open_relation.global_config
 class ExtraConfig:
     def __init__(self, target, extra_root, dataset_name):
         self._root = os.path.join(extra_root, target)
-        self.fc7_root = os.path.join(self._root, 'fc7')
+        self.fc7_root = os.path.join(self._root, 'fc7_1')
         self.label_root = os.path.join(self._root, 'label')
         self.prepare_root = os.path.join(self._root, 'prepare')
         self.det_box_path = os.path.join(self._root, 'det', 'test_box.bin')

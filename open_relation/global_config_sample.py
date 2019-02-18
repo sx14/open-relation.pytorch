@@ -1,16 +1,12 @@
 import os
 
 
-project_root = '/media/sunx/Data/linux-workspace/python-workspace/hierarchical-relationship'
+project_root = '/media/sunx/Data/linux-workspace/python-workspace/open-relation'
 
 
 dataset_root = {
-    'vg': os.path.join(project_root, 'VG'),
-    'vrd': os.path.join(project_root, 'VRD')
+    'vg': os.path.join(project_root, 'data', 'VGdevkit2007', 'VOC2007'),
+    'vrd': os.path.join(project_root, 'data', 'VRDdevkit2007', 'VOC2007')
 }
-
-
-fast_prototxt_path = os.path.join(project_root, 'models', 'VGG16', 'test.prototxt')
-fast_caffemodel_path = os.path.join(project_root, 'data', 'fast_rcnn_models', 'vgg16_fast_rcnn_iter_40000.caffemodel')
 
 our_model_root = os.path.join(project_root, 'open_relation', 'model')

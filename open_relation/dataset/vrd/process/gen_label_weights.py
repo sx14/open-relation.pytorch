@@ -49,7 +49,7 @@ def gen_weights(box_labels, vrd2path, index2label, label2index, weights_save_pat
     pickle.dump(vrd2weight, open(weights_save_path, 'wb'))
 
 
-def gen_weights1(box_labels, vrd2path, index2label, label2index, weights_save_path, mode):
+def gen_weights1(box_labels, vrd2path, index2label, weights_save_path, mode):
     # counter
     label_counter = np.zeros(len(index2label))
     vrd_counter = np.zeros(len(index2label))
@@ -59,8 +59,8 @@ def gen_weights1(box_labels, vrd2path, index2label, label2index, weights_save_pa
         img_box_labels = box_labels[img_id]
         for box_label in img_box_labels:
             vrd_label = box_label[4]
-            vrd_counter[label2index[vrd_label]] += 1
-            label_path = vrd2path[label2index[vrd_label]]
+            vrd_counter[vrd_label] += 1
+            label_path = vrd2path[vrd_label]
             for l in label_path:
                 label_counter[l] += 1
 
@@ -113,4 +113,4 @@ def gen_label_weigths(target):
 
     # weight save path
     weights_save_path = dataset_config.extra_config[target].config['raw2weight_path']
-    gen_weights1(box_labels, raw2path, index2label, label2index, weights_save_path, 'raw')
+    gen_weights1(box_labels, raw2path, index2label, weights_save_path, 'raw')

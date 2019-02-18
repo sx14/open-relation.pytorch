@@ -87,7 +87,7 @@ def extract_fc7_features(net, img_box_label, img_root, list_path, feature_root,
         feature_id = image_id + '.bin'
         feature_path = os.path.join(feature_root, feature_id)
 
-        if not os.path.exists(feature_path):
+        if True or not os.path.exists(feature_path):
             # extract fc7
             img_path = os.path.join(img_root, image_id+'.jpg')
             fc7s = ext_cnn_feat(net, img_path, curr_img_boxes)

@@ -32,7 +32,7 @@ def parse_args(dataset):
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default=dataset, type=str)
+                        default='pascal_voc', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default=os.path.join(project_root, 'cfgs/vgg16.yml'),
@@ -114,8 +114,16 @@ def load_detector(dataset):
     load_name = os.path.join(input_dir,
                              'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
 
+    pascal_classes = np.asarray(['__background__',
+                                 'aeroplane', 'bicycle', 'bird', 'boat',
+                                 'bottle', 'bus', 'car', 'cat', 'chair',
+                                 'cow', 'diningtable', 'dog', 'horse',
+                                 'motorbike', 'person', 'pottedplant',
+                                 'sheep', 'sofa', 'train', 'tvmonitor'])
+    vrd_classes = np.asarray(['__background__'] + objnet.get_raw_labels())
+
     # initilize the network here.
-    fasterRCNN = vgg16(['__background__'] + objnet.get_raw_labels(), pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = vgg16(pascal_classes, pretrained=False, class_agnostic=args.class_agnostic)
     fasterRCNN.create_architecture()
 
     print("load checkpoint %s" % (load_name))

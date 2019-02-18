@@ -76,7 +76,7 @@ for feature_file_id in test_box_label:
         vf_v = torch.autograd.Variable(torch.from_numpy(vf).float()).cuda()
         lfs_v = torch.autograd.Variable(torch.from_numpy(label_vecs).float()).cuda()
         org_label_ind = box_label[4]
-        org_label = objnet.get_node_by_index(org_label_ind)
+        org_label = objnet.get_node_by_index(org_label_ind).name()
         scores, _ = net(vf_v)
         scores = scores.cpu().data[0]
         ranked_inds = np.argsort(scores).tolist()

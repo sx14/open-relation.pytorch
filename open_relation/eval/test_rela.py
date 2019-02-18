@@ -14,7 +14,8 @@ from open_relation.dataset.vrd.label_hier.pre_hier import prenet
 from open_relation.dataset.vrd.label_hier.obj_hier import objnet
 from open_relation.language.infer.model import RelationEmbedding
 from open_relation.language.infer.lang_config import train_params
-from relationship.ext_cnn_feat import ext_cnn_feat
+from open_relation.feature.ext_cnn_feat import ext_cnn_feat
+from open_relation.feature.load_detector import load_detector
 
 def gen_rela_conds(det_roidb):
     rela_cands = dict()
@@ -89,7 +90,8 @@ obj_index2label = objnet.index2label()
 raw_obj_inds = set([obj_label2index[l] for l in objnet.get_raw_labels()])
 
 
-
+# load cnn
+net = load_detector(dataset)
 
 # load visual model with best weights
 vmodel_best_weights_path = pre_config['best_weight_path']
@@ -136,14 +138,14 @@ for img_id in rela_box_label:
 
     # extract cnn feats
     curr_img_boxes = np.array(box_labels)
-    img = cv2.imread(os.path.join(img_root, img_id + '.jpg'))
+    img_path = os.path.join(img_root, img_id + '.jpg')
 
     # pre fc7
-    pre_fc7s = ext_cnn_feat(img, curr_img_boxes[:, :4])
+    pre_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, :5])
     # sbj fc7
-    sbj_fc7s = ext_cnn_feat(img, curr_img_boxes[:, 5:9])
+    sbj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 5:10])
     # obj fc7
-    obj_fc7s = ext_cnn_feat(img, curr_img_boxes[:, 10:14])
+    obj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 10:15])
 
     vfs = np.concatenate((sbj_fc7s, pre_fc7s, obj_fc7s), axis=1)
 

@@ -113,13 +113,13 @@ def extract_fc7_features(net, img_box_label, img_root, list_path, feature_root,
             # img = cv2.imread(img_path)
 
             # pre fc7
-            pre_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, :4])
+            pre_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, :5])
 
             # sbj fc7
-            sbj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 5:9])
+            sbj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 5:10])
 
             # obj fc7
-            obj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 10:14])
+            obj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 10:15])
 
             fc7s = np.concatenate((sbj_fc7s, pre_fc7s, obj_fc7s), axis=1)
 

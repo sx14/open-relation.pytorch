@@ -32,7 +32,7 @@ def parse_args(dataset):
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='pascal_voc', type=str)
+                        default=dataset, type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default=os.path.join(project_root, 'cfgs/vgg16.yml'),
@@ -92,11 +92,23 @@ def load_detector(dataset):
         args.imdbval_name = "vg_2007_trainval"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from open_relation.dataset.vg.label_hier.obj_hier import objnet
+        classes = np.asarray(['__background__'] + objnet.get_raw_labels())
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from open_relation.dataset.vrd.label_hier.obj_hier import objnet
+        classes = np.asarray(['__background__'] + objnet.get_raw_labels())
+    elif args.dataset == "pascal_voc":
+        args.imdb_name = "voc_2007_trainval"
+        args.imdbval_name = "voc_2007_test"
+        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+        classes = np.asarray(['__background__',
+                              'aeroplane', 'bicycle', 'bird', 'boat',
+                              'bottle', 'bus', 'car', 'cat', 'chair',
+                              'cow', 'diningtable', 'dog', 'horse',
+                              'motorbike', 'person', 'pottedplant',
+                              'sheep', 'sofa', 'train', 'tvmonitor'])
 
     args.cfg_file = os.path.join(project_root, "cfgs/{}_ls.yml".format(args.net)
                                  if args.large_scale else "cfgs/{}.yml".format(args.net))
@@ -114,16 +126,12 @@ def load_detector(dataset):
     load_name = os.path.join(input_dir,
                              'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
 
-    pascal_classes = np.asarray(['__background__',
-                                 'aeroplane', 'bicycle', 'bird', 'boat',
-                                 'bottle', 'bus', 'car', 'cat', 'chair',
-                                 'cow', 'diningtable', 'dog', 'horse',
-                                 'motorbike', 'person', 'pottedplant',
-                                 'sheep', 'sofa', 'train', 'tvmonitor'])
-    vrd_classes = np.asarray(['__background__'] + objnet.get_raw_labels())
+
+
+
 
     # initilize the network here.
-    fasterRCNN = vgg16(pascal_classes, pretrained=False, class_agnostic=args.class_agnostic)
+    fasterRCNN = vgg16(classes, pretrained=False, class_agnostic=args.class_agnostic)
     fasterRCNN.create_architecture()
 
     print("load checkpoint %s" % (load_name))

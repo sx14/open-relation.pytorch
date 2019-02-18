@@ -172,13 +172,13 @@ def split_a_small_val(val_list_path, length, small_val_path):
 
 def gen_cnn_feat():
     dataset = 'vrd'
+    target = 'predicate'
 
     # load cnn
-    net = load_detector(dataset)
+    net = load_detector('pascal_voc')
 
     # prepare
-    dataset_config = DatasetConfig('vrd')
-    target = 'predicate'
+    dataset_config = DatasetConfig(dataset)
     labelnet = prenet
 
 

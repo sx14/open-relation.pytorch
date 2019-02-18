@@ -147,13 +147,13 @@ def split_a_small_val(val_list_path, length, small_val_path):
 
 def gen_cnn_feat():
     dataset = 'vrd'
+    target = 'object'
 
     # load cnn
-    net = load_detector(dataset)
+    net = load_detector('pascal_voc')
 
     # prepare
     dataset_config = DatasetConfig(dataset)
-    target = 'object'
     labelnet = objnet
 
     # extract feature

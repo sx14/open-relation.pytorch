@@ -108,6 +108,6 @@ def ext_cnn_feat(net, img_path, boxes):
     num_boxes.data.resize_(1).zero_()
     num_boxes[0] = gt_boxes.size()[1]
 
-    fc7 = net.ext_feat(im_data, im_info, gt_boxes, num_boxes)
+    fc7 = net.ext_feat(im_data, im_info, gt_boxes, num_boxes, False)
     fc7 = fc7.cpu().data.numpy()
     return fc7

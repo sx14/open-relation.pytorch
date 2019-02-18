@@ -12,6 +12,8 @@ from open_relation.dataset.dataset_config import DatasetConfig
 from open_relation import global_config
 from open_relation.dataset.vrd.label_hier.obj_hier import objnet
 from open_relation.dataset.vrd.label_hier.pre_hier import prenet
+from open_relation.feature.ext_cnn_feat import ext_cnn_feat
+from open_relation.feature.load_detector import load_detector
 
 
 def cal_sample_ratio(label2index, vrd2path, box_labels):
@@ -107,19 +109,17 @@ def extract_fc7_features(net, img_box_label, img_root, list_path, feature_root,
 
         if not os.path.exists(feature_path):
             # extract fc7
-            img = cv2.imread(os.path.join(img_root, image_id+'.jpg'))
+            img_path = os.path.join(img_root, image_id+'.jpg')
+            # img = cv2.imread(img_path)
 
             # pre fc7
-            im_detect(net, img, curr_img_boxes[:, :4])
-            pre_fc7s = np.array(net.blobs['fc7'].data)
+            pre_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, :4])
 
             # sbj fc7
-            im_detect(net, img, curr_img_boxes[:, 5:9])
-            sbj_fc7s = np.array(net.blobs['fc7'].data)
+            sbj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 5:9])
 
             # obj fc7
-            im_detect(net, img, curr_img_boxes[:, 10:14])
-            obj_fc7s = np.array(net.blobs['fc7'].data)
+            obj_fc7s = ext_cnn_feat(net, img_path, curr_img_boxes[:, 10:14])
 
             fc7s = np.concatenate((sbj_fc7s, pre_fc7s, obj_fc7s), axis=1)
 
@@ -171,13 +171,10 @@ def split_a_small_val(val_list_path, length, small_val_path):
 
 
 def gen_cnn_feat():
+    dataset = 'vrd'
+
     # load cnn
-    prototxt = global_config.fast_prototxt_path
-    caffemodel = global_config.fast_caffemodel_path
-    datasets = ['train', 'test']
-    caffe.set_mode_gpu()
-    caffe.set_device(0)
-    net = caffe.Net(prototxt, caffemodel, caffe.TEST)
+    net = load_detector(dataset)
 
     # prepare
     dataset_config = DatasetConfig('vrd')
@@ -191,6 +188,8 @@ def gen_cnn_feat():
     label_save_root = dataset_config.extra_config[target].label_root
     prepare_root = dataset_config.extra_config[target].prepare_root
     fc7_save_root = dataset_config.extra_config[target].fc7_root
+
+    datasets = ['train', 'test']
     for d in datasets:
         # prepare labels and boxes
         label_save_path = os.path.join(label_save_root, d + '.txt')

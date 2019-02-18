@@ -210,3 +210,15 @@ lib/pycocotools/_mask.c
 
 # sunx
 path_config.py
+*.pyc
+.ipynb_checkpoints
+*.bin
+.idea/
+*.pkl
+global_config.py
+*.npz
+runs
+/VRD
+/VG
+
+

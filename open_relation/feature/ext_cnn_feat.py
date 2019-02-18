@@ -94,7 +94,7 @@ def ext_cnn_feat(net, img_path, boxes):
 
     # 准备输入网络的图像数据
     blobs, im_scales = _get_image_blob(im)
-    im_boxes_np = _get_roi_blob(boxes, im_scales[0])
+    im_boxes = _get_roi_blob(boxes, im_scales[0])
 
 
 
@@ -105,14 +105,14 @@ def ext_cnn_feat(net, img_path, boxes):
 
 
     im_data_pt = torch.from_numpy(im_blob)
+    im_boxes_pt = torch.from_numpy(im_boxes)
     im_data_pt = im_data_pt.permute(0, 3, 1, 2)
     im_info_pt = torch.from_numpy(im_info_np)
-    im_boxes_pt = torch.from_numpy(im_boxes_np)
 
     # 张量装进预先定义好的Variable
     im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
-    im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
     gt_boxes.data.resize_(im_boxes_pt.size()).copy_(im_boxes_pt)
+    im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
     num_boxes.data.resize_(1).zero_()
     num_boxes[0] = gt_boxes.size()[1]
 

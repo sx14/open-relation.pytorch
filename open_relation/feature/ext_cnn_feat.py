@@ -23,6 +23,12 @@ def im_list_to_blob(ims):
     return blob
 
 
+def _get_roi_blob(boxes, scale):
+    boxes_np = np.array(boxes)
+    boxes_np[:, 4] = boxes_np[:, 4] * scale
+    boxes_np = boxes_np[np.newaxis, :, :]
+    return boxes_np
+
 def _get_image_blob(im):
   """Converts an image into a network input.
   Arguments:
@@ -88,12 +94,14 @@ def ext_cnn_feat(net, img_path, boxes):
 
     # 准备输入网络的图像数据
     blobs, im_scales = _get_image_blob(im)
+    im_boxes_np = _get_roi_blob(boxes, im_scales[0])
+
+
 
     # 网络输入
     im_blob = blobs
     # 图像信息，图像高、宽、resize比例
     im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
-    im_boxes_np = np.array(boxes)[np.newaxis, :, :]
 
 
     im_data_pt = torch.from_numpy(im_blob)

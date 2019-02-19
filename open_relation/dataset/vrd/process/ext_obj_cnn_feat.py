@@ -150,7 +150,7 @@ def gen_cnn_feat():
     target = 'object'
 
     # load cnn
-    net = load_detector('pascal_voc')
+    net = load_detector(dataset)
 
     # prepare
     dataset_config = DatasetConfig(dataset)

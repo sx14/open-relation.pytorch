@@ -25,7 +25,7 @@ def im_list_to_blob(ims):
 
 def _get_roi_blob(boxes, scale):
     boxes_np = np.array(boxes)
-    boxes_np[:, 4] = boxes_np[:, 4] * scale
+    boxes_np[:, :4] = boxes_np[:, :4] * scale
     boxes_np = boxes_np[np.newaxis, :, :]
     return boxes_np
 

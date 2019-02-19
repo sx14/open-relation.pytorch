@@ -68,10 +68,10 @@ def parse_args(dataset):
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=6, type=int)
+                        default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=10021, type=int)
+                        default=7547, type=int)
     args = parser.parse_args()
     return args
 

@@ -317,6 +317,7 @@ if __name__ == '__main__':
             else:
                 all_boxes[j][i] = empty_array
 
+        det_temp = []
         # Limit to max_per_image detections *over all classes*
         if max_per_image > 0:
             image_scores = np.hstack([all_boxes[j][i][:, -1]
@@ -326,10 +327,9 @@ if __name__ == '__main__':
                 for j in xrange(1, imdb.num_classes):
                     keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
                     all_boxes[j][i] = all_boxes[j][i][keep, :]
+                    for box in all_boxes[j][i]:
+                        det_temp.append(box)
 
-        det_temp = []
-        for j in range(1, imdb.num_classes):
-            det_temp = det_temp + all_boxes[j][i]
         det_temp = np.array(det_temp)
         img_id = roidb[i]['image'].split('/')[-1].split('.')[0]
         obj_det_roidbs[img_id] = det_temp

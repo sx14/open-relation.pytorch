@@ -92,13 +92,13 @@ def load_detector(dataset):
         args.imdbval_name = "vg_2007_trainval"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from open_relation.dataset.vg.label_hier.obj_hier import objnet
-        classes = np.asarray(['__background__'] + objnet.get_raw_labels())
+        classes = np.asarray(objnet.get_raw_labels())
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from open_relation.dataset.vrd.label_hier.obj_hier import objnet
-        classes = np.asarray(['__background__'] + objnet.get_raw_labels())
+        classes = np.asarray(objnet.get_raw_labels())
     elif args.dataset == "pascal_voc":
         args.imdb_name = "voc_2007_trainval"
         args.imdbval_name = "voc_2007_test"

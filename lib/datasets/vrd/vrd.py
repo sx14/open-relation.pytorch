@@ -40,7 +40,7 @@ class vrd(imdb):
         self._devkit_path = self._get_default_path() if devkit_path is None \
             else devkit_path
         self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
-        self._classes = ['__background__'] + objnet.get_raw_labels()
+        self._classes = objnet.get_raw_labels()
 
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.jpg'

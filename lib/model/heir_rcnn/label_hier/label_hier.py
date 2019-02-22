@@ -154,7 +154,7 @@ class LabelHier:
 
     def __init__(self, raw_label_path):
         self._raw_labels = self._load_raw_label(raw_label_path)
-        # self._raw_labels.insert(0, '__background__')
+        self._raw_labels.insert(0, '__background__')
         bk = LabelNode('__background__', 0, False)
         self._label2node = {'__background__': bk}
         self._index2node = [bk]

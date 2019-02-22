@@ -30,6 +30,7 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import save_net, load_net, vis_detections
 from lib.model.faster_rcnn.vgg16 import vgg16
 from lib.model.faster_rcnn.resnet import resnet
+from open_relation.dataset.label_hier import accum_score
 
 import pdb
 
@@ -126,10 +127,13 @@ if __name__ == '__main__':
         args.imdb_name = "vg_150-50-50_minitrain"
         args.imdbval_name = "vg_150-50-50_minival"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+        from open_relation.dataset.vg.label_hier.obj_hier import objnet
+
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+        from open_relation.dataset.vrd.label_hier.obj_hier import objnet
 
     args.cfg_file = "cfgs/{}_ls.yml".format(args.net) if args.large_scale else "cfgs/{}.yml".format(args.net)
 
@@ -232,7 +236,7 @@ if __name__ == '__main__':
     fasterRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
-    use_gt_box = False
+    use_rpn = False
     TP_count = 0.0
     N_count = 0.1
 
@@ -250,18 +254,23 @@ if __name__ == '__main__':
         rois, cls_prob, bbox_pred, \
         rpn_loss_cls, rpn_loss_box, \
         RCNN_loss_cls, RCNN_loss_bbox, \
-        rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, not use_gt_box)
+        rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
 
         scores = cls_prob.data
         boxes = rois.data[:, :, 1:5]
 
-        if use_gt_box:
+        if not use_rpn:
             for ppp in range(scores.size()[1]):
                 N_count += 1
-                pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
+                all_scores = accum_score(scores[0][ppp].cpu().data.numpy(), objnet)
+                sorted_scores = sorted(all_scores.items(), key=lambda d: d[1], reverse=True)
+                pred_cate = sorted_scores[0][0]
+                # pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                if pred_cate == gt_cate:
-                    TP_count += 1
+                # if pred_cate == gt_cate:
+                #     TP_count += 1
+                gt_node = objnet.get_node_by_index(gt_cate)
+                TP_count += gt_node.score(pred_cate)
 
         if cfg.TEST.BBOX_REG:
             # Apply bounding-box regression deltas

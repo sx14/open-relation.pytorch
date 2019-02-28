@@ -47,7 +47,7 @@ class _HierRCNN(nn.Module):
         self.n_classes = len(self.classes)
         self.class_agnostic = class_agnostic
         # min negative label num
-        self.n_neg_classes = objnet.neg_class_num()
+        self.n_neg_classes = objnet.neg_num()
         self.objnet = objnet
 
         # label vectors

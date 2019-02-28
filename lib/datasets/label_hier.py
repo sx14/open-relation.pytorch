@@ -175,6 +175,9 @@ class LabelHier:
             punish.append(1/p)
         return punish
 
+    def neg_num(self):
+        return self.label_sum() - self.max_depth
+
     def _load_raw_label(self, raw_label_path):
         labels = []
         if os.path.exists(raw_label_path):

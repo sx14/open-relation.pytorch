@@ -18,14 +18,13 @@ from lib.model.heir_rcnn.hier_rcnn import _HierRCNN
 import pdb
 
 class vgg16(_HierRCNN):
-  # 继承Faster-RCNN
-  def __init__(self, classes, pretrained=False, class_agnostic=False):
+  def __init__(self, objnet, level_vec_path, pretrained=False, class_agnostic=False):
     self.model_path = 'data/pretrained_model/vgg16_caffe.pth'
     self.dout_base_model = 512
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic
 
-    _HierRCNN.__init__(self, classes, class_agnostic)
+    _HierRCNN.__init__(self, class_agnostic, objnet, level_vec_path)
 
   def _init_modules(self):
 
@@ -53,7 +52,8 @@ class vgg16(_HierRCNN):
     self.RCNN_top = vgg.classifier
 
     # 新建分类层，得分
-    self.RCNN_cls_score = nn.Linear(4096, self.n_classes)
+    # not used in hier-rcnn
+    # self.RCNN_cls_score = nn.Linear(4096, self.n_classes)
 
     # box预测层，box坐标
     if self.class_agnostic:
@@ -62,9 +62,7 @@ class vgg16(_HierRCNN):
       self.RCNN_bbox_pred = nn.Linear(4096, 4 * self.n_classes)      
 
   def _head_to_tail(self, pool5):
-    
     pool5_flat = pool5.view(pool5.size(0), -1)
     fc7 = self.RCNN_top(pool5_flat)
-
     return fc7
 

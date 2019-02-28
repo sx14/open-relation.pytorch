@@ -43,7 +43,7 @@ class _fasterRCNN(nn.Module):
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
 
-        # feed image data to base model to obtain base feature map
+        # feed image data to RCNN model to obtain whole feature map
         base_feat = self.RCNN_base(im_data)
 
         if use_rpn:

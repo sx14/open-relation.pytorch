@@ -139,9 +139,17 @@ class LabelHier:
         else:
             return None
 
-    def neg_class_num(self):
-        return self.label_sum() - self._max_depth
 
+    def depth_punish(self):
+        # y = 1/196(x - 15)^2 + 1
+        punish = []
+        max_punish = 2.0
+        min_punish = 1.0
+        for i in range(self.label_sum()):
+            d = self.get_node_by_index(i).depth()
+            p = (max_punish - min_punish) / (1 - self.max_depth) ** 2 * (d - self.max_depth) ** 2 + min_punish
+            punish.append(1/p)
+        return punish
 
     def _load_raw_label(self, raw_label_path):
         labels = []
@@ -166,6 +174,6 @@ class LabelHier:
         self._raw2path = None
         self._construct_hier()
 
-        self._max_depth = 0
+        self.max_depth = 0
         for n in self._index2node:
-            self._max_depth = max(self._max_depth, n.depth())
+            self.max_depth = max(self.max_depth, n.depth())

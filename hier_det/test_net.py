@@ -7,19 +7,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import _init_paths
 import os
 import sys
 import numpy as np
 import argparse
 import pprint
-import pdb
 import time
 import cv2
 import torch
 from torch.autograd import Variable
-import torch.nn as nn
-import torch.optim as optim
 import pickle
 from lib.roi_data_layer.roidb import combined_roidb
 from lib.roi_data_layer.roibatchLoader import roibatchLoader
@@ -27,7 +23,7 @@ from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output
 from lib.model.rpn.bbox_transform import clip_boxes
 from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
-from lib.model.utils.net_utils import save_net, load_net, vis_detections
+from lib.model.utils.net_utils import vis_detections
 from lib.model.faster_rcnn.vgg16 import vgg16
 from lib.model.faster_rcnn.resnet import resnet
 from open_relation.dataset.label_hier import accum_score

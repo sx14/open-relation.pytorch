@@ -7,10 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import _init_paths
 import os
-import sys
-import h5py
 import numpy as np
 import argparse
 import pprint
@@ -20,19 +17,16 @@ import time
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
-import torch.optim as optim
 
-import torchvision.transforms as transforms
 from torch.utils.data.sampler import Sampler
 
 from lib.roi_data_layer.roidb import combined_roidb
 from lib.roi_data_layer.roibatchLoader import roibatchLoader
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from lib.model.utils.net_utils import weights_normal_init, save_net, load_net, \
-      adjust_learning_rate, save_checkpoint, clip_gradient
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
+from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 
-from lib.model.heir_rcnn.vgg16 import vgg16
-from lib.model.heir_rcnn.resnet import resnet
+from lib.model.faster_rcnn.vgg16 import vgg16
+from lib.model.faster_rcnn.resnet import resnet
 
 def parse_args():
   """
@@ -41,7 +35,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vrd', type=str)
+                      default='vg', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -50,7 +44,7 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--epochs', dest='max_epochs',
                       help='number of epochs to train',
-                      default=20, type=int)
+                      default=10, type=int)
   parser.add_argument('--disp_interval', dest='disp_interval',
                       help='number of iterations to display',
                       default=100, type=int)
@@ -103,16 +97,16 @@ def parse_args():
 # resume trained model
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',
-                      default=False, type=bool)
+                      default=True, type=bool)
   parser.add_argument('--checksession', dest='checksession',
                       help='checksession to load model',
                       default=1, type=int)
   parser.add_argument('--checkepoch', dest='checkepoch',
                       help='checkepoch to load model',
-                      default=1, type=int)
+                      default=5, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
                       help='checkpoint to load model',
-                      default=0, type=int)
+                      default=171083, type=int)
 # log and diaplay
   parser.add_argument('--use_tfb', dest='use_tfboard',
                       help='whether use tensorboard',
@@ -174,9 +168,14 @@ if __name__ == '__main__':
   elif args.dataset == "vg":
       # train sizes: train, smalltrain, minitrain
       # train scale: ['150-50-20', '150-50-50', '500-150-80', '750-250-150', '1750-700-450', '1600-400-20']
-      args.imdb_name = "vg_150-50-50_minitrain"
-      args.imdbval_name = "vg_150-50-50_minival"
+      # args.imdb_name = "vg_150-50-50_minitrain"
+      # args.imdbval_name = "vg_150-50-50_minival"
+      # args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
+
+      args.imdb_name = "vg_2007_trainval"
+      args.imdbval_name = "vg_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
+
   elif args.dataset == "vrd":
       args.imdb_name = "vrd_2007_trainval"
       args.imdbval_name = "vrd_2007_test"
@@ -242,18 +241,18 @@ if __name__ == '__main__':
 
   # initilize the network here.
   if args.net == 'vgg16':
-    heirRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+    fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res101':
-    heirRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
+    fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res50':
-    heirRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
+    fasterRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
   elif args.net == 'res152':
-    heirRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
+    fasterRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
   else:
     print("network is not defined")
     pdb.set_trace()
 
-  heirRCNN.create_architecture()
+  fasterRCNN.create_architecture()
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
@@ -261,7 +260,7 @@ if __name__ == '__main__':
   #tr_momentum = args.momentum
 
   params = []
-  for key, value in dict(heirRCNN.named_parameters()).items():
+  for key, value in dict(fasterRCNN.named_parameters()).items():
     if value.requires_grad:
       if 'bias' in key:
         params += [{'params':[value],'lr':lr*(cfg.TRAIN.DOUBLE_BIAS + 1), \
@@ -277,7 +276,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
   if args.cuda:
-    heirRCNN.cuda()
+    fasterRCNN.cuda()
 
   if args.resume:
     load_name = os.path.join(output_dir,
@@ -286,7 +285,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
     args.start_epoch = checkpoint['epoch']
-    heirRCNN.load_state_dict(checkpoint['model'])
+    fasterRCNN.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr = optimizer.param_groups[0]['lr']
     if 'pooling_mode' in checkpoint.keys():
@@ -295,7 +294,7 @@ if __name__ == '__main__':
 
 
   if args.mGPUs:
-    heirRCNN = nn.DataParallel(heirRCNN)
+    fasterRCNN = nn.DataParallel(fasterRCNN)
 
   iters_per_epoch = int(train_size / args.batch_size)
 
@@ -305,7 +304,7 @@ if __name__ == '__main__':
 
   for epoch in range(args.start_epoch, args.max_epochs + 1):
     # setting to train mode
-    heirRCNN.train()
+    fasterRCNN.train()
     loss_temp = 0
     start = time.time()
 
@@ -321,11 +320,11 @@ if __name__ == '__main__':
       gt_boxes.data.resize_(data[2].size()).copy_(data[2])
       num_boxes.data.resize_(data[3].size()).copy_(data[3])
 
-      heirRCNN.zero_grad()
+      fasterRCNN.zero_grad()
       rois, cls_prob, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label = heirRCNN(im_data, im_info, gt_boxes, num_boxes)
+      rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
 
       loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
            + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
@@ -335,7 +334,7 @@ if __name__ == '__main__':
       optimizer.zero_grad()
       loss.backward()
       if args.net == "vgg16":
-          clip_gradient(heirRCNN, 10.)
+          clip_gradient(fasterRCNN, 10.)
       optimizer.step()
 
       if step % args.disp_interval == 0:
@@ -381,7 +380,7 @@ if __name__ == '__main__':
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,
-      'model': heirRCNN.module.state_dict() if args.mGPUs else heirRCNN.state_dict(),
+      'model': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
       'optimizer': optimizer.state_dict(),
       'pooling_mode': cfg.POOLING_MODE,
       'class_agnostic': args.class_agnostic,

@@ -1,18 +1,20 @@
-# -*- coding: utf-8 -*-
-import h5py
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+import torchvision.models as models
+from torch.autograd import Variable
 import numpy as np
+import h5py
 from lib.model.utils.config import cfg
 from lib.model.rpn.rpn import _RPN
 from lib.model.roi_pooling.modules.roi_pool import _RoIPooling
 from lib.model.roi_crop.modules.roi_crop import _RoICrop
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
-from lib.model.utils.net_utils import _smooth_l1_loss, _affine_grid_gen
-from lib.model.heir_rcnn.label_hier.vrd.obj_hier import objnet
+from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
+
 
 class _OrderSimilarity(nn.Module):
     def __init__(self, norm):
@@ -21,25 +23,39 @@ class _OrderSimilarity(nn.Module):
         self.act = nn.ReLU()
 
     def forward(self, lab_vecs, vis_vecs):
-        partial_order_sims = torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])
+        order_scores = torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])
         for i in range(vis_vecs.size()[0]):
+            # hyper - hypo
             sub = lab_vecs - vis_vecs[i]
+            # max(sub, 0)
             sub = self.act(sub)
-            partial_order_dis = sub.norm(p=self._norm, dim=1)
-            partial_order_sim = -partial_order_dis
-            partial_order_sims[i] = partial_order_sim
-        return partial_order_sims
+            # norm 2
+            order_dis = sub.norm(p=self._norm, dim=1)
+            order_sim = -order_dis
+            order_scores[i] = order_sim
+        return order_scores
 
 
 class _HierRCNN(nn.Module):
-    """ hier RCNN """
-    def __init__(self, classes, class_agnostic):
+    """ Hier RCNN """
+    def __init__(self, class_agnostic, objnet, label_vec_path):
         super(_HierRCNN, self).__init__()
-        with h5py.File('data/pretrained_model/label_vec_vrd.h5', 'r') as f:
-            self.label_vecs = np.array(f['label_vec'])
-        self.classes = classes
-        self.n_classes = len(classes)
+
+        # config heir classes
+        # all classes
+        self.classes = objnet.get_all_labels()
+        self.n_classes = len(self.classes)
         self.class_agnostic = class_agnostic
+        # min negative label num
+        self.n_neg_classes = objnet.neg_class_num()
+        self.objnet = objnet
+
+        # label vectors
+        with h5py.File(label_vec_path, 'r') as f:
+            label_vecs = np.array(f['label_vec'])
+            self.label_vecs = Variable(torch.from_numpy(label_vecs).float()).cuda()
+
+
         # loss
         self.RCNN_loss_cls = 0
         self.RCNN_loss_bbox = 0
@@ -53,6 +69,7 @@ class _HierRCNN(nn.Module):
         self.grid_size = cfg.POOLING_SIZE * 2 if cfg.CROP_RESIZE_WITH_MAX_POOL else cfg.POOLING_SIZE
         self.RCNN_roi_crop = _RoICrop()
 
+        # fc7(4096) -> emb(600)
         self.order_embedding = nn.Sequential(
             nn.ReLU(inplace=True),
             nn.Dropout(),
@@ -63,17 +80,9 @@ class _HierRCNN(nn.Module):
 
         self.order_score = _OrderSimilarity(cfg.HIER.ORDER_DISTANCE_NORM)
 
-    def _label2vec(self, rois_label):
-        rois_label_vecs = torch.zeros(rois_label.size(0), objnet.label_sum())
-        for i, label_ind in enumerate(rois_label):
-            label_node = objnet.get_node_by_index(label_ind)
-            hier_labels = label_node.trans_hyper_inds()
-            rois_label_vecs[i][hier_labels] = 1
-        return rois_label_vecs
-
-
-    def forward(self, im_data, im_info, gt_boxes, num_boxes):
+    def forward(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
         batch_size = im_data.size(0)
+
         im_info = im_info.data
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
@@ -81,18 +90,29 @@ class _HierRCNN(nn.Module):
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
-        # feed base feature map tp RPN to obtain rois
-        rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
+        if use_rpn:
+            # feed base feature map tp RPN to obtain rois
+            rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
 
-        # if it is training phrase, then use ground trubut bboxes for refining
-        if self.training:
-            roi_data = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
-            rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = roi_data
+            # if it is training phrase, then use ground trubut bboxes for refining
+            if self.training:
+                roi_data = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
+                rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = roi_data
 
-            rois_label = Variable(rois_label.view(-1).long())
-            rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
-            rois_inside_ws = Variable(rois_inside_ws.view(-1, rois_inside_ws.size(2)))
-            rois_outside_ws = Variable(rois_outside_ws.view(-1, rois_outside_ws.size(2)))
+                rois_label = Variable(rois_label.view(-1).long())
+                rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
+                rois_inside_ws = Variable(rois_inside_ws.view(-1, rois_inside_ws.size(2)))
+                rois_outside_ws = Variable(rois_outside_ws.view(-1, rois_outside_ws.size(2)))
+            else:
+                rois_label = None
+                rois_target = None
+                rois_inside_ws = None
+                rois_outside_ws = None
+                rpn_loss_cls = 0
+                rpn_loss_bbox = 0
+
+            rois = Variable(rois)
+            # do roi pooling based on predicted rois
         else:
             rois_label = None
             rois_target = None
@@ -100,9 +120,9 @@ class _HierRCNN(nn.Module):
             rois_outside_ws = None
             rpn_loss_cls = 0
             rpn_loss_bbox = 0
-
-        rois = Variable(rois)
-        # do roi pooling based on predicted rois
+            raw_rois = torch.zeros(gt_boxes.size())
+            raw_rois[0, :, 1:] = gt_boxes[0, :, :4]
+            rois = Variable(raw_rois).cuda()
 
         if cfg.POOLING_MODE == 'crop':
             # pdb.set_trace()
@@ -117,11 +137,8 @@ class _HierRCNN(nn.Module):
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
-        # feed pooled features to top model (fc7)
+        # feed pooled features to top model(fc7)
         pooled_feat = self._head_to_tail(pooled_feat)
-        vis_embedding = self.order_embedding(pooled_feat)
-
-
 
 
         # compute bbox offset
@@ -132,32 +149,87 @@ class _HierRCNN(nn.Module):
             bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
             bbox_pred = bbox_pred_select.squeeze(1)
 
-        # order embedding here ================\
-        # fc7 -> emb_vec
-        # compute object classification probability
+        # ===== order embedding here =====\
+        # visual embedding
+        vis_embedding = self.order_embedding(pooled_feat)
+        # compute order similarity for hier labels
         cls_score = self.order_score(self.label_vecs, vis_embedding)
-        cls_prob = F.softmax(cls_score, 1)
-        # order embedding here ================/
-
+        # ===== order embedding here =====/
 
         RCNN_loss_cls = 0
         RCNN_loss_bbox = 0
 
         if self.training:
+            pos_negs = self._loss_labels(rois_label)
+            loss_score, y = self._prepare_loss_input(cls_score, pos_negs)
+
             # classification loss
-            # RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
-            rois_label_vec = self._label2vec(rois_label)
-            RCNN_loss_cls = F.binary_cross_entropy(cls_score, rois_label_vec)
-
-
+            RCNN_loss_cls = F.cross_entropy(loss_score, y)
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
 
-
-        cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
+        cls_score = cls_score.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
 
-        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
+        return rois, cls_score, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
+
+    def _prepare_loss_input(self, cls_scores, pos_negs):
+        loss_scores = Variable(torch.zeros(len(cls_scores), len(pos_negs[0]))).float().cuda()
+        for i in range(len(cls_scores)):
+            scores = cls_scores[i]
+            loss_scores[i] = scores[pos_negs[i]]
+
+        y = Variable(torch.zeros(len(loss_scores))).long().cuda()
+        return loss_scores, y
+
+    def _loss_labels(self, rois_label):
+        loss_labels = np.zeros(rois_label.size(0), 1+self.n_neg_classes)
+        for i, gt_ind in enumerate(rois_label):
+            gt_label = self.objnet.get_raw_labels()[gt_ind]
+            gt_node = self._labelnet.get_node_by_name(gt_label)
+            all_pos_inds = set(gt_node.trans_hyper_inds())
+            all_neg_inds = list(set(range(self._label_num)) - all_pos_inds)
+            loss_labels[i] = [gt_ind + random.sample(all_neg_inds, self.n_neg_classes)]
+        loss_labels = torch.from_numpy(loss_labels)
+        return loss_labels
+
+    def ext_feat(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
+
+        im_info = im_info.data
+        gt_boxes = gt_boxes.data
+        num_boxes = num_boxes.data
+
+        # feed image data to base model to obtain base feature map
+        base_feat = self.RCNN_base(im_data)
+
+        if use_rpn:
+            # feed base feature map tp RPN to obtain rois
+            rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
+            rois = Variable(rois)
+            # do roi pooling based on predicted rois
+        else:
+            raw_rois = torch.zeros(gt_boxes.size())
+            raw_rois[0, :, 1:] = gt_boxes[0, :, :4]
+            rois = Variable(raw_rois).cuda()
+
+        if cfg.POOLING_MODE == 'crop':
+            # pdb.set_trace()
+            # pooled_feat_anchor = _crop_pool_layer(base_feat, rois.view(-1, 5))
+            grid_xy = _affine_grid_gen(rois.view(-1, 5), base_feat.size()[2:], self.grid_size)
+            grid_yx = torch.stack([grid_xy.data[:,:,:,1], grid_xy.data[:,:,:,0]], 3).contiguous()
+            pooled_feat = self.RCNN_roi_crop(base_feat, Variable(grid_yx).detach())
+            if cfg.CROP_RESIZE_WITH_MAX_POOL:
+                pooled_feat = F.max_pool2d(pooled_feat, 2, 2)
+        elif cfg.POOLING_MODE == 'align':
+            pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+        elif cfg.POOLING_MODE == 'pool':
+            pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
+
+        # feed pooled features to top model
+        fc7 = self._head_to_tail(pooled_feat)
+
+        return fc7
+
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
@@ -178,7 +250,5 @@ class _HierRCNN(nn.Module):
         normal_init(self.RCNN_bbox_pred, 0, 0.001, cfg.TRAIN.TRUNCATED)
 
     def create_architecture(self):
-        # 初始化原始VGG16
         self._init_modules()
-        # 初始化Faster-RCNN部分网络权重
         self._init_weights()

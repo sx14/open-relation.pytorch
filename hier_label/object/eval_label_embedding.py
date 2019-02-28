@@ -1,23 +1,19 @@
-import pickle
+import os
 import h5py
 import numpy as np
-from nltk.corpus import wordnet as wn
-from open_relation.dataset.dataset_config import DatasetConfig
-
+from global_config import label_vec_path
 
 dataset_name = 'vrd'
 target = 'object'
 
-data_config = DatasetConfig(dataset_name)
-
 if dataset_name == 'vrd' and target == 'object':
-    from open_relation.dataset.vrd.label_hier.obj_hier import objnet as classnet
+    from lib.datasets.vrd.label_hier.obj_hier import objnet as classnet
 elif dataset_name == 'vrd' and target == 'predicate':
-    from open_relation.dataset.vrd.label_hier.pre_hier import prenet as classnet
+    from lib.datasets.vrd.label_hier.pre_hier import prenet as classnet
 elif dataset_name == 'vg' and target == 'object':
-    from open_relation.dataset.vg.label_hier.obj_hier import objnet as classnet
+    from lib.datasets.vg.label_hier.obj_hier import objnet as classnet
 else:
-    from open_relation.dataset.vg.label_hier.pre_hier import prenet as classnet
+    from lib.datasets.vg.label_hier.pre_hier import prenet as classnet
 
 
 def eval2(label_vecs, labelnet):
@@ -54,7 +50,7 @@ def eval2(label_vecs, labelnet):
 
 def eval4(label_vecs, label2index, label1, label2):
     ind1 = label2index[label1]
-    ind2=  label2index[label2]
+    ind2 = label2index[label2]
     vec1 = label_vecs[ind1]
     vec2 = label_vecs[ind2]
     sub = vec1 - vec2
@@ -67,7 +63,7 @@ def eval4(label_vecs, label2index, label1, label2):
 
 if __name__ == '__main__':
     # label vectors
-    weight_path = data_config.extra_config[target].config['label_vec_path']
+    weight_path = label_vec_path(dataset_name)
     label_vec_file = h5py.File(weight_path, 'r')
     label_vecs = np.array(label_vec_file['label_vec'])
 

@@ -215,7 +215,6 @@ path_config.py
 *.bin
 .idea/
 *.pkl
-global_config.py
 *.npz
 runs
 /VRD

@@ -2,8 +2,7 @@ import os
 import pickle
 import numpy as np
 from nltk.corpus import wordnet as wn
-from open_relation import global_config
-from open_relation.dataset.dataset_config import DatasetConfig
+from global_config import HierLabelConfig
 
 
 
@@ -32,8 +31,7 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
 if __name__ == '__main__':
 
     dataset = 'vrd'
-    data_config = DatasetConfig(dataset)
-
+    config = HierLabelConfig(dataset, 'object')
     if dataset == 'vrd':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
     else:
@@ -41,7 +39,5 @@ if __name__ == '__main__':
 
     label2index = objnet.label2index()
 
-    hypernym_save_path = os.path.join(global_config.project_root,
-                                      'open_relation', 'label_embedding', 'object',
-                                      dataset+'_dataset', 'wordnet_with_'+dataset+'.h5')
+    hypernym_save_path = config.direct_relation_path()
     generate_direct_hypernyms(objnet, hypernym_save_path)

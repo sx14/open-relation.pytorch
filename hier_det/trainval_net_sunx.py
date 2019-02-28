@@ -26,7 +26,7 @@ from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 from lib.model.heir_rcnn.vgg16 import vgg16
 
-import global_config as mycfg
+from global_config import HierLabelConfig
 
 def parse_args():
   """
@@ -219,7 +219,8 @@ if __name__ == '__main__':
 
   # initilize the network here.
   if args.net == 'vgg16':
-    label_vec_path = mycfg.label_vec_path(dataset)
+    labelconf = HierLabelConfig(args.dataset, 'object')
+    label_vec_path = labelconf.label_vec_path()
     heirRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=args.class_agnostic)
   else:
     print("network is not defined")

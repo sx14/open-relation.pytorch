@@ -173,6 +173,7 @@ class _HierRCNN(nn.Module):
 
         return rois, cls_score, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
 
+    # prepare cls scores [pos, neg1, neg2, ...]
     def _prepare_loss_input(self, cls_scores, pos_negs):
         loss_scores = Variable(torch.zeros(len(cls_scores), len(pos_negs[0]))).float().cuda()
         for i in range(len(cls_scores)):
@@ -182,19 +183,19 @@ class _HierRCNN(nn.Module):
         y = Variable(torch.zeros(len(loss_scores))).long().cuda()
         return loss_scores, y
 
+    # prepare labels [pos, neg1, neg2, ...]
     def _loss_labels(self, rois_label):
-        loss_labels = np.zeros(rois_label.size(0), 1+self.n_neg_classes)
+        loss_labels = np.zeros((rois_label.size()[0], 1+self.n_neg_classes)).astype(np.int)
         for i, gt_ind in enumerate(rois_label):
-            gt_label = self.objnet.get_raw_labels()[gt_ind]
-            gt_node = self._labelnet.get_node_by_name(gt_label)
+            gt_label = self.objnet.get_all_labels()[gt_ind]
+            gt_node = self.objnet.get_node_by_name(gt_label)
             all_pos_inds = set(gt_node.trans_hyper_inds())
-            all_neg_inds = list(set(range(self._label_num)) - all_pos_inds)
-            loss_labels[i] = [gt_ind + random.sample(all_neg_inds, self.n_neg_classes)]
-        loss_labels = torch.from_numpy(loss_labels)
+            all_neg_inds = list(set(range(self.objnet.label_sum())) - all_pos_inds)
+            loss_labels[i] = [rois_label[i]] + random.sample(all_neg_inds, self.n_neg_classes)
         return loss_labels
 
+    # extract roi fc7
     def ext_feat(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
-
         im_info = im_info.data
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data

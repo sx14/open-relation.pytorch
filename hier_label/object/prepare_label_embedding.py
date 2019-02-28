@@ -35,9 +35,9 @@ if __name__ == '__main__':
     data_config = DatasetConfig(dataset)
 
     if dataset == 'vrd':
-        from open_relation.dataset.vrd.label_hier.obj_hier import objnet
+        from lib.datasets.vrd.label_hier.obj_hier import objnet
     else:
-        from open_relation.dataset.vg.label_hier.obj_hier import objnet
+        from lib.datasets.vg.label_hier.obj_hier import objnet
 
     label2index = objnet.label2index()
 

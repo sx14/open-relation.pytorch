@@ -3,14 +3,18 @@ import os
 
 class LabelNode(object):
     def __init__(self, name, index, is_raw):
-        self._weight = -1
+        self._weight = 0
         self._index = index
         self._name = name
-        self._hypers = []
+        self._hypers = set()
+        self._children = set()
         self._is_raw = is_raw
 
     def __str__(self):
         return self._name
+
+    def set_index(self, i):
+        self._index = i
 
     def score(self, pred_ind):
         if not self._is_raw:
@@ -23,6 +27,7 @@ class LabelNode(object):
                     best_score = max((i+1) * 1.0 / (len(h_path)), best_score)
                     break
         return best_score
+
 
     def depth(self):
         h_paths = self.hyper_paths()
@@ -41,10 +46,25 @@ class LabelNode(object):
         return self._name
 
     def hypers(self):
-        return self._hypers
+        return list(self._hypers)
 
-    def append_hyper(self, hyper):
-        self._hypers.append(hyper)
+    def add_hyper(self, hyper):
+        self._hypers.add(hyper)
+
+    def del_hyper(self, hyper):
+        if hyper in self._hypers:
+            self._hypers.remove(hyper)
+
+    def children(self):
+        return list(self._children)
+
+    def add_child(self, child):
+        if child not in self._children:
+            self._children.add(child)
+
+    def del_child(self, child):
+        if child in self._children:
+            self._children.remove(child)
 
     def index(self):
         return self._index
@@ -83,11 +103,16 @@ class LabelNode(object):
             str = str[:-1]
             print(' '.join(str))
 
+    def weight(self):
+        return self._weight
+
+    def set_weight(self, w):
+        self._weight = w
 
 class LabelHier:
 
     def root(self):
-        raw_label_node = self._label2node[self._raw_labels[0]]
+        raw_label_node = self._label2node[self._raw_labels[-1]]
         return raw_label_node.hyper_paths()[0][0]
 
     def label2index(self):
@@ -103,11 +128,11 @@ class LabelHier:
         return i2l
 
     def get_raw_indexes(self):
-        raw_ind_set = set()
-        for node in self._index2node:
-            if node.is_raw():
-                raw_ind_set.add(node.index())
-        return raw_ind_set
+        raw_inds = []
+        for raw_label in self._raw_labels:
+            raw_node = self.get_node_by_name(raw_label)
+            raw_inds.append(raw_node.index())
+        return raw_inds
 
     def raw2path(self):
         if self._raw2path is None:
@@ -139,7 +164,6 @@ class LabelHier:
         else:
             return None
 
-
     def depth_punish(self):
         # y = 1/196(x - 15)^2 + 1
         punish = []
@@ -162,18 +186,63 @@ class LabelHier:
             print('Raw label file not exists !')
         return labels
 
+    def _compress(self):
+        self._dfs_compress(self.root())
+        # reindex nodes
+        new_index = 0
+        new_index2node = []
+        new_label2node = dict()
+        for i, node in enumerate(self._index2node):
+            if node is not None:
+                node.set_index(new_index)
+                new_index2node.append(node)
+                new_label2node[node.name()] = node
+                new_index += 1
+
+        self._index2node = new_index2node
+        self._label2node = new_label2node
+
+    def _dfs_compress(self, curr):
+        # dfs based compression
+        if len(curr.children()) > 1:
+            # keep curr
+            for child in curr.children():
+                self._dfs_compress(child)
+        elif len(curr.children()) == 1:
+            # remove curr
+            hypers = curr.hypers()
+            for h in hypers:
+                # curr.hyper -> curr.children
+                h.del_child(curr)
+                h.add_child(curr.children()[0])
+                # curr.children -> curr.hyper
+                curr.children()[0].del_hyper(curr)
+                curr.children()[0].add_hyper(h)
+
+            self._index2node[curr.index()] = None
+            self._label2node[curr.name()] = None
+
+            if curr.is_raw():
+                self._raw_labels.remove(curr.name())
+            self._dfs_compress(curr.children()[0])
+        else:
+            return
+
     def _construct_hier(self):
         raise NotImplementedError
 
     def __init__(self, raw_label_path):
         self._raw_labels = self._load_raw_label(raw_label_path)
-        # self._raw_labels.insert(0, '__background__')
+        self._raw_labels.insert(0, '__background__')
         bk = LabelNode('__background__', 0, True)
         self._label2node = {'__background__': bk}
         self._index2node = [bk]
-        self._raw2path = None
         self._construct_hier()
+        self._compress()
+        self._raw2path = None
 
         self.max_depth = 0
         for n in self._index2node:
             self.max_depth = max(self.max_depth, n.depth())
+
+

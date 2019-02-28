@@ -45,13 +45,13 @@ class ObjNet(LabelHier):
             if node.name() in raw2wn:
                 # raw label node
                 hyper_wn_label = raw2wn[node.name()][0]
-                node.append_hyper(self._label2node[hyper_wn_label])
+                node.add_hyper(self._label2node[hyper_wn_label])
             else:
                 # wn label node
                 w = wn.synset(node.name())
                 for h in w.hypernyms() + w.instance_hypernyms():
                     if h.name() in self._label2node:
-                        node.append_hyper(self._label2node[h.name()])
+                        node.add_hyper(self._label2node[h.name()])
 
     def _raw_to_wn(self, raw2wn_path):
         vg_labels = self._load_raw_label(raw2wn_path)

@@ -21,7 +21,7 @@ class PreNet(LabelHier):
             node = LabelNode(abs_label, next_label_ind, False)
             self._index2node.append(node)
             next_label_ind += 1
-            node.append_hyper(root)
+            node.add_hyper(root)
             self._label2node[abs_label] = node
 
         # basic level
@@ -54,7 +54,7 @@ class PreNet(LabelHier):
                 node = LabelNode(basic_label, next_label_ind, False)
                 next_label_ind += 1
                 self._index2node.append(node)
-                node.append_hyper(abs_pre)
+                node.add_hyper(abs_pre)
                 self._label2node[basic_label] = node
 
         # supply basic level
@@ -96,7 +96,7 @@ class PreNet(LabelHier):
             next_label_ind += 1
             self._index2node.append(child_node)
             self._label2node[child_label] = child_node
-            child_node.append_hyper(parent_node)
+            child_node.add_hyper(parent_node)
 
         # concrete level
         for raw_label in self._raw_labels:
@@ -113,7 +113,7 @@ class PreNet(LabelHier):
                 for part in phrase:
                     if part in self._label2node:
                         hyper = self._label2node[part]
-                        node.append_hyper(hyper)
+                        node.add_hyper(hyper)
                     else:
                         # print(' <%s> -> <%s> miss' % (raw_label, part))
                         pass

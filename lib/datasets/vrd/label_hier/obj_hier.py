@@ -3,7 +3,7 @@ import pickle
 from nltk.corpus import wordnet as wn
 from open_relation.dataset.label_hier import LabelHier
 from open_relation.dataset.label_hier import LabelNode
-from open_relation.dataset.dataset_config import DatasetConfig
+from global_config import PROJECT_ROOT
 
 class ObjNet(LabelHier):
 
@@ -108,10 +108,9 @@ class ObjNet(LabelHier):
         self._fill_weights(weight_path)
 
 
-dataset_config = DatasetConfig('vrd')
-label_path = os.path.join(dataset_config.dataset_root, 'object_labels.txt')
-weight_path = dataset_config.extra_config['object'].config['ind2weight_path']
-objnet = ObjNet(label_path, weight_path)
+label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_labels.txt')
+objnet = ObjNet(label_path, None)
+
 # raw2path = objnet.raw2path()
 # if __name__ == '__main__':
 #     a = ObjNet(label_path)

@@ -159,7 +159,7 @@ if __name__ == '__main__':
       args.imdbval_name = "vrd_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
       from lib.datasets.vrd.label_hier.obj_hier import objnet
-  args.cfg_file = "cfgs/{}_ls.yml".format(args.net) if args.large_scale else "cfgs/{}.yml".format(args.net)
+  args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
 
   if args.cfg_file is not None:
     cfg_from_file(args.cfg_file)

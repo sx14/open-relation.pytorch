@@ -1,6 +1,6 @@
 import os
-from open_relation.dataset.label_hier import LabelHier
-from open_relation.dataset.label_hier import LabelNode
+from lib.datasets.label_hier import LabelHier
+from lib.datasets.label_hier import LabelNode
 from open_relation.dataset.dataset_config import DatasetConfig
 
 class PreNet(LabelHier):

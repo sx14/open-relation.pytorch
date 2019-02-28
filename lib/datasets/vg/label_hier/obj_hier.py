@@ -1,7 +1,7 @@
 import os
 from nltk.corpus import wordnet as wn
-from open_relation.dataset.label_hier import LabelHier
-from open_relation.dataset.label_hier import LabelNode
+from lib.datasets.label_hier import LabelHier
+from lib.datasets.label_hier import LabelNode
 from open_relation.dataset.dataset_config import DatasetConfig
 
 

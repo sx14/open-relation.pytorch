@@ -18,13 +18,14 @@ class LabelNode(object):
 
     def score(self, pred_ind):
         if not self._is_raw:
+            print('[sunx] ATTENTION: class index error !!!')
             return -1
         best_score = 0
         gt_paths = self.hyper_paths()
         for h_path in gt_paths:
             for i, h_node in enumerate(h_path):
                 if h_node.index() == pred_ind:
-                    best_score = max((i+1) * 1.0 / (len(h_path)), best_score)
+                    best_score = max((i+1.0) / (len(h_path)), best_score)
                     break
         return best_score
 

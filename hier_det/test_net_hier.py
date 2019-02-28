@@ -24,9 +24,7 @@ from lib.model.rpn.bbox_transform import clip_boxes
 from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
-from lib.model.faster_rcnn.vgg16 import vgg16
-from lib.model.faster_rcnn.resnet import resnet
-
+from lib.model.heir_rcnn.vgg16 import vgg16
 
 import pdb
 
@@ -46,7 +44,7 @@ def parse_args():
                         default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
-                        default='cfgs/vgg16.yml', type=str)
+                        default='../cfgs/vgg16.yml', type=str)
     parser.add_argument('--net', dest='net',
                         help='vgg16, res50, res101, res152',
                         default='vgg16', type=str)
@@ -103,26 +101,11 @@ if __name__ == '__main__':
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
     np.random.seed(cfg.RNG_SEED)
-    if args.dataset == "pascal_voc":
-        args.imdb_name = "voc_2007_trainval"
-        args.imdbval_name = "voc_2007_test"
-        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "pascal_voc_0712":
-        args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
-        args.imdbval_name = "voc_2007_test"
-        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "coco":
-        args.imdb_name = "coco_2014_train+coco_2014_valminusminival"
-        args.imdbval_name = "coco_2014_minival"
-        args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "imagenet":
-        args.imdb_name = "imagenet_train"
-        args.imdbval_name = "imagenet_val"
-        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "vg":
-        args.imdb_name = "vg_150-50-50_minitrain"
-        args.imdbval_name = "vg_150-50-50_minival"
-        args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+
+    if args.dataset == "vg":
+        args.imdb_name = "vg_2007_trainval"
+        args.imdbval_name = "vg_2007_test"
+        args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg.label_hier.obj_hier import objnet
 
     elif args.dataset == "vrd":
@@ -151,27 +134,22 @@ if __name__ == '__main__':
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
     load_name = os.path.join(input_dir,
-                             'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+                             'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
 
     # initilize the network here.
     if args.net == 'vgg16':
         print(args.class_agnostic)
-        fasterRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic)
-    elif args.net == 'res101':
-        fasterRCNN = resnet(imdb.classes, 101, pretrained=False, class_agnostic=args.class_agnostic)
-    elif args.net == 'res50':
-        fasterRCNN = resnet(imdb.classes, 50, pretrained=False, class_agnostic=args.class_agnostic)
-    elif args.net == 'res152':
-        fasterRCNN = resnet(imdb.classes, 152, pretrained=False, class_agnostic=args.class_agnostic)
+        hierRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic)
     else:
         print("network is not defined")
         pdb.set_trace()
+        exit(-1)
 
-    fasterRCNN.create_architecture()
+    hierRCNN.create_architecture()
 
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
-    fasterRCNN.load_state_dict(checkpoint['model'])
+    hierRCNN.load_state_dict(checkpoint['model'])
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
@@ -199,7 +177,7 @@ if __name__ == '__main__':
         cfg.CUDA = True
 
     if args.cuda:
-        fasterRCNN.cuda()
+        hierRCNN.cuda()
 
     start = time.time()
     # max_per_image = 100
@@ -212,7 +190,7 @@ if __name__ == '__main__':
     else:
         thresh = 0.0
 
-    save_name = 'faster_rcnn_10'
+    save_name = 'hier_rcnn_10'
     num_images = len(imdb.image_index)
     all_boxes = [[[] for _ in xrange(num_images)]
                  for _ in xrange(imdb.num_classes)]
@@ -229,7 +207,7 @@ if __name__ == '__main__':
     _t = {'im_detect': time.time(), 'misc': time.time()}
     det_file = os.path.join(output_dir, 'detections.pkl')
 
-    fasterRCNN.eval()
+    hierRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
     use_rpn = False
@@ -250,7 +228,7 @@ if __name__ == '__main__':
         rois, cls_prob, bbox_pred, \
         rpn_loss_cls, rpn_loss_box, \
         RCNN_loss_cls, RCNN_loss_bbox, \
-        rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
+        rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
 
         scores = cls_prob.data
         boxes = rois.data[:, :, 1:5]
@@ -292,6 +270,8 @@ if __name__ == '__main__':
 
         scores = scores.squeeze()
         pred_boxes = pred_boxes.squeeze()
+
+
         det_toc = time.time()
         detect_time = det_toc - det_tic
         misc_tic = time.time()

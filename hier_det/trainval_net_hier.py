@@ -13,12 +13,13 @@ import argparse
 import pprint
 import pdb
 import time
+import shutil
 
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
-
+from torch.autograd import Variable
 from torch.utils.data.sampler import Sampler
+from tensorboardX import SummaryWriter
 
 from lib.roi_data_layer.roidb import combined_roidb
 from lib.roi_data_layer.roibatchLoader import roibatchLoader
@@ -27,6 +28,7 @@ from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, cli
 from lib.model.heir_rcnn.vgg16 import vgg16
 
 from global_config import HierLabelConfig
+
 
 def parse_args():
   """
@@ -110,7 +112,8 @@ def parse_args():
 # log and diaplay
   parser.add_argument('--use_tfb', dest='use_tfboard',
                       help='whether use tensorboard',
-                      action='store_true')
+                      action='store_true',
+                      default=True)
 
   args = parser.parse_args()
   return args
@@ -141,10 +144,14 @@ class sampler(Sampler):
   def __len__(self):
     return self.num_data
 
+
 if __name__ == '__main__':
 
   args = parse_args()
   args.cuda = True
+
+  # clean logs
+  shutil.rmtree('logs')
 
   print('Called with args:')
   print(args)
@@ -255,7 +262,7 @@ if __name__ == '__main__':
 
   if args.resume:
     load_name = os.path.join(output_dir,
-      'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+      'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
     print("loading checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
@@ -351,7 +358,7 @@ if __name__ == '__main__':
         start = time.time()
 
     
-    save_name = os.path.join(output_dir, 'faster_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
+    save_name = os.path.join(output_dir, 'hier_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,

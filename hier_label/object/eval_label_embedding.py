@@ -5,7 +5,7 @@ from nltk.corpus import wordnet as wn
 from open_relation.dataset.dataset_config import DatasetConfig
 
 
-dataset_name = 'vg'
+dataset_name = 'vrd'
 target = 'object'
 
 data_config = DatasetConfig(dataset_name)
@@ -20,8 +20,10 @@ else:
     from open_relation.dataset.vg.label_hier.pre_hier import prenet as classnet
 
 
-def eval2(label_vecs, index2label, label2index, vg2wn):
-    vg_labels = vg2wn.keys()
+def eval2(label_vecs, labelnet):
+    label2index = labelnet.label2index()
+    index2label = labelnet.index2label()
+    vg_labels = labelnet.get_raw_labels()
     for vg_label in vg_labels:
         vg_label_index = label2index[vg_label]
         vg_label_vec = label_vecs[vg_label_index]
@@ -38,42 +40,16 @@ def eval2(label_vecs, index2label, label2index, vg2wn):
         pred = np.argsort(E)[:20]
         print('\n===== '+vg_label+' =====')
         print('---answer---')
-        wn_labels = vg2wn[vg_label]
-        wn_node = wn.synset(wn_labels[0])
-        wn_label_set = set()
-        for hypernym_path in wn_node.hypernym_paths():
-            for w in hypernym_path:
-                if w.name() not in wn_label_set:
-                    print(w.name())
-                    wn_label_set.add(w.name())
+        gt_node = labelnet.get_node_by_name(vg_label)
+        for hyper_path in gt_node.hyper_paths():
+            for w in hyper_path:
+                print(w.name())
         print('---prediction---')
         for p in pred:
             print(index2label[p]+'| %f' % E[p])
 
 
-def eval3(label_vecs, index2label, label2index, vg2wn, label):
-    label_vec = label_vecs[label2index[label]]
-    sub = label_vecs - label_vec
-    sub[sub < 0] = 0
-    sub_square = sub * sub
-    E = np.sum(sub_square, axis=1)
-    pred = np.argsort(E)[:50]
-    print('\n===== '+label+' =====')
-    print('---answer---')
-    if label in vg2wn:
-        wn_labels = vg2wn[label]
-        wn_node = wn.synset(wn_labels[0])
-    else:
-        wn_node = wn.synset(label)
-    wn_label_set = set()
-    for hypernym_path in wn_node.hypernym_paths():
-        for w in hypernym_path:
-            if w.name() not in wn_label_set:
-                print(w.name())
-                wn_label_set.add(w.name())
-    print('---prediction---')
-    for p in pred:
-        print(index2label[p] + '| %f' % E[p])
+
 
 
 def eval4(label_vecs, label2index, label1, label2):
@@ -98,9 +74,7 @@ if __name__ == '__main__':
     # label mapping
     label2index = classnet.label2index()
     index2label = classnet.index2label()
-    raw2wn = classnet.raw2wn()
 
-    eval2(label_vecs, index2label, label2index, raw2wn)
-    # eval3(label_vecs, index2label, label2index, raw2wn, 'jeans')
+    eval2(label_vecs, classnet)
     # eval4(label_vecs, label2index, 'shirt', 'garment.n.01')
     # objnet.get_node_by_name('person').show_hyper_paths()

@@ -5,7 +5,7 @@ local method = 'contrastive'
 
 local hdf5 = require 'hdf5'
 
-dataset_name = 'vg'
+dataset_name = 'vrd'
 
 
 f = hdf5.open(dataset_name .. '_dataset/wordnet_with_' .. dataset_name .. '.h5', 'r')

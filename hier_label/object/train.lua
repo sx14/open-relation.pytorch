@@ -32,7 +32,7 @@ torch.manualSeed(args.seed)
 
 require 'Dataset'
 
-dataset_name = 'vg'
+dataset_name = 'vrd'
 
 datasets = torch.load(dataset_name .. '_dataset/' .. args.train .. '.t7')
 

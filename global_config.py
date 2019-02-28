@@ -1,2 +1,2 @@
 import os
-PROJECT_ROOT = os.getcwd()
+PROJECT_ROOT = os.path.dirname(__file__)

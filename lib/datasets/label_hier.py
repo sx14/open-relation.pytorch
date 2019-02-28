@@ -147,7 +147,10 @@ class LabelHier:
         return len(self._index2node)
 
     def get_all_labels(self):
-        return sorted(self._label2node.keys())
+        all_labels = []
+        for node in self._index2node:
+            all_labels.append(node.name())
+        return all_labels
 
     def get_raw_labels(self):
         return self._raw_labels

@@ -23,7 +23,7 @@ class _OrderSimilarity(nn.Module):
         self.act = nn.ReLU()
 
     def forward(self, lab_vecs, vis_vecs):
-        order_scores = torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])
+        order_scores = Variable(torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])).cuda()
         for i in range(vis_vecs.size()[0]):
             # hyper - hypo
             sub = lab_vecs - vis_vecs[i]
@@ -246,7 +246,7 @@ class _HierRCNN(nn.Module):
         normal_init(self.RCNN_rpn.RPN_Conv, 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(self.RCNN_rpn.RPN_cls_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(self.RCNN_rpn.RPN_bbox_pred, 0, 0.01, cfg.TRAIN.TRUNCATED)
-        normal_init(self.RCNN_cls_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
+        # normal_init(self.RCNN_cls_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(self.RCNN_bbox_pred, 0, 0.001, cfg.TRAIN.TRUNCATED)
 
     def create_architecture(self):

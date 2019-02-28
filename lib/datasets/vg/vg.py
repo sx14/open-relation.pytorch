@@ -19,7 +19,7 @@ import pickle
 from lib.datasets.imdb import imdb
 from lib.datasets import ds_utils
 from lib.datasets.voc_eval import voc_eval
-from lib.model.heir_rcnn.label_hier.vg.obj_hier import objnet
+from open_relation.dataset.vg.label_hier.obj_hier import objnet
 
 # TODO: make fast_rcnn irrelevant
 # >>>> obsolete, because it depends on sth outside of this project

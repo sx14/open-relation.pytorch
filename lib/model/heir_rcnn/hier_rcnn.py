@@ -71,10 +71,10 @@ class _HierRCNN(nn.Module):
 
         # fc7(4096) -> emb(600)
         self.order_embedding = nn.Sequential(
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Dropout(),
             nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Dropout(),
             nn.Linear(4096, cfg.HIER.EMBEDDING_LENGTH))
 

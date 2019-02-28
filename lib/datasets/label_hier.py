@@ -147,9 +147,7 @@ class LabelHier:
         return len(self._index2node)
 
     def get_all_labels(self):
-        all_labels = []
-        for node in self._index2node:
-            all_labels.append(node.name())
+        all_labels = [node.name() for node in self._index2node]
         return all_labels
 
     def get_raw_labels(self):
@@ -166,17 +164,6 @@ class LabelHier:
             return self._index2node[index]
         else:
             return None
-
-    def depth_punish(self):
-        # y = 1/196(x - 15)^2 + 1
-        punish = []
-        max_punish = 2.0
-        min_punish = 1.0
-        for i in range(self.label_sum()):
-            d = self.get_node_by_index(i).depth()
-            p = (max_punish - min_punish) / (1 - self.max_depth) ** 2 * (d - self.max_depth) ** 2 + min_punish
-            punish.append(1/p)
-        return punish
 
     def neg_num(self):
         return self.label_sum() - self.max_depth

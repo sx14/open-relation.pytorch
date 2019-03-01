@@ -229,7 +229,7 @@ if __name__ == '__main__':
   if args.net == 'vgg16':
     labelconf = HierLabelConfig(args.dataset, 'object')
     label_vec_path = labelconf.label_vec_path()
-    hierRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=args.class_agnostic)
+    hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=args.class_agnostic)
   else:
     print("network is not defined")
     pdb.set_trace()
@@ -267,6 +267,13 @@ if __name__ == '__main__':
 
   if args.cuda:
     hierRCNN.cuda()
+
+  load_name = '../data/pretrained_model/pascal_voc.pth'
+  print("load pretrained model: %s" % (load_name))
+  checkpoint = torch.load(load_name)
+  state_dict = checkpoint['model']
+  hierRCNN.load_state_dict({k:v for k,v in state_dict.items() if k in hierRCNN.state_dict()})
+
 
   if args.resume:
     load_name = os.path.join(output_dir,

@@ -245,11 +245,18 @@ if __name__ == '__main__':
   params = []
   for key, value in dict(hierRCNN.named_parameters()).items():
     if value.requires_grad:
+      # larger lr for embedding layer
+      if 'order' in key:
+        lr_use = lr * 10
+      else:
+        lr_use = lr
+
       if 'bias' in key:
-        params += [{'params':[value],'lr':lr*(cfg.TRAIN.DOUBLE_BIAS + 1), \
+        params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \
                     'weight_decay': cfg.TRAIN.BIAS_DECAY and cfg.TRAIN.WEIGHT_DECAY or 0}]
       else:
-        params += [{'params':[value],'lr':lr, 'weight_decay': cfg.TRAIN.WEIGHT_DECAY}]
+        params += [{'params':[value],'lr':lr_use,
+                    'weight_decay': cfg.TRAIN.WEIGHT_DECAY}]
 
   if args.optimizer == "adam":
     lr = lr * 0.1
@@ -358,7 +365,6 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    
     save_name = os.path.join(output_dir, 'hier_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
     save_checkpoint({
       'session': args.session,

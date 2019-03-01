@@ -71,8 +71,8 @@ class _HierRCNN(nn.Module):
 
         # fc7(4096) -> emb(600)
         self.order_embedding = nn.Sequential(
-            nn.ReLU(),
-            nn.Dropout(),
+            # nn.ReLU(),
+            # nn.Dropout(),
             nn.Linear(4096, 4096),
             nn.ReLU(),
             nn.Dropout(),
@@ -254,6 +254,8 @@ class _HierRCNN(nn.Module):
         normal_init(self.RCNN_rpn.RPN_cls_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(self.RCNN_rpn.RPN_bbox_pred, 0, 0.01, cfg.TRAIN.TRUNCATED)
         # normal_init(self.RCNN_cls_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(self.order_embedding, 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(self.order_score, 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(self.RCNN_bbox_pred, 0, 0.001, cfg.TRAIN.TRUNCATED)
 
     def create_architecture(self):

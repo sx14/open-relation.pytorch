@@ -4,10 +4,10 @@ local argparse = require 'argparse'
 parser = argparse('Train a label completion model')
 parser:option '--seed' :description 'random seed' : default '1234' :convert(tonumber)
 parser:option '-d' :description 'dimensionality of embedding space' :default "600" :convert(tonumber)
-parser:option '--epochs' :description 'number of epochs to train for ' :default "400" :convert(tonumber)
-parser:option '--batchsize' :description 'size of minibatch to use' :default "10" :convert(tonumber)
+parser:option '--epochs' :description 'number of epochs to train for ' :default "1000" :convert(tonumber)
+parser:option '--batchsize' :description 'size of minibatch to use' :default "1000" :convert(tonumber)
 parser:option '--eval_freq' :description 'evaluation frequency' :default "100" :convert(tonumber)
-parser:option '--lr' :description 'learning rate' :default "0.001" :convert(tonumber)
+parser:option '--lr' :description 'learning rate' :default "0.01" :convert(tonumber)
 parser:option '--train' :description 'dataset to use for training' :default 'contrastive_trans'
 parser:option '--eval' :description 'dataset to use for evaluation' :args('*')
 parser:option '--name' :description 'name of model' :default 'my_model'
@@ -31,15 +31,17 @@ end
 torch.manualSeed(args.seed)
 
 require 'Dataset'
+require 'config'
 
-dataset_name = 'vrd'
+dataset_name = config.dataset_name
+target = config.target
 
-datasets = torch.load(dataset_name .. '_dataset/' .. args.train .. '.t7')
+datasets = torch.load(dataset_name .. '_dataset/' .. args.train .. '_' .. target .. '.t7')
 
 
 local datasets_eval = {}
 for _, name in ipairs(args.eval) do
-    datasets_eval[name] = torch.load(dataset_name .. '_dataset/' .. name .. '.t7')
+    datasets_eval[name] = torch.load(dataset_name .. '_dataset/' .. name .. '_' .. target .. '.t7')
 end
 local train = datasets.train
 
@@ -163,8 +165,9 @@ print("Best accuracy was at batch #" )
 print(pretty.write(best_counts,""))
 print(pretty.write(best_accuracies,""))
 
-torch.save('label_embedding_weights_' .. dataset_name .. '.t7', hypernymNet.lookupModule.weight:float())
-torch.save('label_embedding_weights_best_' .. dataset_name .. '.t7', saved_weight)
+
+torch.save('weights_best_' .. dataset_name .. '_' .. target ..'.t7', saved_weight)
+torch.save('weights_' .. dataset_name .. '_' .. target ..'.t7', hypernymNet.lookupModule.weight:float())
 
 if args.vis then
     for name, dataset in pairs(datasets_eval) do

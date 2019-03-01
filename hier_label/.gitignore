@@ -1,4 +1,4 @@
-*.t7
+dataset/
+vg_dataset/
+vrd_dataset/
 *.h5
-*.json
-path_config.py

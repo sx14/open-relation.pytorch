@@ -31,7 +31,7 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
 if __name__ == '__main__':
 
     dataset = 'vrd'
-    config = HierLabelConfig(dataset, 'object')
+    target = 'object'
     if dataset == 'vrd':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
     else:
@@ -39,5 +39,5 @@ if __name__ == '__main__':
 
     label2index = objnet.label2index()
 
-    hypernym_save_path = config.direct_relation_path()
+    hypernym_save_path = '%s_dataset/hypernym_%s.h5' % (dataset, target)
     generate_direct_hypernyms(objnet, hypernym_save_path)

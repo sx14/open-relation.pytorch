@@ -63,7 +63,8 @@ def eval4(label_vecs, label2index, label1, label2):
 
 if __name__ == '__main__':
     # label vectors
-    labelconf = HierLabelConfig(dataset_name, 'object')
+
+    labelconf = HierLabelConfig(dataset_name, target)
     weight_path = labelconf.label_vec_path()
     label_vec_file = h5py.File(weight_path, 'r')
     label_vecs = np.array(label_vec_file['label_vec'])

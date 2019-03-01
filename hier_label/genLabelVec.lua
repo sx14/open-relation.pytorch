@@ -3,13 +3,15 @@ require 'nn'
 require 'dpnn'
 require 'Dataset'
 require 'hdf5'
+require 'config'
 
-dataset_name = 'vrd'
+dataset_name = config.dataset_name
+target = config.target
 featureDimension = 600
 
 
-datasetPath = dataset_name .. '_dataset/contrastive_trans.t7'
-weights = torch.load('label_embedding_weights_' .. dataset_name .. '.t7')
+datasetPath = dataset_name .. '_dataset/contrastive_trans_'.. target ..'.t7'
+weights = torch.load('weights_' .. dataset_name .. '_' .. target .. '.t7')
 
 
 dataset = torch.load(datasetPath)
@@ -23,7 +25,7 @@ for i=1, dataset.numEntities do
   fs[i] = f
 end
 
-myFile = hdf5.open('label_vec_' .. dataset_name .. '.h5', 'w')
+myFile = hdf5.open('label_vec_' .. dataset_name .. '_' .. target ..'.h5', 'w')
 
 myFile:write('label_vec', torch.Tensor(fs))
 myFile:close()

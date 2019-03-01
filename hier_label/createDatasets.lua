@@ -1,14 +1,15 @@
 require 'Dataset'
+require 'config'
 
 torch.manualSeed(1234)
 local method = 'contrastive'
 
 local hdf5 = require 'hdf5'
 
-dataset_name = 'vrd'
+dataset_name = config.dataset_name
+target = config.target
 
-
-f = hdf5.open(dataset_name .. '_dataset/wordnet_with_' .. dataset_name .. '.h5', 'r')
+f = hdf5.open(dataset_name .. '_dataset/hypernym_' .. target .. '.h5', 'r')
 
 
 local originalHypernyms = f:read('hypernyms'):all():add(1) -- convert to 1-based indexing
@@ -74,7 +75,7 @@ local graph = require 'Graph'
             f:close()
         end
     
-        torch.save(dataset_name .. '_dataset/' .. methodName .. '.t7', datasets)
+        torch.save(dataset_name .. '_dataset/' .. methodName .. '_' .. target .. '.t7', datasets)
 
         write_json('vis/static/' .. methodName .. '/hypernyms', datasets.train.hypernyms:totable())
 end

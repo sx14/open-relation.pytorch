@@ -243,12 +243,12 @@ if __name__ == '__main__':
 
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
                 gt_node = objnet.get_node_by_index(int(gt_cate))
-                print('==== %s ====' % gt_node.name())
+                # print('==== %s ====' % gt_node.name())
                 all_scores = scores[0][ppp].cpu().data.numpy()
                 ranked_inds = np.argsort(all_scores)[::-1][:20]
                 sorted_scrs = np.sort(all_scores)[::-1][:20]
-                for item in zip(ranked_inds, sorted_scrs):
-                    print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
+                # for item in zip(ranked_inds, sorted_scrs):
+                #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
 
                 raw_scores = all_scores[raw_label_inds]
                 pred_raw_ind = np.argmax(raw_scores[1:]) + 1

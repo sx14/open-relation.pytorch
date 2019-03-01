@@ -52,7 +52,7 @@ def parse_args():
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument('--load_dir', dest='load_dir',
-                        help='directory to load models', default="output",
+                        help='directory to load models', default="hier_output",
                         type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
@@ -236,15 +236,16 @@ if __name__ == '__main__':
         if not use_rpn:
             for ppp in range(scores.size()[1]):
                 N_count += 1
-                all_scores = accum_score(scores[0][ppp].cpu().data.numpy(), objnet)
-                sorted_scores = sorted(all_scores.items(), key=lambda d: d[1], reverse=True)
-                pred_cate = sorted_scores[0][0]
-                # pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
+                raw_label_inds = objnet.get_raw_indexes()
+                pred_raw_ind = np.argmax(scores[0][ppp][raw_label_inds].cpu().data.numpy())
+                pred_cate = raw_label_inds[pred_raw_ind]
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                # if pred_cate == gt_cate:
-                #     TP_count += 1
-                gt_node = objnet.get_node_by_index(gt_cate)
-                TP_count += gt_node.score(pred_cate)
+                if pred_cate == gt_cate:
+                    # flat recall
+                    TP_count += 1
+                else:
+                    # TOOD: hier recall
+                    pass
 
         if cfg.TEST.BBOX_REG:
             # Apply bounding-box regression deltas
@@ -270,7 +271,6 @@ if __name__ == '__main__':
 
         scores = scores.squeeze()
         pred_boxes = pred_boxes.squeeze()
-
 
         det_toc = time.time()
         detect_time = det_toc - det_tic
@@ -305,8 +305,7 @@ if __name__ == '__main__':
         det_temp = []
         # Limit to max_per_image detections *over all classes*
         if max_per_image > 0:
-            image_scores = np.hstack([all_boxes[j][i][:, -1]
-                                      for j in xrange(1, imdb.num_classes)])
+            image_scores = np.hstack([all_boxes[j][i][:, -1] for j in xrange(1, imdb.num_classes)])
             if len(image_scores) > max_per_image:
                 image_thresh = np.sort(image_scores)[-max_per_image]
                 for j in xrange(1, imdb.num_classes):
@@ -341,8 +340,8 @@ if __name__ == '__main__':
     end = time.time()
     print("test time: %0.4fs" % (end - start))
 
-    print("Rec Acc: %.4f" % (TP_count / N_count))
+    print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
-    det_save_path = 'data/VRDdevkit2007/VOC2007/feature/object/det/test_box.bin'
+    det_save_path = args.dataset+'_test_box.bin'
     with open(det_save_path, 'wb') as f:
         pickle.dump(obj_det_roidbs, f)

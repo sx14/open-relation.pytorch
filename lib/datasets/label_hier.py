@@ -238,5 +238,3 @@ class LabelHier:
         self.max_depth = 0
         for n in self._index2node:
             self.max_depth = max(self.max_depth, n.depth())
-
-

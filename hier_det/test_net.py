@@ -46,7 +46,7 @@ def parse_args():
                         default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
-                        default='cfgs/vgg16.yml', type=str)
+                        default='../cfgs/vgg16.yml', type=str)
     parser.add_argument('--net', dest='net',
                         help='vgg16, res50, res101, res152',
                         default='vgg16', type=str)
@@ -54,7 +54,7 @@ def parse_args():
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument('--load_dir', dest='load_dir',
-                        help='directory to load models', default="output",
+                        help='directory to load models', default="faster_output",
                         type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
@@ -258,13 +258,8 @@ if __name__ == '__main__':
         if not use_rpn:
             for ppp in range(scores.size()[1]):
                 N_count += 1
-                all_scores = accum_score(scores[0][ppp].cpu().data.numpy(), objnet)
-                sorted_scores = sorted(all_scores.items(), key=lambda d: d[1], reverse=True)
-                pred_cate = sorted_scores[0][0]
-                # pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
+                pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                # if pred_cate == gt_cate:
-                #     TP_count += 1
                 gt_node = objnet.get_node_by_index(gt_cate)
                 TP_count += gt_node.score(pred_cate)
 
@@ -361,8 +356,8 @@ if __name__ == '__main__':
     end = time.time()
     print("test time: %0.4fs" % (end - start))
 
-    print("Rec Acc: %.4f" % (TP_count / N_count))
+    print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
-    det_save_path = 'data/VRDdevkit2007/VOC2007/feature/object/det/test_box.bin'
-    with open(det_save_path, 'wb') as f:
-        pickle.dump(obj_det_roidbs, f)
+    # det_save_path = 'vrd_test_box.bin'
+    # with open(det_save_path, 'wb') as f:
+    #     pickle.dump(obj_det_roidbs, f)

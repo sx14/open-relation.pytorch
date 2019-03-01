@@ -55,7 +55,7 @@ def parse_args():
                       default=10000, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
-                      help='directory to save models', default="output",
+                      help='directory to save models', default="hier_output",
                       type=str)
   parser.add_argument('--nw', dest='num_workers',
                       help='number of worker to load data',

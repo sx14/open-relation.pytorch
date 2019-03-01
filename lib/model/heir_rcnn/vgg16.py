@@ -15,12 +15,12 @@ from torch.autograd import Variable
 import math
 import torchvision.models as models
 from lib.model.heir_rcnn.hier_rcnn import _HierRCNN
-from global_config import PROJECT_ROOT
+
 import pdb
 
 class vgg16(_HierRCNN):
   def __init__(self, objnet, level_vec_path, pretrained=False, class_agnostic=False):
-    self.model_path = PROJECT_ROOT + '/data/pretrained_model/vgg16_caffe.pth'
+    self.model_path = '../data/pretrained_model/vgg16_caffe.pth'
     self.dout_base_model = 512
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic

@@ -151,7 +151,8 @@ if __name__ == '__main__':
   args.cuda = True
 
   # clean logs
-  shutil.rmtree('logs')
+  if os.path.isdir('logs'):
+    shutil.rmtree('logs')
 
   print('Called with args:')
   print(args)
@@ -228,13 +229,13 @@ if __name__ == '__main__':
   if args.net == 'vgg16':
     labelconf = HierLabelConfig(args.dataset, 'object')
     label_vec_path = labelconf.label_vec_path()
-    heirRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=args.class_agnostic)
+    hierRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=args.class_agnostic)
   else:
     print("network is not defined")
     pdb.set_trace()
     exit(-1)
 
-  heirRCNN.create_architecture()
+  hierRCNN.create_architecture()
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
@@ -242,7 +243,7 @@ if __name__ == '__main__':
   #tr_momentum = args.momentum
 
   params = []
-  for key, value in dict(heirRCNN.named_parameters()).items():
+  for key, value in dict(hierRCNN.named_parameters()).items():
     if value.requires_grad:
       if 'bias' in key:
         params += [{'params':[value],'lr':lr*(cfg.TRAIN.DOUBLE_BIAS + 1), \
@@ -258,7 +259,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
   if args.cuda:
-    heirRCNN.cuda()
+    hierRCNN.cuda()
 
   if args.resume:
     load_name = os.path.join(output_dir,
@@ -267,7 +268,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
     args.start_epoch = checkpoint['epoch']
-    heirRCNN.load_state_dict(checkpoint['model'])
+    hierRCNN.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr = optimizer.param_groups[0]['lr']
     if 'pooling_mode' in checkpoint.keys():
@@ -276,7 +277,7 @@ if __name__ == '__main__':
 
 
   if args.mGPUs:
-    heirRCNN = nn.DataParallel(heirRCNN)
+    hierRCNN = nn.DataParallel(hierRCNN)
 
   iters_per_epoch = int(train_size / args.batch_size)
 
@@ -286,7 +287,7 @@ if __name__ == '__main__':
 
   for epoch in range(args.start_epoch, args.max_epochs + 1):
     # setting to train mode
-    heirRCNN.train()
+    hierRCNN.train()
     loss_temp = 0
     start = time.time()
 
@@ -302,11 +303,11 @@ if __name__ == '__main__':
       gt_boxes.data.resize_(data[2].size()).copy_(data[2])
       num_boxes.data.resize_(data[3].size()).copy_(data[3])
 
-      heirRCNN.zero_grad()
+      hierRCNN.zero_grad()
       rois, cls_score, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label = heirRCNN(im_data, im_info, gt_boxes, num_boxes)
+      rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes)
 
       loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
            + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
@@ -316,7 +317,7 @@ if __name__ == '__main__':
       optimizer.zero_grad()
       loss.backward()
       if args.net == "vgg16":
-          clip_gradient(heirRCNN, 10.)
+          clip_gradient(hierRCNN, 10.)
       optimizer.step()
 
       if step % args.disp_interval == 0:
@@ -362,7 +363,7 @@ if __name__ == '__main__':
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,
-      'model': heirRCNN.module.state_dict() if args.mGPUs else heirRCNN.state_dict(),
+      'model': hierRCNN.module.state_dict() if args.mGPUs else hierRCNN.state_dict(),
       'optimizer': optimizer.state_dict(),
       'pooling_mode': cfg.POOLING_MODE,
       'class_agnostic': args.class_agnostic,

@@ -176,10 +176,16 @@ class _HierRCNN(nn.Module):
     # prepare cls scores [pos, neg1, neg2, ...]
     def _prepare_loss_input(self, cls_scores, pos_negs):
         loss_scores = Variable(torch.zeros(len(cls_scores), len(pos_negs[0]))).float().cuda()
+        obj_count = 0
         for i in range(len(cls_scores)):
+            if pos_negs[i][0] == 0:
+                # abort background
+                continue
             scores = cls_scores[i]
-            loss_scores[i] = scores[pos_negs[i]]
+            loss_scores[obj_count] = scores[pos_negs[i]]
+            obj_count += 1
 
+        loss_scores = loss_scores[:obj_count]
         y = Variable(torch.zeros(len(loss_scores))).long().cuda()
         return loss_scores, y
 

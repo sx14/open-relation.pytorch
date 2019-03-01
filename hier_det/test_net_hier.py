@@ -25,6 +25,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.heir_rcnn.vgg16 import vgg16
+from global_config import HierLabelConfig
 
 import pdb
 
@@ -138,8 +139,9 @@ if __name__ == '__main__':
 
     # initilize the network here.
     if args.net == 'vgg16':
-        print(args.class_agnostic)
-        hierRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic)
+        labelconf = HierLabelConfig(args.dataset, 'object')
+        label_vec_path = labelconf.label_vec_path()
+        hierRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=args.class_agnostic)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -180,8 +182,9 @@ if __name__ == '__main__':
         hierRCNN.cuda()
 
     start = time.time()
-    # max_per_image = 100
-    max_per_image = 20
+
+    max_per_image = 100
+    # max_per_image = 20
 
     vis = args.vis
 
@@ -237,15 +240,32 @@ if __name__ == '__main__':
             for ppp in range(scores.size()[1]):
                 N_count += 1
                 raw_label_inds = objnet.get_raw_indexes()
-                pred_raw_ind = np.argmax(scores[0][ppp][raw_label_inds].cpu().data.numpy())
+
+                gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
+                gt_node = objnet.get_node_by_index(int(gt_cate))
+                print('==== %s ====' % gt_node.name())
+                all_scores = scores[0][ppp].cpu().data.numpy()
+                ranked_inds = np.argsort(all_scores)[::-1][:20]
+                sorted_scrs = np.sort(all_scores)[::-1][:20]
+                for item in zip(ranked_inds, sorted_scrs):
+                    print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
+
+                raw_scores = all_scores[raw_label_inds]
+                pred_raw_ind = np.argmax(raw_scores[1:]) + 1
                 pred_cate = raw_label_inds[pred_raw_ind]
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
+                pred_node = objnet.get_node_by_index(pred_cate)
+                gt_node = objnet.get_node_by_index(int(gt_cate))
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), raw_scores[pred_raw_ind]))
                 if pred_cate == gt_cate:
                     # flat recall
                     TP_count += 1
+                    info = 'T: ' + info
                 else:
-                    # TOOD: hier recall
+                    # TOOD: hier recalla
+                    info = 'F: ' + info
                     pass
+                print(info)
 
         if cfg.TEST.BBOX_REG:
             # Apply bounding-box regression deltas
@@ -342,6 +362,6 @@ if __name__ == '__main__':
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
-    det_save_path = args.dataset+'_test_box.bin'
+    det_save_path = args.dataset + '_test_box.bin'
     with open(det_save_path, 'wb') as f:
         pickle.dump(obj_det_roidbs, f)

@@ -111,8 +111,18 @@ class ObjNet(LabelHier):
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_labels.txt')
 objnet = ObjNet(label_path, '')
 
-# raw2path = objnet.raw2path()
-# if __name__ == '__main__':
-#     a = ObjNet(label_path)
-#     n = a.get_node_by_name('road')
-#     n.show_hyper_paths()
+# all_labels = objnet.get_all_labels()
+# raw_labels = objnet.get_raw_labels()
+# raw_indexs = objnet.get_raw_indexes()
+# raw_label_set = set(raw_labels)
+# raw_labels1 = []
+# for l in all_labels:
+#     if l in raw_label_set:
+#         raw_labels1.append(l)
+#
+# good = True
+# for i in range(len(raw_labels)):
+#     if raw_indexs[i] != objnet.get_node_by_name(raw_labels1[i]).index():
+#         good = False
+#
+# print(good)

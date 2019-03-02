@@ -80,11 +80,11 @@ def collect_labels(vg_config):
                 break
 
         # save label list
-        raw_label_list_path = vg_config['_raw_label_path' % target[:3]]
+        raw_label_list_path = vg_config['%s_raw_label_path' % target[:3]]
         with open(raw_label_list_path, 'w') as f:
             f.writelines(raw_label_list)
 
-        label_list_path = vg_config['_raw2wn_path' % target[:3]]
+        label_list_path = vg_config['%s_raw2wn_path' % target[:3]]
         with open(label_list_path, 'w') as f:
             f.writelines(label_list)
 

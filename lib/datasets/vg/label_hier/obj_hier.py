@@ -23,18 +23,19 @@ class ObjNet(LabelHier):
     def _export_split(self):
         records = []
         for node in self._index2node:
-            if node.name() == 'female.n.02':
-                a = 1
             if len(node.hypers()) > 1:
                 hyper_names = ' '.join([h.name() for h in node.hypers()])
                 node_name = node.name()
                 record = '%s|%s\n' % (node_name, hyper_names)
                 records.append(record)
-        with open('splits.txt', 'w') as f:
+        file_path = os.path.join(os.path.dirname(__file__), 'splits.txt')
+        with open(file_path, 'w') as f:
             f.writelines(records)
 
     def _import_split(self):
-        with open('splits1.txt', 'r') as f:
+        file_path = os.path.join(os.path.dirname(__file__), 'splits1.txt')
+        print(file_path)
+        with open(file_path, 'r') as f:
             splits = f.readlines()
         return splits
 
@@ -75,7 +76,6 @@ class ObjNet(LabelHier):
                 elif len(curr_node.hypers()) == 1:
                     curr_node = curr_node.hypers()[0]
             # print('%s -> %s' % (raw_label, curr_node.name()))
-
 
     def _create_label_nodes(self, raw2wn):
         next_label_index = 1
@@ -132,6 +132,6 @@ class ObjNet(LabelHier):
         LabelHier.__init__(self, raw_label_path)
 
 
-raw_label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_labels.txt')
-raw2wn_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_label2wn.txt')
+raw_label_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'object_labels.txt')
+raw2wn_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'object_label2wn.txt')
 objnet = ObjNet(raw_label_path, raw2wn_path)

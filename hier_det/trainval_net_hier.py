@@ -66,7 +66,7 @@ def parse_args():
                       action='store_true')
   parser.add_argument('--ls', dest='large_scale',
                       help='whether use large imag scale',
-                      action='store_true')                      
+                      action='store_true')
   parser.add_argument('--mGPUs', dest='mGPUs',
                       help='whether use multiple GPUs',
                       action='store_true')
@@ -237,6 +237,19 @@ if __name__ == '__main__':
 
   hierRCNN.create_architecture()
 
+  # load pretrained model
+  load_name = '../data/pretrained_model/pascal_voc.pth'
+  print("load pretrained model: %s" % (load_name))
+  checkpoint = torch.load(load_name)
+  pre_state_dict = checkpoint['model']
+
+  pre_state_dict = {k: v for k, v in pre_state_dict.items()
+                    if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k}
+
+  hierRCNN_state_dict = hierRCNN.state_dict()
+  hierRCNN_state_dict.update(pre_state_dict)
+  hierRCNN.load_state_dict(hierRCNN_state_dict)
+
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
   #tr_momentum = cfg.TRAIN.MOMENTUM
@@ -268,11 +281,7 @@ if __name__ == '__main__':
   if args.cuda:
     hierRCNN.cuda()
 
-  load_name = '../data/pretrained_model/pascal_voc.pth'
-  print("load pretrained model: %s" % (load_name))
-  checkpoint = torch.load(load_name)
-  state_dict = checkpoint['model']
-  hierRCNN.load_state_dict({k:v for k,v in state_dict.items() if k in hierRCNN.state_dict()})
+
 
 
   if args.resume:

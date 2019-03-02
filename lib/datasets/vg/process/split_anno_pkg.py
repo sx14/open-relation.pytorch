@@ -12,7 +12,7 @@ def split_json(json_path, output_json_root, key, has_key):
         print('processing ' + key + ' : [%d/%d]' % (len(image_data), i+1))
         img_info = image_data[i]
         img_json_file_path = os.path.join(output_json_root, str(img_info['image_id']) + '.json')
-        if os.path.exists(img_json_file_path):
+        if os.path.exists(img_json_file_path) and has_key:
             img_json_file = open(img_json_file_path, 'r')
             img_json_content = json.load(img_json_file)
         else:

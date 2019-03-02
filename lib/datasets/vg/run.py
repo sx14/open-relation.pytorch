@@ -21,9 +21,9 @@ if __name__ == '__main__':
         'ImageSets': os.path.join(vg_root, 'ImageSets'),
     }
 
-    split_anno_pkg(vg_config)
-    reformat_anno(vg_config)
-    collect_labels(vg_config)
+    # split_anno_pkg(vg_config)
+    # reformat_anno(vg_config)
+    # collect_labels(vg_config)
     filter_anno(vg_config)
     split_dataset(vg_config)
     vg2pascal(vg_config)

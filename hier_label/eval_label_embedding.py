@@ -3,7 +3,7 @@ import h5py
 import numpy as np
 from global_config import HierLabelConfig
 
-dataset_name = 'vrd'
+dataset_name = 'vg'
 target = 'object'
 
 if dataset_name == 'vrd' and target == 'object':

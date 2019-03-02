@@ -238,7 +238,8 @@ if __name__ == '__main__':
   hierRCNN.create_architecture()
 
   # load pretrained model
-  load_name = '../data/pretrained_model/pascal_voc.pth'
+  load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset
+
   print("load pretrained model: %s" % (load_name))
   checkpoint = torch.load(load_name)
   pre_state_dict = checkpoint['model']

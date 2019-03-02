@@ -4,6 +4,8 @@ import json
 import numpy as np
 import cv2
 from lib.datasets.tools.to_pascal_format import output_pascal_format
+from lib.datasets.vrd.process.reformat_anno import reformat_anno
+from lib.datasets.vrd.process.split_anno_pkg import split_anno_pkg
 from global_config import PROJECT_ROOT
 
 
@@ -136,6 +138,18 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
 
 if __name__ == '__main__':
     vrd_root = label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007')
+    vrd_config = {
+        'raw_anno_root': os.path.join(vrd_root, 'json_dataset'),
+        'dirty_anno_root': os.path.join(vrd_root, 'dirty_anno'),
+        'clean_anno_root': os.path.join(vrd_root, 'anno'),
+        'obj_raw_label_path': os.path.join(vrd_root, 'object_labels.txt'),
+        'pre_raw_label_path': os.path.join(vrd_root, 'predicate_labels.txt'),
+        'Annotations': os.path.join(vrd_root, 'Annotations'),
+        'ImageSets': os.path.join(vrd_root, 'ImageSets'),
+    }
     gen_JPEGImages(vrd_root, vrd_root)
     gen_ImageSets(vrd_root, vrd_root)
     gen_Annotations(vrd_root, vrd_root)
+
+    split_anno_pkg(vrd_config)
+    reformat_anno(vrd_config)

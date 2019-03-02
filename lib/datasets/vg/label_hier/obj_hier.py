@@ -134,3 +134,4 @@ class ObjNet(LabelHier):
 raw_label_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'object_labels.txt')
 raw2wn_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'object_label2wn.txt')
 objnet = ObjNet(raw_label_path, raw2wn_path)
+

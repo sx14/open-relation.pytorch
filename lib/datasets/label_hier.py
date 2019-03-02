@@ -196,6 +196,16 @@ class LabelHier:
         self._index2node = new_index2node
         self._label2node = new_label2node
 
+        # remove dead children
+        # check one parent
+        all_labels = set(self.get_all_labels())
+        for node in self._index2node:
+            hypers = node.hypers()
+            assert len(hypers) < 2
+            for c in node.children():
+                if c.name() not in all_labels:
+                    node.del_child(c)
+
     def _dfs_compress(self, curr):
         # dfs based compression
         if len(curr.children()) > 1:

@@ -16,7 +16,7 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
         hyper = nodes.pop()
         hypos = hyper.children()
         for hypo in hypos:
-            print('%s -> %s' % (hypo.name(), hyper.name()))
+            # print('%s -> %s' % (hypo.name(), hyper.name()))
             hypernyms.append([hypo.index(), hyper.index()])
             nodes.insert(0, hypo)
 
@@ -30,8 +30,8 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
 
 if __name__ == '__main__':
 
-    dataset = 'vrd'
-    target = 'predicate'
+    dataset = 'vg'
+    target = 'object'
     if dataset == 'vrd':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet

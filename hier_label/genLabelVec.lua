@@ -9,9 +9,17 @@ dataset_name = config.dataset_name
 target = config.target
 
 if dataset_name == 'vrd' then
-  featureDimension = 600
+  if target == 'object' then
+    embedding_d = 600
+  else
+    embedding_d = 300
+  end
 else
-  featureDimension = 1000
+  if target == 'object' then
+    embedding_d = 1000
+  else
+    embedding_d = 600
+  end
 end
 
 
@@ -20,9 +28,9 @@ weights = torch.load('weights_' .. dataset_name .. '_' .. target .. '.t7')
 
 
 dataset = torch.load(datasetPath)
-lookup = nn.LookupTable(dataset.numEntities, featureDimension)
+lookup = nn.LookupTable(dataset.numEntities, embedding_d)
 lookup.weight = weights:double()
-fs = torch.Tensor(dataset.numEntities, featureDimension)
+fs = torch.Tensor(dataset.numEntities, embedding_d)
 embedding = nn.Sequential():add(lookup)
 for i=1, dataset.numEntities do
   input = torch.Tensor({i})

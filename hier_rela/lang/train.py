@@ -1,15 +1,18 @@
 import os
 import shutil
+
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
+
 from lang_dataset import LangDataset
 from lang_config import train_params, data_config
 from model import RelationEmbedding
 from torch.nn.functional import cross_entropy as loss_func
 from model import order_softmax_test as rank_test
 from global_config import HierLabelConfig
+
 
 def eval(model, test_dl):
     model.eval()
@@ -52,7 +55,7 @@ obj_config = HierLabelConfig(dataset, 'object')
 pre_config = HierLabelConfig(dataset, 'predicate')
 obj_label_vec_path = obj_config.label_vec_path()
 pre_label_vec_path = pre_config.label_vec_path()
-rlt_path = data_config['train']['ext_rlt_path']
+rlt_path = data_config['train']['raw_rlt_path']
 train_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
 train_dl = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
@@ -85,7 +88,8 @@ optim = torch.optim.SGD([{'params': weight_p, 'weight_decay': 1e-5},
                          {'params': bias_p, 'weight_decay': 0}], lr=lr)
 
 # training process record
-shutil.rmtree('runs')
+if os.path.exists('runs'):
+    shutil.rmtree('runs')
 sw = SummaryWriter()
 batch_num = 0
 best_acc = 0

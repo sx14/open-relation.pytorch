@@ -98,6 +98,6 @@ if __name__ == '__main__':
         rlt_save_path = data_config[d]['raw_rlt_path']
         raw_rlts = collect_raw_rlts(anno_root, list_path, rlt_save_path)
         print('raw relationship tuple num: %d' % len(raw_rlts))
-        rlt_save_path = data_config[d]['ext_rlt_path']
-        ext_rlts = extend_rlts(raw_rlts, rlt_save_path)
-        print('extended relationship tuple num: %d' % len(ext_rlts))
+        # rlt_save_path = data_config[d]['ext_rlt_path']
+        # ext_rlts = extend_rlts(raw_rlts, rlt_save_path)
+        # print('extended relationship tuple num: %d' % len(ext_rlts))

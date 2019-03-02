@@ -30,14 +30,21 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
 
 if __name__ == '__main__':
 
-    dataset = 'vg'
-    target = 'object'
+    dataset = 'vrd'
+    target = 'predicate'
     if dataset == 'vrd':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
+        from lib.datasets.vrd.label_hier.pre_hier import prenet
     else:
         from lib.datasets.vg.label_hier.obj_hier import objnet
+        from lib.datasets.vg.label_hier.pre_hier import prenet
 
-    label2index = objnet.label2index()
+    if target == 'object':
+        labelnet = objnet
+    else:
+        labelnet = prenet
+
+    label2index = labelnet.label2index()
 
     hypernym_save_path = '%s_dataset/hypernym_%s.h5' % (dataset, target)
-    generate_direct_hypernyms(objnet, hypernym_save_path)
+    generate_direct_hypernyms(labelnet, hypernym_save_path)

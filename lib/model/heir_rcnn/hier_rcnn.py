@@ -53,6 +53,8 @@ class _HierRCNN(nn.Module):
         # label vectors
         with h5py.File(label_vec_path, 'r') as f:
             label_vecs = np.array(f['label_vec'])
+
+        with torch.autograd.no_grad:
             self.label_vecs = Variable(torch.from_numpy(label_vecs).float()).cuda()
 
         # visual embedding vector length

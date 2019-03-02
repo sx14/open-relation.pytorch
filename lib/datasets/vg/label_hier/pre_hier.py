@@ -1,8 +1,7 @@
 import os
-from open_relation.dataset.label_hier import LabelHier
-from open_relation.dataset.label_hier import LabelNode
-from open_relation.dataset.dataset_config import DatasetConfig
-
+from lib.datasets.label_hier import LabelHier
+from lib.datasets.label_hier import LabelNode
+from global_config import PROJECT_ROOT
 
 class PreNet(LabelHier):
 
@@ -16,8 +15,7 @@ class PreNet(LabelHier):
         LabelHier.__init__(self, raw_label_path)
 
 
-dataset_config = DatasetConfig('vg')
-label_path = os.path.join(dataset_config.dataset_root, 'predicate_labels.txt')
+label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'predicate_labels.txt')
 prenet = PreNet(label_path)
 
 # if __name__ == '__main__':

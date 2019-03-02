@@ -3,8 +3,9 @@ import shutil
 import json
 import numpy as np
 import cv2
-from to_pascal_format import output_pascal_format
-from path_config import vrd_root
+from lib.datasets.tools.to_pascal_format import output_pascal_format
+from global_config import PROJECT_ROOT
+
 
 def gen_JPEGImages(vrd_root, vrd_pascal_root):
     # output path
@@ -134,6 +135,7 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
 
 
 if __name__ == '__main__':
+    vrd_root = label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007')
     gen_JPEGImages(vrd_root, vrd_root)
     gen_ImageSets(vrd_root, vrd_root)
     gen_Annotations(vrd_root, vrd_root)

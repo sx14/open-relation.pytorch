@@ -1,1 +1,0 @@
-vrd_root = '/media/sunx/Data/linux-workspace/python-workspace/dataset/VRD'

@@ -67,8 +67,10 @@ test_dl = DataLoader(test_set, batch_size=batch_size, shuffle=True)
 save_model_path = train_params['save_model_path']
 new_model_path = train_params['latest_model_path']
 best_model_path = train_params['best_model_path']
+
+input_length = train_set.obj_vec_length() * 2
 gt_label_vec_path = pre_label_vec_path
-model = RelationEmbedding(gt_label_vec_path)
+model = RelationEmbedding(input_length, gt_label_vec_path)
 if os.path.exists(new_model_path):
     model.load_state_dict(torch.load(new_model_path))
     print('Loading weights success.')

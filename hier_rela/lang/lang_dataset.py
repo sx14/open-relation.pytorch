@@ -8,6 +8,9 @@ from lang_config import train_params
 
 class LangDataset(Dataset):
 
+    def obj_vec_length(self):
+        return self._obj_vecs.shape[1]
+
     def get_gt_vecs(self):
         return self._pre_vecs
 

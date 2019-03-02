@@ -165,8 +165,3 @@ class PreNet(LabelHier):
 
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'predicate_labels.txt')
 prenet = PreNet(label_path)
-
-# if __name__ == '__main__':
-#     a = PreNet()
-#     n = a.get_pre('stand next to')
-#     n.show_hyper_paths()

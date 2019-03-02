@@ -18,14 +18,13 @@ def order_sim(hypers, hypos):
 
 
 class RelationEmbedding(nn.Module):
-    def __init__(self, label_vec_path):
+    def __init__(self, input_len, label_vec_path):
         super(RelationEmbedding, self).__init__()
 
         label_vec_file = h5py.File(label_vec_path, 'r')
         gt_label_vecs = np.array(label_vec_file['label_vec'])
         self._gt_label_vecs = Variable(torch.from_numpy(gt_label_vecs)).float().cuda()
 
-        input_len = gt_label_vecs.shape[1] * 2
         output_len = gt_label_vecs.shape[1]
 
         self.hidden = nn.Sequential(

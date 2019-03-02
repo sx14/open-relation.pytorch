@@ -71,13 +71,10 @@ class _HierRCNN(nn.Module):
 
         # fc7(4096) -> emb(600)
         self.order_embedding = nn.Sequential(
-            # nn.ReLU(),
-            # nn.Dropout(),
             nn.Linear(4096, 4096),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(4096, cfg.HIER.EMBEDDING_LENGTH)
-        )
+            nn.Linear(4096, cfg.HIER.EMBEDDING_LENGTH))
 
         self.order_score = _OrderSimilarity(cfg.HIER.ORDER_DISTANCE_NORM)
 

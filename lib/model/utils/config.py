@@ -19,9 +19,7 @@ cfg = __C
 __C.TRAIN = edict()
 
 # ==== Hier RCNN ====\
-__C.HIER = edict()
-__C.HIER.EMBEDDING_LENGTH = 600
-__C.HIER.ORDER_DISTANCE_NORM = 2
+
 # ==================/
 
 # Initial learning rate

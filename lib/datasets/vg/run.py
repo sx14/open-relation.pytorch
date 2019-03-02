@@ -13,6 +13,7 @@ if __name__ == '__main__':
     vg_config = {
         'raw_anno_root': os.path.join(vg_root, 'json_dataset'),
         'dirty_anno_root': os.path.join(vg_root, 'dirty_anno'),
+        'clean_anno_root': os.path.join(vg_root, 'anno'),
         'obj_raw_label_path': os.path.join(vg_root, 'object_labels.txt'),
         'obj_raw2wn_path': os.path.join(vg_root, 'object_label2wn.txt'),
         'pre_raw_label_path': os.path.join(vg_root, 'predicate_labels.txt'),

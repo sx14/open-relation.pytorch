@@ -19,7 +19,7 @@ import pickle
 from lib.datasets.imdb import imdb
 from lib.datasets import ds_utils
 from lib.datasets.voc_eval import voc_eval
-from open_relation.dataset.vg.label_hier.obj_hier import objnet
+from lib.datasets.vg.label_hier.obj_hier import objnet
 
 # TODO: make fast_rcnn irrelevant
 # >>>> obsolete, because it depends on sth outside of this project
@@ -40,7 +40,7 @@ class vg(imdb):
         self._devkit_path = self._get_default_path() if devkit_path is None \
             else devkit_path
         self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
-        self._classes = objnet.get_raw_labels()
+        self._classes = objnet.get_all_labels()
 
         self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
         self._image_ext = '.jpg'
@@ -375,7 +375,7 @@ class vg(imdb):
 
 
 if __name__ == '__main__':
-    d = vrd('trainval', '2007')
+    d = vg('trainval', '2007')
     res = d.roidb
     from IPython import embed;
 

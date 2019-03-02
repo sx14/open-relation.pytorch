@@ -7,7 +7,12 @@ require 'config'
 
 dataset_name = config.dataset_name
 target = config.target
-featureDimension = 600
+
+if dataset_name == 'vrd' then
+  featureDimension = 600
+else
+  featureDimension = 1000
+end
 
 
 datasetPath = dataset_name .. '_dataset/contrastive_trans_'.. target ..'.t7'

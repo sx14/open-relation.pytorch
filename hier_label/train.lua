@@ -46,10 +46,15 @@ end
 local train = datasets.train
 
 
+if dataset_name == 'vrd' then
+  embedding_d = 600
+else
+  embedding_d = 1000
+end
 
 
 local hyperparams = {
-    D_embedding = args.d,
+    D_embedding = embedding_d,
     symmetric = args.symmetric,
     margin = args.margin,
     lr = args.lr,

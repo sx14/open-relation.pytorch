@@ -55,6 +55,8 @@ class _HierRCNN(nn.Module):
             label_vecs = np.array(f['label_vec'])
             self.label_vecs = Variable(torch.from_numpy(label_vecs).float()).cuda()
 
+        # visual embedding vector length
+        self.embedding_len = self.label_vecs.size(1)
 
         # loss
         self.RCNN_loss_cls = 0
@@ -74,9 +76,9 @@ class _HierRCNN(nn.Module):
             nn.Linear(4096, 4096),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(4096, cfg.HIER.EMBEDDING_LENGTH))
+            nn.Linear(4096, self.embedding_len))
 
-        self.order_score = _OrderSimilarity(cfg.HIER.ORDER_DISTANCE_NORM)
+        self.order_score = _OrderSimilarity(norm=2)
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
         batch_size = im_data.size(0)

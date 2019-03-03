@@ -112,6 +112,9 @@ class LabelNode(object):
 
 class LabelHier:
 
+    def background(self):
+        return self.get_node_by_index(0)
+
     def root(self):
         raw_label_node = self._label2node[self._raw_labels[-1]]
         return raw_label_node.hyper_paths()[0][0]

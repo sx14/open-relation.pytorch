@@ -168,14 +168,24 @@ class _HierRCNN(nn.Module):
             bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
             bbox_pred = bbox_pred_select.squeeze(1)
 
+
+
+        # ===== class prediction part =====
         # ===== order embedding here =====\
+        rois_label_use = rois_label
+        pooled_feat_use = pooled_feat
+        if self.training:
+            rois_label_use = rois_label[rois_label>self.objnet.background().index()]
+            pooled_feat_use = pooled_feat[rois_label>self.objnet.background().index(), :]
+
+
         # visual embedding
-        vis_embedding = self.order_embedding(pooled_feat)
+        vis_embedding_use = self.order_embedding(pooled_feat_use)
         # compute order similarity for hier labels
         start = time.time()
-        cls_score = self.order_score(self.label_vecs, vis_embedding)
+        cls_score_use = self.order_score(self.label_vecs, vis_embedding_use)
         end = time.time()
-        print('Order Scoring Time: %.2f s' % (end - start))
+        # print('Order Scoring Time: %.2f s' % (end - start))
         # ===== order embedding here =====/
 
         RCNN_loss_cls = 0
@@ -185,15 +195,20 @@ class _HierRCNN(nn.Module):
             start = time.time()
             # pos_negs = self._loss_labels(rois_label)
             # loss_score, y = self._prepare_loss_input(cls_score, pos_negs)
-            loss_score, y = self._process_scores(cls_score, rois_label)
+            loss_score, y = self._process_scores(cls_score_use, rois_label_use)
             end = time.time()
-            print('Pos_Neg_label Time: %.2f' % (end - start))
+            # print('Pos_Neg_label Time: %.2f' % (end - start))
             # classification loss
             RCNN_loss_cls = F.cross_entropy(loss_score, y)
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
 
-        cls_score = cls_score.view(batch_size, rois.size(1), -1)
+        if self.training:
+            rois = rois[rois_label>self.objnet.background().index(), :]
+            bbox_pred = bbox_pred[rois_label>self.objnet.background().index(), :]
+
+        rois_label = rois_label_use
+        cls_score = cls_score_use.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
 
         return rois, cls_score, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
@@ -217,14 +232,16 @@ class _HierRCNN(nn.Module):
 
     def _process_scores(self, cls_scores, rois_label):
         # remove background scores
-        rois_label_use = rois_label[rois_label > 0]
-        cls_scores_use = cls_scores[rois_label > 0, :]
+        rois_label_use = rois_label
+        cls_scores_use = cls_scores
+        # rois_label_use = rois_label[rois_label > 0]
+        # cls_scores_use = cls_scores[rois_label > 0, :]
         cls_scores_use = cls_scores_use + (-0.00001)    # for zeros
 
         # raw and negs is 1, others is +Inf
         mask = self.objnet.raw_neg_mask(rois_label_use)
         with torch.no_grad():
-            mask_v = Variable(torch.from_numpy(mask)).cuda()
+            mask_v = Variable(torch.from_numpy(mask)).float().cuda()
         cls_scores_use = cls_scores_use.mul(mask_v)
         return cls_scores_use, rois_label_use
 

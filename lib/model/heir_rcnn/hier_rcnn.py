@@ -160,7 +160,7 @@ class _HierRCNN(nn.Module):
         start = time.time()
         cls_score = self.order_score(self.label_vecs, vis_embedding)
         end = time.time()
-        print('Order Scoring Time: %.2f' % ((end - start) / 1000.0))
+        print('Order Scoring Time: %.2f s' % (end - start))
         # ===== order embedding here =====/
 
         RCNN_loss_cls = 0

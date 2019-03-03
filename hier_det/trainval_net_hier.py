@@ -19,7 +19,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data.sampler import Sampler
-from tensorboardX import SummaryWriter
 
 from lib.roi_data_layer.roidb import combined_roidb
 from lib.roi_data_layer.roibatchLoader import roibatchLoader

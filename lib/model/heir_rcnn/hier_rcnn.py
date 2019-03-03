@@ -41,13 +41,15 @@ class _OrderSimilarity(nn.Module):
         d_vec = lab_vecs.size(1)
         n_label = lab_vecs.size(0)
         n_vis = vis_vecs.size(0)
+
         stack_lab_vecs = lab_vecs.repeat(n_vis, 1)
-        stack_vis_vecs = vis_vecs.repeat(1, n_label).resize_(n_vis * n_label, d_vec)
+        stack_vis_vecs = vis_vecs.repeat(1, n_label).reshape(n_vis * n_label, d_vec)
+
         stack_sub = stack_lab_vecs - stack_vis_vecs
         stack_sub = self.act(stack_sub)
         stack_dis = stack_sub.norm(p=self._norm, dim=1)
         stack_sim = - stack_dis
-        order_sims = stack_sim.resize(n_vis, n_label)
+        order_sims = stack_sim.reshape(n_vis, n_label)
         return order_sims
 
 
@@ -181,8 +183,9 @@ class _HierRCNN(nn.Module):
 
         if self.training:
             start = time.time()
-            pos_negs = self._loss_labels(rois_label)
-            loss_score, y = self._prepare_loss_input(cls_score, pos_negs)
+            # pos_negs = self._loss_labels(rois_label)
+            # loss_score, y = self._prepare_loss_input(cls_score, pos_negs)
+            loss_score, y = self._process_scores(cls_score, rois_label)
             end = time.time()
             print('Pos_Neg_label Time: %.2f' % (end - start))
             # classification loss
@@ -211,6 +214,21 @@ class _HierRCNN(nn.Module):
         y = Variable(torch.zeros(len(loss_scores))).long().cuda()
         return loss_scores, y
 
+
+    def _process_scores(self, cls_scores, rois_label):
+        # remove background scores
+        rois_label_use = rois_label[rois_label > 0]
+        cls_scores_use = cls_scores[rois_label > 0, :]
+        cls_scores_use = cls_scores_use + (-0.00001)    # for zeros
+
+        # raw and negs is 1, others is +Inf
+        mask = self.objnet.raw_neg_mask(rois_label_use)
+        with torch.no_grad():
+            mask_v = Variable(torch.from_numpy(mask)).cuda()
+        cls_scores_use = cls_scores_use.mul(mask_v)
+        return cls_scores_use, rois_label_use
+
+
     # prepare labels [pos, neg1, neg2, ...]
     def _loss_labels(self, rois_label):
         loss_labels = np.zeros((rois_label.size()[0], 1+self.n_neg_classes)).astype(np.int)
@@ -221,6 +239,9 @@ class _HierRCNN(nn.Module):
             all_neg_inds = list(set(range(self.objnet.label_sum())) - all_pos_inds)
             loss_labels[i] = [rois_label[i]] + random.sample(all_neg_inds, self.n_neg_classes)
         return loss_labels
+
+
+
 
     # extract roi fc7
     def ext_feat(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):

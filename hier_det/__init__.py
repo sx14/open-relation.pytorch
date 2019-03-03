@@ -12,13 +12,13 @@
 #
 #
 # cc = c.repeat(b.size(0), 1)
-# bb = b.repeat(1, c.size(0)).resize_(b.size(0) * c.size(0), d_vec)
+# bb = b.repeat(1, c.size(0)).reshape(b.size(0) * c.size(0), d_vec)
 #
 # sub = cc - bb
 # dis = sub.norm(p=2, dim=1)
 # sim = -dis
 #
-# sim_mat = sim.resize_(b.size(0), c.size(0))
+# sim_mat = sim.reshape(b.size(0), c.size(0))
 #
 #
 #

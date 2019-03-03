@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 
 class LabelNode(object):
     def __init__(self, name, index, is_raw):
@@ -168,6 +168,13 @@ class LabelHier:
 
     def neg_num(self):
         return self.label_sum() - self.max_depth
+
+    def raw_neg_mask(self, raw_inds):
+        mask = np.ones((raw_inds.shape[0], self.label_sum()))
+        for i, raw_ind in enumerate(raw_inds):
+            hyper_inds = self.get_node_by_index(raw_ind).trans_hyper_inds()[:-1]
+            mask[i, hyper_inds] = float('+Inf')
+        return mask
 
     def _load_raw_label(self, raw_label_path):
         labels = []

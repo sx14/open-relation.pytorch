@@ -173,11 +173,22 @@ class LabelHier:
         return self.label_sum() - self.max_depth
 
     def raw_neg_mask(self, raw_inds):
+        # ATTENTION: +Inf value can cause NaN error
         mask = np.ones((raw_inds.shape[0], self.label_sum()))
         for i, raw_ind in enumerate(raw_inds):
             hyper_inds = self.get_node_by_index(raw_ind).trans_hyper_inds()[:-1]
             mask[i, hyper_inds] = float('+Inf')
         return mask
+
+    def _prepare_pos_negs(self):
+        raw2pns = {}
+        all_inds = set(range(self.label_sum()))
+        for raw_ind in self.get_raw_indexes():
+            raw_node = self.get_node_by_index(raw_ind)
+            all_pos_inds = set(raw_node.trans_hyper_inds())
+            all_neg_inds = list(all_inds - all_pos_inds)
+            raw2pns[raw_ind] = [raw_ind] + all_neg_inds[:self.neg_num()]
+
 
     def _load_raw_label(self, raw_label_path):
         labels = []

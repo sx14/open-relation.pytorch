@@ -152,7 +152,7 @@ class _HierRCNN(nn.Module):
             if cfg.CROP_RESIZE_WITH_MAX_POOL:
                 pooled_feat = F.max_pool2d(pooled_feat, 2, 2)
         elif cfg.POOLING_MODE == 'align':
-            pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1,5))
+            pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
@@ -174,9 +174,9 @@ class _HierRCNN(nn.Module):
         # ===== order embedding here =====\
         rois_label_use = rois_label
         pooled_feat_use = pooled_feat
-        # if self.training:
-        #     rois_label_use = rois_label[rois_label>self.objnet.background().index()]
-        #     pooled_feat_use = pooled_feat[rois_label>self.objnet.background().index(), :]
+        if self.training:
+            rois_label_use = rois_label[rois_label>self.objnet.background().index()]
+            pooled_feat_use = pooled_feat[rois_label>self.objnet.background().index(), :]
 
 
         # visual embedding
@@ -193,9 +193,9 @@ class _HierRCNN(nn.Module):
 
         if self.training:
             start = time.time()
-            # pos_negs = self._loss_labels(rois_label)
-            # loss_score, y = self._prepare_loss_input(cls_score, pos_negs)
-            loss_score, y = self._process_scores(cls_score_use, rois_label_use)
+            pos_negs = self._loss_labels(rois_label_use)
+            loss_score, y = self._prepare_loss_input(cls_score_use, pos_negs)
+            # loss_score, y = self._process_scores(cls_score_use, rois_label_use)
             end = time.time()
             # print('Pos_Neg_label Time: %.2f' % (end - start))
             # classification loss
@@ -203,14 +203,12 @@ class _HierRCNN(nn.Module):
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
 
-        # if self.training:
-        #     rois = rois.squeeze()
-        #     rois = rois[rois_label>self.objnet.background().index(), :]
-        #     rois = rois.unsqueeze(0)
-        #
-        #     bbox_pred = bbox_pred.view(-1)
-        #     bbox_pred = bbox_pred[:, rois_label>self.objnet.background().index(), :]
-        #     bbox_pred = bbox_pred.unsqueeze(0)
+        if self.training:
+            rois = rois.squeeze()
+            rois = rois[rois_label>self.objnet.background().index(), :]
+            rois = rois.unsqueeze(0)
+
+            bbox_pred = bbox_pred[rois_label>self.objnet.background().index(), :]
 
         rois_label = rois_label_use
         cls_score = cls_score_use.view(batch_size, rois.size(1), -1)
@@ -235,20 +233,20 @@ class _HierRCNN(nn.Module):
         return loss_scores, y
 
 
-    def _process_scores(self, cls_scores, rois_label):
-        # remove background scores
-        # rois_label_use = rois_label
-        # cls_scores_use = cls_scores
-        rois_label_use = rois_label[rois_label > 0]
-        cls_scores_use = cls_scores[rois_label > 0, :]
-        cls_scores_use = cls_scores_use + (-0.00001)    # for zeros
-
-        # raw and negs is 1, others is +Inf
-        mask = self.objnet.raw_neg_mask(rois_label_use)
-        with torch.no_grad():
-            mask_v = Variable(torch.from_numpy(mask)).float().cuda()
-        cls_scores_use = cls_scores_use.mul(mask_v)
-        return cls_scores_use, rois_label_use
+    # def _process_scores(self, cls_scores, rois_label):
+    #     # remove background scores
+    #     rois_label_use = rois_label
+    #     cls_scores_use = cls_scores
+    #     # rois_label_use = rois_label[rois_label > 0]
+    #     # cls_scores_use = cls_scores[rois_label > 0, :]
+    #     cls_scores_use = cls_scores_use + (-0.00001)    # for zeros
+    #
+    #     # raw and negs is 1, others is +Inf
+    #     mask = self.objnet.raw_neg_mask(rois_label_use)
+    #     with torch.no_grad():
+    #         mask_v = Variable(torch.from_numpy(mask)).float().cuda()
+    #     cls_scores_use = cls_scores_use.mul(mask_v)
+    #     return cls_scores_use, rois_label_use
 
 
     # prepare labels [pos, neg1, neg2, ...]
@@ -259,7 +257,7 @@ class _HierRCNN(nn.Module):
             gt_node = self.objnet.get_node_by_name(gt_label)
             all_pos_inds = set(gt_node.trans_hyper_inds())
             all_neg_inds = list(set(range(self.objnet.label_sum())) - all_pos_inds)
-            loss_labels[i] = [rois_label[i]] + random.sample(all_neg_inds, self.n_neg_classes)
+            loss_labels[i] = [rois_label[i]] + all_neg_inds[:self.n_neg_classes]
         return loss_labels
 
 

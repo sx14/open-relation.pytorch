@@ -24,7 +24,7 @@ class _OrderSimilarity(nn.Module):
         self._norm = norm
         self.act = nn.ReLU()
 
-    def forward(self, lab_vecs, vis_vecs):
+    def forward1(self, lab_vecs, vis_vecs):
         order_scores = Variable(torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])).cuda()
         for i in range(vis_vecs.size()[0]):
             # hyper - hypo
@@ -36,6 +36,19 @@ class _OrderSimilarity(nn.Module):
             order_sim = -order_dis
             order_scores[i] = order_sim
         return order_scores
+
+    def forward(self, lab_vecs, vis_vecs):
+        d_vec = lab_vecs.size(1)
+        n_label = lab_vecs.size(0)
+        n_vis = vis_vecs.size(0)
+        stack_lab_vecs = lab_vecs.repeat(n_vis, 1)
+        stack_vis_vecs = vis_vecs.repeat(1, n_label).resize_(n_vis * n_label, d_vec)
+        stack_sub = stack_lab_vecs - stack_vis_vecs
+        stack_sub = self.act(stack_sub)
+        stack_dis = stack_sub.norm(p=self._norm, dim=1)
+        stack_sim = - stack_dis
+        order_sims = stack_sim.resize(n_vis, n_label)
+        return order_sims
 
 
 class _HierRCNN(nn.Module):

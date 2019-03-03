@@ -152,7 +152,7 @@ class _HierRCNN(nn.Module):
             if cfg.CROP_RESIZE_WITH_MAX_POOL:
                 pooled_feat = F.max_pool2d(pooled_feat, 2, 2)
         elif cfg.POOLING_MODE == 'align':
-            pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+            pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1,5))
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
@@ -174,9 +174,9 @@ class _HierRCNN(nn.Module):
         # ===== order embedding here =====\
         rois_label_use = rois_label
         pooled_feat_use = pooled_feat
-        if self.training:
-            rois_label_use = rois_label[rois_label>self.objnet.background().index()]
-            pooled_feat_use = pooled_feat[rois_label>self.objnet.background().index(), :]
+        # if self.training:
+        #     rois_label_use = rois_label[rois_label>self.objnet.background().index()]
+        #     pooled_feat_use = pooled_feat[rois_label>self.objnet.background().index(), :]
 
 
         # visual embedding
@@ -203,9 +203,14 @@ class _HierRCNN(nn.Module):
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
 
-        if self.training:
-            rois = rois[rois_label>self.objnet.background().index(), :]
-            bbox_pred = bbox_pred[rois_label>self.objnet.background().index(), :]
+        # if self.training:
+        #     rois = rois.squeeze()
+        #     rois = rois[rois_label>self.objnet.background().index(), :]
+        #     rois = rois.unsqueeze(0)
+        #
+        #     bbox_pred = bbox_pred.view(-1)
+        #     bbox_pred = bbox_pred[:, rois_label>self.objnet.background().index(), :]
+        #     bbox_pred = bbox_pred.unsqueeze(0)
 
         rois_label = rois_label_use
         cls_score = cls_score_use.view(batch_size, rois.size(1), -1)
@@ -232,10 +237,10 @@ class _HierRCNN(nn.Module):
 
     def _process_scores(self, cls_scores, rois_label):
         # remove background scores
-        rois_label_use = rois_label
-        cls_scores_use = cls_scores
-        # rois_label_use = rois_label[rois_label > 0]
-        # cls_scores_use = cls_scores[rois_label > 0, :]
+        # rois_label_use = rois_label
+        # cls_scores_use = cls_scores
+        rois_label_use = rois_label[rois_label > 0]
+        cls_scores_use = cls_scores[rois_label > 0, :]
         cls_scores_use = cls_scores_use + (-0.00001)    # for zeros
 
         # raw and negs is 1, others is +Inf

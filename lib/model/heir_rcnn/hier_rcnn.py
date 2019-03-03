@@ -180,9 +180,11 @@ class _HierRCNN(nn.Module):
         RCNN_loss_bbox = 0
 
         if self.training:
+            start = time.time()
             pos_negs = self._loss_labels(rois_label)
             loss_score, y = self._prepare_loss_input(cls_score, pos_negs)
-
+            end = time.time()
+            print('Pos_Neg_label Time: %.2f' % (end - start))
             # classification loss
             RCNN_loss_cls = F.cross_entropy(loss_score, y)
             # bounding box regression L1 loss

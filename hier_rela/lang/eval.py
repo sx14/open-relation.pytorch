@@ -6,26 +6,27 @@ from lang_dataset import LangDataset
 from lang_config import train_params, data_config
 from model import RelationEmbedding
 from model import order_rank_test as rank_test
-from open_relation.dataset.vrd.label_hier.pre_hier import prenet
-from open_relation.dataset.dataset_config import DatasetConfig
+from lib.datasets.vrd.label_hier.pre_hier import prenet
+from global_config import HierLabelConfig
 
 
+
+dataset = 'vrd'
 # hyper params
-epoch_num = 1
-embedding_dim = train_params['embedding_dim']
-batch_size = 1
-
-
-dataset_config = DatasetConfig('vrd')
-pre_label_vec_path = dataset_config.extra_config['predicate'].config['label_vec_path']
-obj_label_vec_path = dataset_config.extra_config['object'].config['label_vec_path']
+obj_config = HierLabelConfig(dataset, 'object')
+pre_config = HierLabelConfig(dataset, 'predicate')
+pre_label_vec_path = pre_config.label_vec_path()
+obj_label_vec_path = obj_config.label_vec_path()
 rlt_path = data_config['test']['raw_rlt_path']
 test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
-test_dl = DataLoader(test_set, batch_size=batch_size, shuffle=True)
+test_dl = DataLoader(test_set, batch_size=1, shuffle=True)
 
 # model
 
-model = RelationEmbedding(embedding_dim * 2, embedding_dim, pre_label_vec_path)
+
+embedding_dim = test_set.obj_vec_length()
+
+model = RelationEmbedding(embedding_dim * 2, pre_label_vec_path)
 weight_path = train_params['best_model_path']
 if os.path.isfile(weight_path):
     model.load_state_dict(torch.load(weight_path))

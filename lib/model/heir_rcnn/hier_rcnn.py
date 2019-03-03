@@ -1,4 +1,6 @@
 import random
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -155,7 +157,10 @@ class _HierRCNN(nn.Module):
         # visual embedding
         vis_embedding = self.order_embedding(pooled_feat)
         # compute order similarity for hier labels
+        start = time.time()
         cls_score = self.order_score(self.label_vecs, vis_embedding)
+        end = time.time()
+        print('Order Scoring Time: %.2f' % ((end - start) / 1000.0))
         # ===== order embedding here =====/
 
         RCNN_loss_cls = 0

@@ -19,7 +19,8 @@ import random
 import time
 import pdb
 
-class roibatchLoader(data.Dataset):
+
+class hierRoibatchLoader(data.Dataset):
   def __init__(self, labelnet, roidb, ratio_list, ratio_index, batch_size, num_classes, training=True, normalize=None):
     self._roidb = roidb
     self._num_classes = num_classes
@@ -208,13 +209,15 @@ class roibatchLoader(data.Dataset):
         keep = torch.nonzero(not_keep == 0).view(-1)
 
         gt_boxes_padding = torch.FloatTensor(self.max_num_box, gt_boxes.size(1)).zero_()
+        gt_n_hot_padding = torch.FloatTensor(self.max_num_box, gt_n_hot.size(1)).zero_()
         if keep.numel() != 0:
             gt_boxes = gt_boxes[keep]
             num_boxes = min(gt_boxes.size(0), self.max_num_box)
             gt_boxes_padding[:num_boxes,:] = gt_boxes[:num_boxes]
 
             gt_n_hot = gt_n_hot[keep]
-            gt_n_hot = gt_n_hot[:num_boxes]
+            gt_n_hot_padding[:num_boxes,:] = gt_n_hot[:num_boxes]
+
 
         else:
             num_boxes = 0
@@ -223,7 +226,7 @@ class roibatchLoader(data.Dataset):
         padding_data = padding_data.permute(2, 0, 1).contiguous()
         im_info = im_info.view(3)
 
-        return padding_data, im_info, gt_boxes_padding, num_boxes, gt_n_hot
+        return padding_data, im_info, gt_boxes_padding, num_boxes, gt_n_hot_padding
     else:
         data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)
         im_info = im_info.view(3)

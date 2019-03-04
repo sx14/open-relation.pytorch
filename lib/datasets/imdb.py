@@ -133,8 +133,8 @@ class imdb(object):
         boxes[:, 0] = widths[i] - oldx2 - 1
         boxes[:, 2] = widths[i] - oldx1 - 1
         assert (boxes[:, 2] >= boxes[:, 0]).all()
-        entry = {'sbj_boxes': boxes,
-                 'sbj_classes': self.roidb[i]['sbj_classes']}
+        entry['sbj_boxes'] = boxes
+        entry['sbj_classes'] = self.roidb[i]['sbj_classes']
 
       if 'obj_boxes' in self.roidb[i]:
         boxes = self.roidb[i]['obj_boxes'].copy()
@@ -143,8 +143,8 @@ class imdb(object):
         boxes[:, 0] = widths[i] - oldx2 - 1
         boxes[:, 2] = widths[i] - oldx1 - 1
         assert (boxes[:, 2] >= boxes[:, 0]).all()
-        entry = {'obj_boxes': boxes,
-                 'obj_classes': self.roidb[i]['obj_classes']}
+        entry['obj_boxes'] = boxes
+        entry['obj_classes'] = self.roidb[i]['obj_classes']
 
       self.roidb.append(entry)
     self._image_index = self._image_index * 2

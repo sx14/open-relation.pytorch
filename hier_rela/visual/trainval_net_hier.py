@@ -247,6 +247,8 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
     hierRCNN.load_state_dict(checkpoint['model'])
     hierRCNN.eval()
+    for name, p in hierRCNN.named_parameters():
+        p.requires_grad = False
 
 
   preconf = HierLabelConfig(args.dataset, 'predicate')

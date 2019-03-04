@@ -113,8 +113,13 @@ class _HierRelaVis(nn.Module):
         pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
 
         sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
-        sbj_obj_pooled_feat, sbj_obj_embedding = self._hierRCNN.ext_feat(im_data, im_info, sbj_obj_boxes,
-                                                                         num_boxes * 2, use_rpn=False)
+
+        with torch.no_grad():
+            sbj_obj_pooled_feat, \
+            sbj_obj_embedding = self._hierRCNN.ext_feat(im_data, im_info,
+                                                        sbj_obj_boxes,num_boxes * 2,
+                                                        use_rpn=False)
+
         num_boxes_padding = gt_boxes.size(1)
         sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
         obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]

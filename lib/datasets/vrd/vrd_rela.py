@@ -234,22 +234,22 @@ class vrd_rela(imdb):
         for i, raw_rlt in enumerate(raw_rlts):
             raw_sbj = raw_rlt['subject']
             sbj_cls = self._obj_class_to_ind[raw_sbj['name']]
-            sbj_box = [float(raw_sbj['xmin']), float(raw_sbj['ymin']),
-                       float(raw_sbj['xmax']), float(raw_sbj['ymax'])]
+            sbj_box = [float(raw_sbj['xmin'])-1, float(raw_sbj['ymin'])-1,
+                       float(raw_sbj['xmax'])-1, float(raw_sbj['ymax'])-1]
             sbj_boxes[i, :] = sbj_box
             sbj_classes[i] = sbj_cls
 
             raw_obj = raw_rlt['object']
             obj_cls = self._obj_class_to_ind[raw_obj['name']]
-            obj_box = [float(raw_obj['xmin']), float(raw_obj['ymin']),
-                       float(raw_obj['xmax']), float(raw_obj['ymax'])]
+            obj_box = [float(raw_obj['xmin'])-1, float(raw_obj['ymin'])-1,
+                       float(raw_obj['xmax'])-1, float(raw_obj['ymax'])-1]
             obj_boxes[i, :] = obj_box
             obj_classes[i] = obj_cls
 
             raw_pre = raw_rlt['predicate']
             pre_cls = self._class_to_ind[raw_pre['name']]
-            pre_box = [float(raw_pre['xmin']), float(raw_pre['ymin']),
-                       float(raw_pre['xmax']), float(raw_pre['ymax'])]
+            pre_box = [float(raw_pre['xmin'])-1, float(raw_pre['ymin'])-1,
+                       float(raw_pre['xmax'])-1, float(raw_pre['ymax'])-1]
             pre_boxes[i, :] = pre_box
             pre_classes[i] = pre_cls
 

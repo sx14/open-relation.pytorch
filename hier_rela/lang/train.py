@@ -8,9 +8,9 @@ from tensorboardX import SummaryWriter
 
 from lang_dataset import LangDataset
 from lang_config import train_params, data_config
-from model import RelationEmbedding
+from lib.model.hier_rela.lang.hier_lang import HierLang
 from torch.nn.functional import cross_entropy as loss_func
-from model import order_softmax_test as rank_test
+from lib.model.hier_rela.lang.hier_lang import order_softmax_test as rank_test
 from global_config import HierLabelConfig
 
 
@@ -70,7 +70,7 @@ best_model_path = train_params['best_model_path']
 
 input_length = train_set.obj_vec_length() * 2
 gt_label_vec_path = pre_label_vec_path
-model = RelationEmbedding(input_length, gt_label_vec_path)
+model = HierLang(input_length, gt_label_vec_path)
 if os.path.exists(new_model_path):
     model.load_state_dict(torch.load(new_model_path))
     print('Loading weights success.')

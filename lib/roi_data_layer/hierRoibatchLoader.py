@@ -11,7 +11,7 @@ from PIL import Image
 import torch
 
 from lib.model.utils.config import cfg
-from lib.roi_data_layer.minibatch import get_minibatch, get_minibatch
+from lib.roi_data_layer.hierMinibatch import get_minibatch
 from lib.model.rpn.bbox_transform import bbox_transform_inv, clip_boxes
 
 import numpy as np
@@ -20,8 +20,8 @@ import time
 import pdb
 
 
-class hierRoibatchLoader(data.Dataset):
-  def __init__(self, labelnet, roidb, ratio_list, ratio_index, batch_size, num_classes, training=True, normalize=None):
+class roibatchLoader(data.Dataset):
+  def __init__(self, roidb, ratio_list, ratio_index, batch_size, num_classes, training=True, normalize=None):
     self._roidb = roidb
     self._num_classes = num_classes
     # we make the height of image consistent to trim_height, trim_width
@@ -34,7 +34,6 @@ class hierRoibatchLoader(data.Dataset):
     self.ratio_index = ratio_index
     self.batch_size = batch_size
     self.data_size = len(self.ratio_list)
-    self.labelnet = labelnet
 
     # given the ratio_list, we want to make the ratio same for each batch.
     self.ratio_list_batch = torch.Tensor(self.data_size).zero_()
@@ -55,7 +54,6 @@ class hierRoibatchLoader(data.Dataset):
 
         self.ratio_list_batch[left_idx:(right_idx+1)] = target_ratio
 
-
   def __getitem__(self, index):
     if self.training:
         index_ratio = int(self.ratio_index[index])
@@ -72,22 +70,21 @@ class hierRoibatchLoader(data.Dataset):
     data = torch.from_numpy(blobs['data'])
     im_info = torch.from_numpy(blobs['im_info'])
 
-    gt_n_hot = torch.ones(blobs['gt_boxes'].size(0), self._num_classes)
-    for mmm in blobs['gt_boxes'].size(0):
-        gt = blobs['gt_boxes'][mmm][-1]
-        gt_node = self.labelnet.get_node_by_index(int(gt))
-        gt_hyper_inds = gt_node.trans_hyper_inds()[:-1] # remove gt
-        gt_n_hot[mmm][gt_hyper_inds] = -9999
-
+    num_box = blobs['gt_boxes'].shape[0]
     # we need to random shuffle the bounding box.
     data_height, data_width = data.size(1), data.size(2)
     if self.training:
+
         np.random.shuffle(blobs['gt_boxes'])
-        gt_boxes = torch.from_numpy(blobs['gt_boxes'])
+        # blob['gt_boxes'] = [px1, py1, py1, py2, pc, sx1, sx2, sy1, sy2, sc, ox1, ox2, oy1, oy2, oc]
 
+        pre_boxes = blobs['gt_boxes'][:, 0:5]
+        sbj_boxes = blobs['gt_boxes'][:, 5:10]
+        obj_boxes = blobs['gt_boxes'][:, 10:15]
 
-
-
+        # 沿dim=0连接pre,sbj,obj
+        gt_boxes = np.concatenate((pre_boxes, sbj_boxes, obj_boxes), axis=0)
+        gt_boxes = torch.from_numpy(gt_boxes)
 
         ########################################################
         # padding the input image to fixed size for each group #
@@ -106,13 +103,18 @@ class hierRoibatchLoader(data.Dataset):
                 # this means that data_width << data_height, we need to crop the
                 # data_height
                 # 图片太高了
+                # 把图像上方多余的部分剪掉
+                # 对应调整box
                 min_y = int(torch.min(gt_boxes[:,1]))
                 max_y = int(torch.max(gt_boxes[:,3]))
+
+                # resized img height
                 trim_size = int(np.floor(data_width / ratio))
                 if trim_size > data_height:
                     trim_size = data_height                
                 box_region = max_y - min_y + 1
                 if min_y == 0:
+                    # box已经顶到天了，无法裁剪上方部分
                     y_s = 0
                 else:
                     if (box_region-trim_size) < 0:
@@ -143,8 +145,12 @@ class hierRoibatchLoader(data.Dataset):
                 # this means that data_width >> data_height, we need to crop the
                 # data_width
                 # 图片太宽了
+                # 把图像左侧多余的部分剪掉
+                # 对应调整box
                 min_x = int(torch.min(gt_boxes[:,0]))
                 max_x = int(torch.max(gt_boxes[:,2]))
+
+                # resized img width
                 trim_size = int(np.ceil(data_height * ratio))
                 if trim_size > data_width:
                     trim_size = data_width                
@@ -203,22 +209,28 @@ class hierRoibatchLoader(data.Dataset):
             im_info[0, 0] = trim_size
             im_info[0, 1] = trim_size
 
-
         # check the bounding box:
-        not_keep = (gt_boxes[:,0] == gt_boxes[:,2]) | (gt_boxes[:,1] == gt_boxes[:,3])
+        pre_boxes = gt_boxes[:, 0:num_box]
+        sbj_boxes = gt_boxes[:, num_box:num_box*2]
+        obj_boxes = gt_boxes[:, num_box*2:num_box*3]
+
+        not_keep_pre = (pre_boxes[:,0] == pre_boxes[:,2]) | (pre_boxes[:,1] == pre_boxes[:,3])
+        not_keep_sbj = (sbj_boxes[:,0] == sbj_boxes[:,2]) | (sbj_boxes[:,1] == sbj_boxes[:,3])
+        not_keep_obj = (obj_boxes[:,0] == obj_boxes[:,2]) | (obj_boxes[:,1] == obj_boxes[:,3])
+        # pre,sbj,obj 三者有任意一个box没有了就丢弃整个relationship
+        not_keep = not_keep_pre | not_keep_sbj | not_keep_obj
         keep = torch.nonzero(not_keep == 0).view(-1)
 
-        gt_boxes_padding = torch.FloatTensor(self.max_num_box, gt_boxes.size(1)).zero_()
-        gt_n_hot_padding = torch.FloatTensor(self.max_num_box, gt_n_hot.size(1)).zero_()
+        gt_boxes_padding = torch.FloatTensor(self.max_num_box, gt_boxes.size(1) * 3).zero_()
         if keep.numel() != 0:
-            gt_boxes = gt_boxes[keep]
+            pre_boxes = pre_boxes[keep]
+            sbj_boxes = sbj_boxes[keep]
+            obj_boxes = obj_boxes[keep]
+
+            gt_boxes = torch.cat([pre_boxes, sbj_boxes, obj_boxes], 1)
+
             num_boxes = min(gt_boxes.size(0), self.max_num_box)
             gt_boxes_padding[:num_boxes,:] = gt_boxes[:num_boxes]
-
-            gt_n_hot = gt_n_hot[keep]
-            gt_n_hot_padding[:num_boxes,:] = gt_n_hot[:num_boxes]
-
-
         else:
             num_boxes = 0
 
@@ -226,16 +238,14 @@ class hierRoibatchLoader(data.Dataset):
         padding_data = padding_data.permute(2, 0, 1).contiguous()
         im_info = im_info.view(3)
 
-        return padding_data, im_info, gt_boxes_padding, num_boxes, gt_n_hot_padding
+        return padding_data, im_info, gt_boxes_padding, num_boxes
     else:
         data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)
         im_info = im_info.view(3)
-        # gt_boxes = torch.FloatTensor([1,1,1,1,1])
-        # num_boxes = 0
         gt_boxes = torch.from_numpy(blobs['gt_boxes'])
         num_boxes = gt_boxes.size(0)
 
-        return data, im_info, gt_boxes, num_boxes, gt_n_hot
+        return data, im_info, gt_boxes, num_boxes
 
   def __len__(self):
     return len(self._roidb)

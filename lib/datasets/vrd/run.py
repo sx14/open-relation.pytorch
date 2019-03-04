@@ -91,28 +91,29 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
                 print(img_name + ' is discarded.')
                 continue
             # removing redundant objects from relations
-            obj_label_boxes = []
+            # collect relationships
+            obj_box_labels = []
             for rlt in org_anno:
                 obj_sbj = [rlt['object'], rlt['subject']]
                 for obj in obj_sbj:
                     # left top, right bottom
                     # ymin, ymax, xmin, xmax, category
-                    label_box = obj['bbox']
-                    label_box.append(obj['category'])
-                    obj_label_boxes.append(label_box)
+                    box_label = obj['bbox']
+                    box_label.append(obj['category'])
+                    obj_box_labels.append(box_label)
 
             objs = []
             # remove redundant objects
-            if len(obj_label_boxes) > 0:
-                obj_label_boxes = np.array(obj_label_boxes)
-                unique_label_boxes = np.unique(obj_label_boxes, axis=0)
-                for label_box in unique_label_boxes:
+            if len(obj_box_labels) > 0:
+                obj_box_labels = np.array(obj_box_labels)
+                unique_box_labels = np.unique(obj_box_labels, axis=0)
+                for box_label in unique_box_labels:
                     obj = dict()
-                    obj['name'] = obj_labels[int(label_box[4])].strip()
-                    obj['ymin'] = int(label_box[0])
-                    obj['ymax'] = int(label_box[1])
-                    obj['xmin'] = int(label_box[2])
-                    obj['xmax'] = int(label_box[3])
+                    obj['name'] = obj_labels[int(box_label[4])].strip()
+                    obj['ymin'] = int(box_label[0])
+                    obj['ymax'] = int(box_label[1])
+                    obj['xmin'] = int(box_label[2])
+                    obj['xmax'] = int(box_label[3])
                     obj['pose'] = 'Left'
                     obj['truncated'] = 0
                     obj['difficult'] = 0
@@ -129,7 +130,8 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
                         'width': im_width,
                         'height': im_height,
                         'depth': 3,
-                        'objects': objs}
+                        'objects': objs,
+                        'relationships': org_anno}
             pascal_anno_path = os.path.join(Annotations_path, img_name.split('.')[0]+'.xml')
             output_pascal_format(mid_anno, pascal_anno_path)
     print('Annotation total: %d' % len(os.listdir(Annotations_path)))

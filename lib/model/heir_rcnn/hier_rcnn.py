@@ -16,42 +16,7 @@ from lib.model.roi_crop.modules.roi_crop import _RoICrop
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
 from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
 from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
-
-
-class _OrderSimilarity(nn.Module):
-    def __init__(self, norm):
-        super(_OrderSimilarity, self).__init__()
-        self._norm = norm
-        self.act = nn.ReLU()
-
-    def forward1(self, lab_vecs, vis_vecs):
-        order_scores = Variable(torch.zeros(vis_vecs.size()[0], lab_vecs.size()[0])).cuda()
-        for i in range(vis_vecs.size()[0]):
-            # hyper - hypo
-            sub = lab_vecs - vis_vecs[i]
-            # max(sub, 0)
-            sub = self.act(sub)
-            # norm 2
-            order_dis = sub.norm(p=self._norm, dim=1)
-            order_sim = -order_dis
-            order_scores[i] = order_sim
-        return order_scores
-
-    def forward(self, lab_vecs, vis_vecs):
-        d_vec = lab_vecs.size(1)
-        n_label = lab_vecs.size(0)
-        n_vis = vis_vecs.size(0)
-
-        stack_lab_vecs = lab_vecs.repeat(n_vis, 1)
-        stack_vis_vecs = vis_vecs.repeat(1, n_label).reshape(n_vis * n_label, d_vec)
-
-        stack_sub = stack_lab_vecs - stack_vis_vecs
-        stack_sub = self.act(stack_sub)
-        stack_dis = stack_sub.norm(p=self._norm, dim=1)
-        stack_sim = - stack_dis
-        order_sims = stack_sim.reshape(n_vis, n_label)
-        return order_sims
-
+from lib.model.hier_utils.hier_utils import OrderSimilarity, OrderLoss
 
 class _HierRCNN(nn.Module):
     """ Hier RCNN """
@@ -97,7 +62,7 @@ class _HierRCNN(nn.Module):
             nn.Dropout(),
             nn.Linear(4096, self.embedding_len))
 
-        self.order_score = _OrderSimilarity(norm=2)
+        self.order_score = OrderSimilarity(norm=2)
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):
         batch_size = im_data.size(0)
@@ -297,9 +262,9 @@ class _HierRCNN(nn.Module):
 
         # feed pooled features to top model
         fc7 = self._head_to_tail(pooled_feat)
+        vis_embedding = self.order_embedding(fc7)
 
-        return fc7
-
+        return fc7, vis_embedding
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):

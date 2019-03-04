@@ -17,9 +17,9 @@ def order_sim(hypers, hypos):
     return partial_order_sim
 
 
-class RelationEmbedding(nn.Module):
+class HierLang(nn.Module):
     def __init__(self, input_len, label_vec_path):
-        super(RelationEmbedding, self).__init__()
+        super(HierLang, self).__init__()
 
         label_vec_file = h5py.File(label_vec_path, 'r')
         gt_label_vecs = np.array(label_vec_file['label_vec'])
@@ -35,8 +35,6 @@ class RelationEmbedding(nn.Module):
             nn.ReLU(),
             nn.Dropout(p=0.5),
             nn.Linear(output_len, output_len))
-
-
 
     def forward(self, sbj_vec, obj_vec):
         sbj_obj_vec = torch.cat([sbj_vec, obj_vec], 1)

@@ -41,7 +41,7 @@ class vrd_rela(imdb):
         self._image_set = image_set
         self._devkit_path = self._get_default_path() if devkit_path is None \
             else devkit_path
-        self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
+        self._data_path = os.path.join(self._devkit_path, 'VOC' + '2007')
         self._classes = prenet.get_all_labels()
         self._obj_classes = objnet.get_all_labels()
 
@@ -117,7 +117,7 @@ class vrd_rela(imdb):
         """
         Return the default path where PASCAL VOC is expected to be installed.
         """
-        return os.path.join(cfg.DATA_DIR, 'VRDdevkit' + self._year)
+        return os.path.join(cfg.DATA_DIR, 'VRDdevkit' + '2007')
 
     def gt_roidb(self):
         """
@@ -163,7 +163,7 @@ class vrd_rela(imdb):
             print('{} ss roidb loaded from {}'.format(self.name, cache_file))
             return roidb
 
-        if int(self._year) == 2007 or self._image_set != 'test':
+        if int(self._year) == 2016 or self._image_set != 'test':
             gt_roidb = self.gt_roidb()
             ss_roidb = self._load_selective_search_roidb(gt_roidb)
             roidb = imdb.merge_roidbs(gt_roidb, ss_roidb)
@@ -176,7 +176,7 @@ class vrd_rela(imdb):
         return roidb
 
     def rpn_roidb(self):
-        if int(self._year) == 2007 or self._image_set != 'test':
+        if int(self._year) == 2016 or self._image_set != 'test':
             gt_roidb = self.gt_roidb()
             rpn_roidb = self._load_rpn_roidb(gt_roidb)
             roidb = imdb.merge_roidbs(gt_roidb, rpn_roidb)
@@ -332,7 +332,7 @@ class vrd_rela(imdb):
     def _get_voc_results_file_template(self):
         #VOCdevkit2007/results/VOC2007/Main/<comp_id>_det_test_aeroplane.txt
         filename = self._get_comp_id() + '_det_' + self._image_set + '_{:s}.txt'
-        filedir = os.path.join(self._devkit_path, 'results', 'VOC' + self._year, 'Main')
+        filedir = os.path.join(self._devkit_path, 'results', 'VOC' + '2007', 'Main')
         if not os.path.exists(filedir):
             os.makedirs(filedir)
         path = os.path.join(filedir, filename)
@@ -359,19 +359,19 @@ class vrd_rela(imdb):
     def _do_python_eval(self, output_dir='output'):
         annopath = os.path.join(
             self._devkit_path,
-            'VOC' + self._year,
+            'VOC' + '2007',
             'Annotations',
             '{:s}.xml')
         imagesetfile = os.path.join(
             self._devkit_path,
-            'VOC' + self._year,
+            'VOC' + '2007',
             'ImageSets',
             'Main',
             self._image_set + '.txt')
         cachedir = os.path.join(self._devkit_path, 'annotations_cache')
         aps = []
         # The PASCAL VOC metric changed in 2010
-        use_07_metric = True if int(self._year) < 2010 else False
+        use_07_metric = True if int(self._year) < 2020 else False
         print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)

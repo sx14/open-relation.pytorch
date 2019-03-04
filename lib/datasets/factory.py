@@ -27,7 +27,7 @@ for year in ['2007', '2016']:
     if year == '2007':
         __sets[name] = (lambda split=split, year=year: vrd(split, year))
     else:
-        __sets[name] = (lambda split=split, year='2007': vrd_rela(split, year))
+        __sets[name] = (lambda split=split, year=year: vrd_rela(split, year))
 
 # Set up vg_<year>_<split>
 for year in ['2007']:

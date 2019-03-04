@@ -110,7 +110,7 @@ class _HierRelaVis(nn.Module):
         # feed pooled features to top model(fc7)
         pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
 
-        sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 0)
+        sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
         sbj_obj_pooled_feat, sbj_obj_embedding = self._hierRCNN.ext_feat(im_data, im_info, sbj_obj_boxes,
                                                                          num_boxes * 2, use_rpn=False)
 

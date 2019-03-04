@@ -12,8 +12,8 @@ data_config = {
 
 train_params = {
     'lr': 0.01,
-    'epoch_num': 50,
-    'batch_size': 128,
+    'epoch_num': 150,
+    'batch_size': 32,
     'neg_sample_num': 78,
     'latest_model_path': 'output/lan_weights_new.pkl',
     'best_model_path': 'output/lan_weights_best.pkl',

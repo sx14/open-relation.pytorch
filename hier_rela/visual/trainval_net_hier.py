@@ -242,7 +242,7 @@ if __name__ == '__main__':
     hierRCNN.create_architecture()
 
     # load HierRCNN model
-    load_name = '../data/pretrained_model/hier_rcnn_%s.pth' % args.dataset
+    load_name = '../../data/pretrained_model/hier_rcnn_%s.pth' % args.dataset
     print("HierRCNN: load pretrained model: %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierRCNN.load_state_dict(checkpoint['model'])

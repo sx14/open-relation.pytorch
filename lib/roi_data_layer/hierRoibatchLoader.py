@@ -210,9 +210,9 @@ class roibatchLoader(data.Dataset):
             im_info[0, 1] = trim_size
 
         # check the bounding box:
-        pre_boxes = gt_boxes[:, 0:num_box]
-        sbj_boxes = gt_boxes[:, num_box:num_box*2]
-        obj_boxes = gt_boxes[:, num_box*2:num_box*3]
+        pre_boxes = gt_boxes[0:num_box, :]
+        sbj_boxes = gt_boxes[num_box:num_box*2, :]
+        obj_boxes = gt_boxes[num_box*2:num_box*3, :]
 
         not_keep_pre = (pre_boxes[:,0] == pre_boxes[:,2]) | (pre_boxes[:,1] == pre_boxes[:,3])
         not_keep_sbj = (sbj_boxes[:,0] == sbj_boxes[:,2]) | (sbj_boxes[:,1] == sbj_boxes[:,3])

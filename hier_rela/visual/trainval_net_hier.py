@@ -256,13 +256,13 @@ if __name__ == '__main__':
 
 
   # load pretrained model
-  load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset
+  load_name = '../../data/pretrained_model/pretrained_%s.pth' % args.dataset
   print("HierVis: load pretrained model: %s" % (load_name))
   checkpoint = torch.load(load_name)
   pre_state_dict = checkpoint['model']
   hierVis_state_dict = hierVis.state_dict()
   pre_state_dict = {k: v for k, v in pre_state_dict.items()
-                    if k in hierVis}
+                    if k in hierVis_state_dict}
   hierVis_state_dict.update(pre_state_dict)
   hierVis.load_state_dict(hierVis_state_dict)
 

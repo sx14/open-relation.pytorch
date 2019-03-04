@@ -34,7 +34,7 @@ except NameError:
 
 
 
-class vrd(imdb):
+class vrd_rela(imdb):
     def __init__(self, image_set, year, devkit_path=None):
         imdb.__init__(self, 'vrd_' + year + '_' + image_set)
         self._year = year
@@ -107,7 +107,7 @@ class vrd(imdb):
             raw_img_indexes = f.readlines()
             for index in raw_img_indexes:
                 index = index.strip()
-                roi = self._load_pascal_annotation(index)
+                roi = self._load_vrd_annotation(index)
                 if len(roi['boxes']) > 0:
                     image_index.append(index)
 
@@ -138,7 +138,7 @@ class vrd(imdb):
         gt_roidb = []
         for index in self.image_index:
             roi = self._load_vrd_annotation(index)
-            if len(roi['sbj_boxes']) > 0:
+            if len(roi['boxes']) > 0:
                 gt_roidb.append(roi)
 
         with open(cache_file, 'wb') as fid:

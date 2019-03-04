@@ -16,14 +16,18 @@ from lib.datasets.coco import coco
 from lib.datasets.imagenet import imagenet
 from lib.datasets.vg.vg import vg
 from lib.datasets.vrd.vrd import vrd
+from lib.datasets.vrd.vrd_rela import vrd_rela
 
 import numpy as np
 
 # Set up vrd_<year>_<split>
-for year in ['2007']:
+for year in ['2007', '2016']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'vrd_{}_{}'.format(year, split)
-    __sets[name] = (lambda split=split, year=year: vrd(split, year))
+    if year == '2007':
+        __sets[name] = (lambda split=split, year=year: vrd(split, year))
+    else:
+        __sets[name] = (lambda split=split, year='2007': vrd_rela(split, year))
 
 # Set up vg_<year>_<split>
 for year in ['2007']:

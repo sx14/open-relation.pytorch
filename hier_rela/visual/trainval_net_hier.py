@@ -163,12 +163,12 @@ if __name__ == '__main__':
       from lib.datasets.vg.label_hier.obj_hier import objnet
       from lib.datasets.vg.label_hier.pre_hier import prenet
   elif args.dataset == "vrd":
-      args.imdb_name = "vrd_2007_trainval"
-      args.imdbval_name = "vrd_2007_test"
+      args.imdb_name = "vrd_2016_trainval"
+      args.imdbval_name = "vrd_2016_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
       from lib.datasets.vrd.label_hier.obj_hier import objnet
       from lib.datasets.vrd.label_hier.pre_hier import prenet
-  args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
+  args.cfg_file = "../../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../../cfgs/{}.yml".format(args.net)
 
   if args.cfg_file is not None:
     cfg_from_file(args.cfg_file)

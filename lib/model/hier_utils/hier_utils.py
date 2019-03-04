@@ -50,7 +50,7 @@ class OrderLoss:
     def _loss_labels(self, rois_label):
         loss_labels = np.zeros((rois_label.size()[0], 1+self.n_neg_classes)).astype(np.int)
         for i, gt_ind in enumerate(rois_label):
-            gt_label = self.labelnet.get_all_labels()[gt_ind]
+            gt_label = self.labelnet.get_all_labels()[int(gt_ind)]
             gt_node = self.labelnet.get_node_by_name(gt_label)
             all_pos_inds = set(gt_node.trans_hyper_inds())
             all_neg_inds = list(set(range(self.labelnet.label_sum())) - all_pos_inds)

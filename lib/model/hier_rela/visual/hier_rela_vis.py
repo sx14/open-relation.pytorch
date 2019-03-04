@@ -65,10 +65,12 @@ class _HierRelaVis(nn.Module):
             nn.Linear(4096, self.embedding_len))
 
         self.order_ex_embedding = nn.Sequential(
-            nn.Linear(self.embedding_len + 2 * self._hierRCNN.embedding_len, self.embedding_len),
+            nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
+                      self.embedding_len + self._hierRCNN.embedding_len * 2),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(4096, self.embedding_len))
+            nn.Linear(self.embedding_len + 2 * self._hierRCNN.embedding_len,
+                      self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 
@@ -82,16 +84,16 @@ class _HierRelaVis(nn.Module):
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
-        pre_label = gt_boxes[:, :, 4]
-        sbj_label = gt_boxes[:, :, 9]
-        obj_label = gt_boxes[:, :, 14]
+        pre_label = gt_boxes[:, :, 4].squeeze()
+        sbj_label = gt_boxes[:, :, 9].squeeze()
+        obj_label = gt_boxes[:, :, 14].squeeze()
 
         pre_boxes = gt_boxes[:, :, :5]
         sbj_boxes = gt_boxes[:, :, 5:10]
         obj_boxes = gt_boxes[:, :, 10:15]
 
         raw_pre_rois = torch.zeros(pre_boxes.size())
-        raw_pre_rois[0, :, 1:] = pre_boxes[0, :, :4]
+        raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]
         rois = Variable(raw_pre_rois).cuda()
 
         if cfg.POOLING_MODE == 'crop':
@@ -122,10 +124,12 @@ class _HierRelaVis(nn.Module):
         # ===== class prediction part =====
         # ===== order embedding here =====\
         pooled_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
+
         # visual embedding
-        pre_embedding0 = self.order_ex_embedding(pooled_feat_use)
+        pre_embedding0 = self.order_in_embedding(pooled_feat_use)
         pre_feat = torch.cat([sbj_embedding, pre_embedding0, obj_embedding], 1)
-        pre_embedding = self.order_in_embedding(pre_feat)
+        pre_embedding = self.order_ex_embedding(pre_feat)
+
         # compute order similarity
         cls_score_use = self.order_score(self.label_vecs, pre_embedding)
         # ===== order embedding here =====/
@@ -136,7 +140,8 @@ class _HierRelaVis(nn.Module):
             RCNN_loss_cls = self._loss.forward(cls_score_use, pre_label)
 
         cls_score = cls_score_use.view(batch_size, rois.size(1), -1)
-        rois_label = torch.cat([sbj_label, pre_label, obj_label], 1)
+        rois_label = pre_label
+        rois_label.unsqueeze(0)
 
         return rois, cls_score, RCNN_loss_cls, rois_label
 

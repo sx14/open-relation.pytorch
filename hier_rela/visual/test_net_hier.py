@@ -138,7 +138,7 @@ if __name__ == '__main__':
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
     load_name = os.path.join(input_dir,
-                             'hier_rela_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+                             'hier_rela_vis_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
 
     # initilize the network here.
     objconf = HierLabelConfig(args.dataset, 'object')

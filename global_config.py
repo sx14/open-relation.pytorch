@@ -11,6 +11,8 @@ class HierLabelConfig:
         self.target = target
 
     def label_vec_path(self):
-        return os.path.join(PROJECT_ROOT, 'hier_label',
-                            'label_vec_%s_%s.h5' % (self.dataset, self.target))
+        return os.path.join(PROJECT_ROOT,
+                            'hier_label',
+                            'label_vec_%s_%s.h5'
+                            % (self.dataset, self.target))
 

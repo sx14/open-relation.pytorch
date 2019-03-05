@@ -160,9 +160,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
     hierLan.load_state_dict(checkpoint)
 
-
     hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
-
 
     print('load model successfully!')
     # initilize the tensor holder here.

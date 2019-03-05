@@ -1,16 +1,15 @@
 import os
-import shutil
 
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+
 from lang_dataset import LangDataset
 from lang_config import train_params, data_config
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
 from lib.datasets.vrd.label_hier.pre_hier import prenet
 from global_config import HierLabelConfig
-
 
 
 dataset = 'vrd'

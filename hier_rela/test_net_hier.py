@@ -28,6 +28,8 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
+from lib.model.hier_utils.tree_infer import my_infer
+
 from global_config import HierLabelConfig
 
 import pdb
@@ -222,6 +224,7 @@ if __name__ == '__main__':
 
     use_rpn = False
     TP_count = 0.0
+    TP_score = 0.0
     N_count = 0.1
 
     for i in range(num_images):
@@ -247,21 +250,21 @@ if __name__ == '__main__':
                 gt_node = prenet.get_node_by_index(int(gt_cate))
                 # print('==== %s ====' % gt_node.name())
                 all_scores = scores[0][ppp].cpu().data.numpy()
-                ranked_inds = np.argsort(all_scores)[::-1][:20]
-                sorted_scrs = np.sort(all_scores)[::-1][:20]
+                # ranked_inds = np.argsort(all_scores)[::-1][:20]
+                # sorted_scrs = np.sort(all_scores)[::-1][:20]
                 # for item in zip(ranked_inds, sorted_scrs):
                 #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
 
-                raw_scores = all_scores[raw_label_inds]
-                pred_raw_ind = np.argmax(raw_scores[1:]) + 1
-                pred_cate = raw_label_inds[pred_raw_ind]
-                gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
+                top2 = my_infer(prenet, all_scores)
+                pred_cate = top2[0][0]
+                pred_scr = top2[0][1]
                 pred_node = prenet.get_node_by_index(pred_cate)
-                gt_node = prenet.get_node_by_index(int(gt_cate))
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), raw_scores[pred_raw_ind]))
-                if pred_cate == gt_cate:
+
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), pred_scr))
+                if pred_scr > 0:
                     # flat recall
                     TP_count += 1
+                    TP_score += pred_scr
                     info = 'T: ' + info
                 else:
                     # TOOD: hier recalla
@@ -339,3 +342,4 @@ if __name__ == '__main__':
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
+    print("Rec heir Acc: %.4f" % (TP_score / N_count))

@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
@@ -17,17 +19,16 @@ obj_config = HierLabelConfig(dataset, 'object')
 pre_config = HierLabelConfig(dataset, 'predicate')
 pre_label_vec_path = pre_config.label_vec_path()
 obj_label_vec_path = obj_config.label_vec_path()
-rlt_path = data_config['test']['raw_rlt_path']
+rlt_path = data_config['test']['raw_rlt_path']+dataset
 test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
 test_dl = DataLoader(test_set, batch_size=1, shuffle=True)
 
 # model
-
-
 embedding_dim = test_set.obj_vec_length()
 
+model_save_root = 'output/%s/' % dataset
 model = HierLang(embedding_dim * 2, pre_label_vec_path)
-weight_path = train_params['best_model_path']
+weight_path = model_save_root + train_params['best_model_path']+dataset+'.pth'
 if os.path.isfile(weight_path):
     model.load_state_dict(torch.load(weight_path))
     print('Loading weights success.')

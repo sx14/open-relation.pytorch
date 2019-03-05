@@ -64,6 +64,10 @@ test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
 test_dl = DataLoader(test_set, batch_size=batch_size, shuffle=True)
 
 # model
+save_model_root = 'output/%s/' % dataset
+if not os.path.isdir(save_model_root):
+    os.makedirs(save_model_root)
+
 save_model_path = train_params['save_model_path']+dataset
 new_model_path = train_params['latest_model_path']+dataset+'.pth'
 best_model_path = train_params['best_model_path']+dataset+'.pth'

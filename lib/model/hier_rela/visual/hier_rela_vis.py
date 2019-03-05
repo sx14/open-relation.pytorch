@@ -84,9 +84,9 @@ class _HierRelaVis(nn.Module):
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
-        pre_label = gt_boxes[:, :, 4].squeeze()
-        sbj_label = gt_boxes[:, :, 9].squeeze()
-        obj_label = gt_boxes[:, :, 14].squeeze()
+        pre_label = gt_boxes[:, :, 4][0]
+        sbj_label = gt_boxes[:, :, 9][0]
+        obj_label = gt_boxes[:, :, 14][0]
 
         pre_boxes = gt_boxes[:, :, :5]
         sbj_boxes = gt_boxes[:, :, 5:10]

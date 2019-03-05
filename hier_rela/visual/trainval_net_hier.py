@@ -301,7 +301,7 @@ if __name__ == '__main__':
 
   if args.resume:
     load_name = os.path.join(output_dir,
-      'hier_rela_vis_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+      'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint, args.dataset))
     print("loading checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
@@ -377,7 +377,7 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}.pth'.format(args.session, epoch, step))
+    save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,

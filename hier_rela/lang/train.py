@@ -4,12 +4,12 @@ import shutil
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+from torch.nn.functional import cross_entropy as loss_func
 from tensorboardX import SummaryWriter
 
 from lang_dataset import LangDataset
 from lang_config import train_params, data_config
 from lib.model.hier_rela.lang.hier_lang import HierLang
-from torch.nn.functional import cross_entropy as loss_func
 from lib.model.hier_rela.lang.hier_lang import order_softmax_test as rank_test
 from global_config import HierLabelConfig
 
@@ -55,18 +55,18 @@ obj_config = HierLabelConfig(dataset, 'object')
 pre_config = HierLabelConfig(dataset, 'predicate')
 obj_label_vec_path = obj_config.label_vec_path()
 pre_label_vec_path = pre_config.label_vec_path()
-rlt_path = data_config['train']['raw_rlt_path']
+rlt_path = data_config['train']['raw_rlt_path']+dataset
 train_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
 train_dl = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
-rlt_path = data_config['test']['raw_rlt_path']
+rlt_path = data_config['test']['raw_rlt_path']+dataset
 test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
 test_dl = DataLoader(test_set, batch_size=batch_size, shuffle=True)
 
 # model
-save_model_path = train_params['save_model_path']
-new_model_path = train_params['latest_model_path']
-best_model_path = train_params['best_model_path']
+save_model_path = train_params['save_model_path']+dataset
+new_model_path = train_params['latest_model_path']+dataset+'.pth'
+best_model_path = train_params['best_model_path']+dataset+'.pth'
 
 input_length = train_set.obj_vec_length() * 2
 gt_label_vec_path = pre_label_vec_path
@@ -125,7 +125,7 @@ for epoch in range(epoch_num):
         best_acc = avg_acc
         torch.save(model.state_dict(), best_model_path)
     print('>>>> Eval Acc: % .2f <<<<\n' % avg_acc)
-    torch.save(model.state_dict(), save_model_path+str(epoch)+'.pkl')
+    torch.save(model.state_dict(), save_model_path+str(epoch)+'.pth')
     torch.save(model.state_dict(), new_model_path)
 
 

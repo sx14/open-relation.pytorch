@@ -95,9 +95,9 @@ if __name__ == '__main__':
     split = ['train', 'test']
     for d in split:
         list_path = os.path.join(dataset_root, 'ImageSets', 'Main', d + '.txt')
-        rlt_save_path = data_config[d]['raw_rlt_path']
+        rlt_save_path = data_config[d]['raw_rlt_path']+dataset
         raw_rlts = collect_raw_rlts(anno_root, list_path, rlt_save_path)
         print('raw relationship tuple num: %d' % len(raw_rlts))
-        # rlt_save_path = data_config[d]['ext_rlt_path']
+        # rlt_save_path = data_config[d]['ext_rlt_path']+dataset
         # ext_rlts = extend_rlts(raw_rlts, rlt_save_path)
         # print('extended relationship tuple num: %d' % len(ext_rlts))

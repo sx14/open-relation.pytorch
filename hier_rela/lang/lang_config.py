@@ -3,19 +3,19 @@ import os
 
 data_config = {
     'train': {
-        'ext_rlt_path': 'train_ext_rlts',
-        'raw_rlt_path': 'train_raw_rlts'},
+        'ext_rlt_path': 'train_ext_rlts_',
+        'raw_rlt_path': 'train_raw_rlts_'},
     'test': {
-        'ext_rlt_path': 'test_ext_rlts',
-        'raw_rlt_path': 'test_raw_rlts',}
+        'ext_rlt_path': 'test_ext_rlts_',
+        'raw_rlt_path': 'test_raw_rlts_',}
 }
 
 train_params = {
     'lr': 0.01,
     'epoch_num': 150,
     'batch_size': 32,
-    'neg_sample_num': 78,
-    'latest_model_path': 'output/lan_weights_new.pkl',
-    'best_model_path': 'output/lan_weights_best.pkl',
-    'save_model_path': 'output/lan_weights_'
+    'latest_model_path': 'hier_rela_lan_new_',
+    'best_model_path': 'hier_rela_lan_best_',
+    'save_model_path': 'hier_rela_lan_'
 }
+

@@ -3,7 +3,6 @@ import numpy as np
 import random
 import torch
 from torch.utils.data import Dataset
-from lang_config import train_params
 
 
 class LangDataset(Dataset):
@@ -26,7 +25,7 @@ class LangDataset(Dataset):
 
         self._raw2path = prenet.raw2path()
         self._label_sum = prenet.label_sum()
-        self._neg_sample_num = train_params['neg_sample_num']
+        self._neg_sample_num = prenet.neg_num()
 
     def __getitem__(self, item):
         rlt = self._rlts[item]

@@ -136,11 +136,6 @@ if __name__ == '__main__':
 
     print('{:d} roidb entries'.format(len(roidb)))
 
-    input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
-    if not os.path.exists(input_dir):
-        raise Exception('There is no input directory for loading network from ' + input_dir)
-
-
     # initilize the network here.
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
@@ -152,7 +147,7 @@ if __name__ == '__main__':
     hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
     hierVis.create_architecture()
 
-    load_name = '../../data/pretrained_model/hier_rela_%s.pth' % args.dataset
+    load_name = '../data/pretrained_model/hier_rela_rcnn_%s.pth' % args.dataset
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierVis.load_state_dict(checkpoint['model'])
@@ -160,7 +155,7 @@ if __name__ == '__main__':
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
     hierLan = HierLang(hierRCNN.embedding_len * 2, preconf.label_vec_path())
-    load_name = '../../data/pretrained_model/hier_lan_%s.pth' % args.dataset
+    load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierLan.load_state_dict(checkpoint)

@@ -90,9 +90,9 @@ optim = torch.optim.SGD([{'params': weight_p, 'weight_decay': 1e-5},
                          {'params': bias_p, 'weight_decay': 0}], lr=lr)
 
 # training process record
-if os.path.exists('runs'):
-    shutil.rmtree('runs')
-sw = SummaryWriter()
+if os.path.exists('logs'):
+    shutil.rmtree('logs')
+sw = SummaryWriter('logs')
 batch_num = 0
 best_acc = 0
 

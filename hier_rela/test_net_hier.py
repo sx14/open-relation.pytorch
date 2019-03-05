@@ -147,7 +147,7 @@ if __name__ == '__main__':
     hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
     hierVis.create_architecture()
 
-    load_name = '../data/pretrained_model/hier_rela_rcnn_%s.pth' % args.dataset
+    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierVis.load_state_dict(checkpoint['model'])

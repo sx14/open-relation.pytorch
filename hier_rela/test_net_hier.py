@@ -258,13 +258,14 @@ if __name__ == '__main__':
                 top2 = my_infer(prenet, all_scores)
                 pred_cate = top2[0][0]
                 pred_scr = top2[0][1]
-                pred_node = prenet.get_node_by_index(pred_cate)
 
+                eval_scr = gt_node.score(pred_cate)
+                pred_node = prenet.get_node_by_index(pred_cate)
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), pred_scr))
-                if pred_scr > 0:
+                if eval_scr > 0:
                     # flat recall
                     TP_count += 1
-                    TP_score += pred_scr
+                    TP_score += eval_scr
                     info = 'T: ' + info
                 else:
                     # TOOD: hier recalla

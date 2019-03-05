@@ -25,6 +25,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.heir_rcnn.vgg16 import vgg16
+from lib.model.hier_utils.tree_infer import my_infer
 from global_config import HierLabelConfig
 
 import pdb
@@ -215,6 +216,7 @@ if __name__ == '__main__':
 
     use_rpn = False
     TP_count = 0.0
+    TP_score = 0.0
     N_count = 0.1
 
     obj_det_roidbs = {}
@@ -237,28 +239,30 @@ if __name__ == '__main__':
         boxes = rois.data[:, :, 1:5]
 
         if not use_rpn:
+            raw_label_inds = objnet.get_raw_indexes()
+
             for ppp in range(scores.size()[1]):
                 N_count += 1
-                raw_label_inds = objnet.get_raw_indexes()
 
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
                 gt_node = objnet.get_node_by_index(int(gt_cate))
                 # print('==== %s ====' % gt_node.name())
                 all_scores = scores[0][ppp].cpu().data.numpy()
-                ranked_inds = np.argsort(all_scores)[::-1][:20]
-                sorted_scrs = np.sort(all_scores)[::-1][:20]
+                #ranked_inds = np.argsort(all_scores)[::-1][:20]
+                #sorted_scrs = np.sort(all_scores)[::-1][:20]
                 # for item in zip(ranked_inds, sorted_scrs):
                 #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
 
-                raw_scores = all_scores[raw_label_inds]
-                pred_raw_ind = np.argmax(raw_scores[1:]) + 1
-                pred_cate = raw_label_inds[pred_raw_ind]
-                gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
+                top2 = my_infer(objnet, all_scores)
+                pred_cate = top2[0][0]
+                pred_scr = top2[0][1]
+
+                eval_scr = gt_node.score(pred_cate)
                 pred_node = objnet.get_node_by_index(pred_cate)
-                gt_node = objnet.get_node_by_index(int(gt_cate))
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), raw_scores[pred_raw_ind]))
-                if pred_cate == gt_cate:
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
+                if eval_scr > 0:
                     # flat recall
+                    TP_score += eval_scr
                     TP_count += 1
                     info = 'T: ' + info
                 else:

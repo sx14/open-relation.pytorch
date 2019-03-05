@@ -4,8 +4,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from lang_dataset import LangDataset
 from lang_config import train_params, data_config
-from model import RelationEmbedding
-from model import order_rank_test as rank_test
+from lib.model.hier_rela.lang.hier_lang import HierLang
+from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
 from lib.datasets.vrd.label_hier.pre_hier import prenet
 from global_config import HierLabelConfig
 
@@ -26,7 +26,7 @@ test_dl = DataLoader(test_set, batch_size=1, shuffle=True)
 
 embedding_dim = test_set.obj_vec_length()
 
-model = RelationEmbedding(embedding_dim * 2, pre_label_vec_path)
+model = HierLang(embedding_dim * 2, pre_label_vec_path)
 weight_path = train_params['best_model_path']
 if os.path.isfile(weight_path):
     model.load_state_dict(torch.load(weight_path))

@@ -26,6 +26,8 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_rela.lang.hier_lang import HierLang
+from lib.model.hier_rela.hier_rela import HierRela
 from global_config import HierLabelConfig
 
 import pdb
@@ -118,7 +120,7 @@ if __name__ == '__main__':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
 
-    args.cfg_file = "../../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../../cfgs/{}.yml".format(args.net)
+    args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
@@ -137,8 +139,7 @@ if __name__ == '__main__':
     input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
-    load_name = os.path.join(input_dir,
-                             'hier_rela_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+
 
     # initilize the network here.
     objconf = HierLabelConfig(args.dataset, 'object')
@@ -151,11 +152,22 @@ if __name__ == '__main__':
     hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
     hierVis.create_architecture()
 
+    load_name = '../../data/pretrained_model/hier_rela_%s.pth' % args.dataset
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierVis.load_state_dict(checkpoint['model'])
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
+
+    hierLan = HierLang(hierRCNN.embedding_len * 2, preconf.label_vec_path())
+    load_name = '../../data/pretrained_model/hier_lan_%s.pth' % args.dataset
+    print("load checkpoint %s" % (load_name))
+    checkpoint = torch.load(load_name)
+    hierLan.load_state_dict(checkpoint)
+
+
+    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+
 
     print('load model successfully!')
     # initilize the tensor holder here.
@@ -181,7 +193,7 @@ if __name__ == '__main__':
         cfg.CUDA = True
 
     if args.cuda:
-        hierVis.cuda()
+        hierRela.cuda()
 
     start = time.time()
 
@@ -212,7 +224,7 @@ if __name__ == '__main__':
     _t = {'im_detect': time.time(), 'misc': time.time()}
     det_file = os.path.join(output_dir, 'detections.pkl')
 
-    hierVis.eval()
+    hierRela.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
     use_rpn = False
@@ -229,7 +241,7 @@ if __name__ == '__main__':
 
         det_tic = time.time()
         rois, cls_score, \
-        _, rois_label = hierVis(im_data, im_info, gt_relas, num_relas)
+        _, rois_label = hierRela(im_data, im_info, gt_relas, num_relas)
 
         scores = cls_score.data
         boxes = rois.data[:, :, 1:5]

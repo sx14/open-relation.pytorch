@@ -145,7 +145,7 @@ class _HierRelaVis(nn.Module):
             RCNN_loss_cls = self._loss.forward(cls_score_use, pre_label)
 
         cls_score = cls_score_use.view(batch_size, rois.size(1), -1)
-        rois_label = pre_label
+        rois_label = torch.stack((pre_label, sbj_label, obj_label), dim=1)
         rois_label.unsqueeze(0)
 
         return rois, cls_score, RCNN_loss_cls, rois_label

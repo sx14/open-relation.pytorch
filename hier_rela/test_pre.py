@@ -90,7 +90,7 @@ if __name__ == '__main__':
         from lib.datasets.vrd.label_hier.pre_hier import prenet
         img_root = os.path.join(VRD_ROOT, 'JPEGImages')
 
-    args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
+    args.cfg_file = "../cfgs/vgg16.yml"
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
@@ -159,7 +159,7 @@ if __name__ == '__main__':
         cfg.CUDA = True
 
     # Load gt data
-    gt_roidb_path = os.path.join(PROJECT_ROOT, 'heir_rela', 'gt_box_label_%s.bin' % args.dataset)
+    gt_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_box_label_%s.bin' % args.dataset)
     with open(gt_roidb_path, 'rb') as f:
         gt_roidb = pickle.load(f)
 
@@ -187,7 +187,7 @@ if __name__ == '__main__':
         scores = cls_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0])
-        pred_scores = torch.zeros(rois[0].shape[0])
+        pred_scores = torch.zeros(rois[0].shape[0], 1)
 
         raw_label_inds = prenet.get_raw_indexes()
         for ppp in range(scores.size()[1]):
@@ -204,6 +204,10 @@ if __name__ == '__main__':
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
 
+
+            if img_id == '3825256896_c2d83ba5b9_b':
+                a = 1
+
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
 
@@ -217,8 +221,8 @@ if __name__ == '__main__':
                 pass
             print(info)
 
-        pred = gt_relas[0]
-        pred[:, 4] = pred_scores
+        pred = gt_relas[0].cpu().data
+        pred[:, 4] = pred_cate
         pred = torch.cat((pred, pred_scores), dim=1)
         pred_roidb[img_id] = pred.numpy()
 

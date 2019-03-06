@@ -69,7 +69,7 @@ def construct_tree(label_hier, scores):
         # score = (len(ranked_inds) - rank) / len(ranked_inds)
         score = scores[ind]
         tnode = ind2node[ind]
-        tnode.set_score(score)
+        tnode.set_score(score.tolist())
 
     return ind2node
 

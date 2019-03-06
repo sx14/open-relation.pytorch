@@ -31,9 +31,12 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
         anno = json.load(open(anno_path, 'r'))
         image_id = anno_list[i]
         anno_rlts = anno['relationships']
+        if len(anno_rlts) == 0:
+            continue
 
         # collect boxes and labels
         rlt_info_list = []
+
         for rlt in anno_rlts:
             things = [rlt['predicate'], rlt['subject'], rlt['object']]
             labelnets = [prenet, objnet, objnet]
@@ -208,7 +211,7 @@ if __name__ == '__main__':
     # for eval
     roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_box_label_vrd.bin')
     anno_root = vrd_config['clean_anno_root']
-    anno_list_path = os.path.join(vrd_config['ImageSets'], 'test.txt')
+    anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
     prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, roidb_save_path)
 
 

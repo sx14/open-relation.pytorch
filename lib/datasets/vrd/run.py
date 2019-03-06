@@ -1,12 +1,58 @@
 import os
 import shutil
 import json
+import pickle
 import numpy as np
 import cv2
+
+from lib.datasets.vrd.label_hier.obj_hier import objnet
+from lib.datasets.vrd.label_hier.pre_hier import prenet
 from lib.datasets.tools.to_pascal_format import output_pascal_format
 from lib.datasets.vrd.process.reformat_anno import reformat_anno
 from lib.datasets.vrd.process.split_anno_pkg import split_anno_pkg
 from global_config import PROJECT_ROOT
+
+
+def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_label_path):
+    # image id -> rlt info
+    rlts = dict()
+
+    # load img id list
+    with open(anno_list_path, 'r') as anno_list_file:
+        anno_list = anno_list_file.read().splitlines()
+
+    # for each anno file
+    for i in range(len(anno_list)):
+
+        # load anno file
+        anno_file_id = anno_list[i]
+        print('prepare processing[%d/%d] %s' % (len(anno_list), (i + 1), anno_file_id))
+        anno_path = os.path.join(anno_root, anno_list[i]+'.json')
+        anno = json.load(open(anno_path, 'r'))
+        image_id = anno_list[i]
+        anno_rlts = anno['relationships']
+
+        # collect boxes and labels
+        rlt_info_list = []
+        for rlt in anno_rlts:
+            things = [rlt['predicate'], rlt['subject'], rlt['object']]
+            labelnets = [prenet, objnet, objnet]
+            # [ p_xmin, p_ymin, p_xmax, p_ymax, p_name,
+            #   s_xmin, s_ymin, s_xmax, s_ymax, s_name,
+            #   o_xmin, o_ymin, o_xmax, o_ymax, o_name  ]
+            rlt_info = []
+            # concatenate three box_label
+            for j, thing in enumerate(things):
+                xmin = int(thing['xmin'])
+                ymin = int(thing['ymin'])
+                xmax = int(thing['xmax'])
+                ymax = int(thing['ymax'])
+                label_ind = labelnets[j].get_node_by_name(thing['name']).index()
+                rlt_info += [xmin, ymin, xmax, ymax, label_ind]
+            rlt_info_list.append(rlt_info)
+        rlts[image_id] = rlt_info_list
+    with open(box_label_path, 'wb') as box_label_file:
+        pickle.dump(rlts, box_label_file)
 
 
 def gen_JPEGImages(vrd_root, vrd_pascal_root):
@@ -149,9 +195,20 @@ if __name__ == '__main__':
         'Annotations': os.path.join(vrd_root, 'Annotations'),
         'ImageSets': os.path.join(vrd_root, 'ImageSets'),
     }
-    gen_JPEGImages(vrd_root, vrd_root)
-    gen_ImageSets(vrd_root, vrd_root)
-    gen_Annotations(vrd_root, vrd_root)
 
-    split_anno_pkg(vrd_config)
-    reformat_anno(vrd_config)
+    # # to pascal format for object detection training
+    # gen_JPEGImages(vrd_root, vrd_root)
+    # gen_ImageSets(vrd_root, vrd_root)
+    # gen_Annotations(vrd_root, vrd_root)
+    #
+    # # to json format for predicate recognition training
+    # split_anno_pkg(vrd_config)
+    # reformat_anno(vrd_config)
+
+    # for eval
+    roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_box_label_vrd.bin')
+    anno_root = vrd_config['clean_anno_root']
+    anno_list_path = os.path.join(vrd_config['ImageSets'], 'test.txt')
+    prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, roidb_save_path)
+
+

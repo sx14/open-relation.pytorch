@@ -365,6 +365,7 @@ if __name__ == '__main__':
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
+    print("Rec heir Acc: %.4f" % (TP_score / N_count))
 
     det_save_path = args.dataset + '_test_box.bin'
     with open(det_save_path, 'wb') as f:

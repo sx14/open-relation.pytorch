@@ -27,9 +27,9 @@ class HierRela(nn.Module):
     def forward(self, im_data, im_info, gt_relas, num_relas):
         batch_size = im_data.size(0)
 
-        pre_label = gt_relas[:, :, 4][0].int()
-        sbj_label = gt_relas[:, :, 9][0].int()
-        obj_label = gt_relas[:, :, 14][0].int()
+        pre_label = gt_relas[:, :, 4][0].long()
+        sbj_label = gt_relas[:, :, 9][0].long()
+        obj_label = gt_relas[:, :, 14][0].long()
 
         if self._hierVis is not None:
             _, vis_score, _, _ = self._hierVis(im_data, im_info, gt_relas, num_relas)

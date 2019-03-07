@@ -8,24 +8,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
-import numpy as np
 import argparse
 import pprint
 import time
-import cv2
-import pickle
 
-import torch
-from torch.autograd import Variable
 import pickle
-from lib.roi_data_layer.roidb import combined_roidb
-from lib.roi_data_layer.hierRoibatchLoader import roibatchLoader
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from lib.model.rpn.bbox_transform import clip_boxes
-from lib.model.nms.nms_wrapper import nms
-from lib.model.rpn.bbox_transform import bbox_transform_inv
-from lib.model.utils.net_utils import vis_detections
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
@@ -128,13 +116,11 @@ if __name__ == '__main__':
     hierLan.load_state_dict(checkpoint)
 
     # get HierRela
-    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, None, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
     hierRela.eval()
     print('load model successfully!')
-
-
 
     # Initilize the tensor holder here.
     im_data = torch.FloatTensor(1)
@@ -163,15 +149,19 @@ if __name__ == '__main__':
     with open(gt_roidb_path, 'rb') as f:
         gt_roidb = pickle.load(f)
 
+    N_count = 1.0
+    TP_score = 0.0
+    TP_count = 0.0
+
     pred_roidb = {}
     start = time.time()
     for img_id in gt_roidb:
 
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
         img = cv2.imread(img_path)
-        rela_rois = gt_roidb[img_id]
+        gt_rois = gt_roidb[img_id]
 
-        data = get_input_data(img, rela_rois)
+        data = get_input_data(img, gt_rois)
 
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
@@ -191,10 +181,13 @@ if __name__ == '__main__':
 
         raw_label_inds = prenet.get_raw_indexes()
         for ppp in range(scores.size()[1]):
+            N_count += 1
+
             gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
-            # print('==== %s ====' % gt_node.name())
             all_scores = scores[0][ppp].cpu().data.numpy()
+
+            # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
             # sorted_scrs = np.sort(all_scores)[::-1][:20]
             # for item in zip(ranked_inds, sorted_scrs):
@@ -205,23 +198,22 @@ if __name__ == '__main__':
             pred_scr = top2[0][1]
 
 
-            if img_id == '3825256896_c2d83ba5b9_b':
-                a = 1
-
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
 
             eval_scr = gt_node.score(pred_cate)
             pred_node = prenet.get_node_by_index(pred_cate)
-            info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), pred_scr))
+            info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), eval_scr))
             if eval_scr > 0:
+                TP_count += 1
+                TP_score += eval_scr
                 info = 'T: ' + info
             else:
                 info = 'F: ' + info
                 pass
             print(info)
 
-        pred = gt_relas[0].cpu().data
+        pred = torch.from_numpy(gt_rois)
         pred[:, 4] = pred_cate
         pred = torch.cat((pred, pred_scores), dim=1)
         pred_roidb[img_id] = pred.numpy()
@@ -231,6 +223,10 @@ if __name__ == '__main__':
     end = time.time()
     print("test time: %0.4fs" % (end - start))
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'heir_rela', 'pred_box_label_%s.bin' % args.dataset)
+    print("Rec flat Acc: %.4f" % (TP_count / N_count))
+    print("Rec heir Acc: %.4f" % (TP_score / N_count))
+
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
+

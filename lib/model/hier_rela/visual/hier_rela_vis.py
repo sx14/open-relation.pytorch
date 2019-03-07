@@ -136,7 +136,12 @@ class _HierRelaVis(nn.Module):
         pre_embedding = self.order_ex_embedding(pre_feat)
 
         # compute order similarity
-        cls_score_use = self.order_score(self.label_vecs, pre_embedding)
+        if pre_embedding.size(0) < 30:
+            # fast, memory consuming
+            cls_score_use = self.order_score.forward(self.label_vecs, pre_embedding)
+        else:
+            # slow, memory saving
+            cls_score_use = self.order_score.forward1(self.label_vecs, pre_embedding)
         # ===== order embedding here =====/
 
         RCNN_loss_cls = 0

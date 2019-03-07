@@ -36,7 +36,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vg', type=str)
+                      default='vrd', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -232,7 +232,7 @@ if __name__ == '__main__':
   if args.net == 'vgg16':
     labelconf = HierLabelConfig(args.dataset, 'object')
     label_vec_path = labelconf.label_vec_path()
-    hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=args.class_agnostic)
+    hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
   else:
     print("network is not defined")
     pdb.set_trace()

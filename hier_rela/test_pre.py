@@ -213,8 +213,8 @@ if __name__ == '__main__':
                 pass
             print(info)
 
-        pred = torch.from_numpy(gt_rois)
-        pred[:, 4] = pred_cate
+        pred = torch.FloatTensor(gt_rois)
+        pred[:, 4] = pred_cates
         pred = torch.cat((pred, pred_scores), dim=1)
         pred_roidb[img_id] = pred.numpy()
 

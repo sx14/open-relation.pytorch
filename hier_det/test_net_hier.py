@@ -299,9 +299,10 @@ if __name__ == '__main__':
         det_toc = time.time()
         detect_time = det_toc - det_tic
         misc_tic = time.time()
-        if vis:
-            im = cv2.imread(imdb.image_path_at(i))
-            im2show = np.copy(im)
+
+
+
+
 
         for j in xrange(1, imdb.num_classes):
             inds = torch.nonzero(scores[:, j] > thresh).view(-1)
@@ -341,25 +342,6 @@ if __name__ == '__main__':
         det_temp = np.array(det_temp)
         img_id = roidb[i]['image'].split('/')[-1].split('.')[0]
         obj_det_roidbs[img_id] = det_temp
-
-        misc_toc = time.time()
-        nms_time = misc_toc - misc_tic
-
-        sys.stdout.write('im_detect: {:d}/{:d} {:.3f}s {:.3f}s   \r' \
-                         .format(i + 1, num_images, detect_time, nms_time))
-        sys.stdout.flush()
-
-        if vis:
-            cv2.imwrite('result.png', im2show)
-            pdb.set_trace()
-            # cv2.imshow('test', im2show)
-            # cv2.waitKey(0)
-
-    with open(det_file, 'wb') as f:
-        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
-
-    print('Evaluating detections')
-    imdb.evaluate_detections(all_boxes, output_dir)
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

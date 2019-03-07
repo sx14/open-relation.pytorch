@@ -301,7 +301,7 @@ if __name__ == '__main__':
         infer_scores = torch.zeros((scores.shape[0], 1)).float()
         infer_boxes  = torch.zeros((scores.shape[0], 4)).float()
         for mmm in range(scores.shape[0]):
-            top2 = my_infer(objnet, scores[mmm])
+            top2 = my_infer(objnet, scores[mmm].cpu().numpy())
             infer_labels[mmm] = top2[0][0]
             infer_scores[mmm] = top2[0][1]
             infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]

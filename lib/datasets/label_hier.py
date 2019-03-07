@@ -10,6 +10,7 @@ class LabelNode(object):
         self._hypers = set()
         self._children = set()
         self._is_raw = is_raw
+        self._info_ratio = -1
 
     def __str__(self):
         return self._name
@@ -25,9 +26,13 @@ class LabelNode(object):
                     n += leaf_num(c)
                 return n
 
-        n_leaf_child = leaf_num(self)
-        ed = log(leaf_sum, leaf_sum) - log(n_leaf_child, leaf_sum)
-        return ed
+        if self._info_ratio != -1:
+            return self._info_ratio
+        else:
+            n_leaf_child = leaf_num(self)
+            info_ratio = log(leaf_sum, leaf_sum) - log(n_leaf_child, leaf_sum)
+            self._info_ratio = info_ratio
+        return info_ratio
 
     def set_index(self, i):
         self._index = i
@@ -284,6 +289,9 @@ class LabelHier:
         self._construct_hier()
         self._compress()
         self._raw2path = None
+
+        for node in self._index2node:
+            node.info_ratio(self.pos_leaf_sum())
 
         self.max_depth = 0
         for n in self._index2node:

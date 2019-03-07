@@ -213,7 +213,7 @@ if __name__ == '__main__':
     hierRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
-    use_rpn = False
+    use_rpn = True
     TP_count = 0.0
     TP_score = 0.0
     N_count = 0.1
@@ -298,12 +298,13 @@ if __name__ == '__main__':
 
         infer_scores = np.zeros((scores.shape[0], 1))
         infer_labels = np.zeros((scores.shape[0], 1))
+        infer_boxes  = np.zeros((scores.shape[0], 4))
         for mmm in range(scores.shape[0]):
             top2 = my_infer(objnet, scores[mmm])
             infer_labels[mmm] = top2[0][0]
             infer_scores[mmm] = top2[0][1]
+            infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
 
-        infer_boxes = pred_boxes[:, infer_labels]
         my_dets = np.concatenate((infer_boxes, infer_scores))
         keep = nms(my_dets, 0.5)
         my_dets = my_dets[keep.view(-1).long()]

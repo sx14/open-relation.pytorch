@@ -289,8 +289,8 @@ if __name__ == '__main__':
 
         pred_boxes /= data[1][0][2].item()
 
-        scores = scores[0].numpy()
-        pred_boxes = pred_boxes[0].numpy()
+        scores = scores[0].cpu().numpy()
+        pred_boxes = pred_boxes[0].cpu().numpy()
 
         det_toc = time.time()
         detect_time = det_toc - det_tic

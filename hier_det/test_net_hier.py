@@ -305,7 +305,7 @@ if __name__ == '__main__':
 
         infer_boxes = pred_boxes[:, infer_labels]
         my_dets = np.concatenate((infer_boxes, infer_scores))
-        keep = nms(my_dets, cfg.TEST.NMS)
+        keep = nms(my_dets, 0.5)
         my_dets = my_dets[keep.view(-1).long()]
         if my_dets.shape[0] > max_per_image:
             scores = my_dets[:, -1]

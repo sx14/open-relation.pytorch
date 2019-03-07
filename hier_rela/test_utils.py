@@ -5,6 +5,17 @@ import torch
 from torch.autograd import Variable
 from scipy.misc import imread
 
+def get_raw_pred(all_scores, raw_inds):
+    ranked_inds = np.argsort(all_scores)[::-1]
+    pred_raw_ind = -1
+    for ind in ranked_inds:
+        if ind in raw_inds:
+            pred_raw_ind = ind
+            break
+    assert pred_raw_ind > -1
+    return pred_raw_ind, all_scores[pred_raw_ind]
+
+
 
 def im_list_to_blob(ims):
     # 将resize后的图像转为输入网络的数据格式
@@ -24,10 +35,12 @@ def im_list_to_blob(ims):
 
 
 def get_roi_blob(boxes, scale):
+    # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, pconf, sconf, oconf
     boxes_np = np.array(boxes)
     boxes_np[:, 0:4] = boxes_np[:, 0:4] * scale
     boxes_np[:, 5:9] = boxes_np[:, 5:9] * scale
     boxes_np[:, 10:14] = boxes_np[:, 10:14] * scale
+    boxes_np = boxes_np[:, :15] # remove confs
     boxes_np = boxes_np[np.newaxis, :, :]
     return boxes_np
 
@@ -73,7 +86,6 @@ def get_image_blob(im):
   return blob, np.array(im_scale_factors)
 
 
-
 def get_input_data(im, rois):
     im_blob, im_scales = get_image_blob(im)
     im_boxes = get_roi_blob(rois, im_scales[0])
@@ -89,51 +101,23 @@ def get_input_data(im, rois):
     data=[im_data_pt, im_info_pt, im_boxes_pt, im_nbox_pt, im_scales[0]]
     return data
 
-# def ext_cnn_feat(net, img_path, boxes):
-#     net.eval()
-#     # initilize the Tensor holder here.
-#     im_data = torch.FloatTensor(1).cuda()
-#     im_info = torch.FloatTensor(1).cuda()
-#     num_boxes = torch.LongTensor(1).cuda()
-#     gt_boxes = torch.FloatTensor(1).cuda()
-#
-#     with torch.no_grad():
-#         # make variable
-#         im_data = Variable(im_data)
-#         im_info = Variable(im_info)
-#         num_boxes = Variable(num_boxes)
-#         gt_boxes = Variable(gt_boxes)
-#
-#     # process inputs
-#     im_in = np.array(imread(img_path))
-#     # rgb -> bgr
-#     im = im_in[:, :, ::-1]
-#
-#
-#     # 准备输入网络的图像数据
-#     blobs, im_scales = get_image_blob(im)
-#     im_boxes = get_roi_blob(boxes, im_scales[0])
-#
-#
-#
-#     # 网络输入
-#     im_blob = blobs
-#     # 图像信息，图像高、宽、resize比例
-#     im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
-#
-#
-#     im_data_pt = torch.from_numpy(im_blob)
-#     im_boxes_pt = torch.from_numpy(im_boxes)
-#     im_data_pt = im_data_pt.permute(0, 3, 1, 2)
-#     im_info_pt = torch.from_numpy(im_info_np)
-#
-#     # 张量装进预先定义好的Variable
-#     im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
-#     gt_boxes.data.resize_(im_boxes_pt.size()).copy_(im_boxes_pt)
-#     im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
-#     num_boxes.data.resize_(1).zero_()
-#     num_boxes[0] = gt_boxes.size()[1]
-#
-#     fc7 = net.ext_feat(im_data, im_info, gt_boxes, num_boxes, False)
-#     fc7 = fc7.cpu().data.numpy()
-#     return fc7
+
+def gen_rela_conds(det_roidb):
+    # det: x1, y1, x2, y2, cls, conf
+    rela_cands = dict()
+    for img_id in det_roidb:
+        rela_cands_temp = []
+        rois = det_roidb[img_id]
+        for i, sbj in enumerate(rois):
+            for j, obj in enumerate(rois):
+                if i == j:
+                    continue
+                px1 = min(sbj[0], obj[0])
+                py1 = min(sbj[1], obj[1])
+                px2 = max(sbj[2], obj[2])
+                py2 = max(sbj[3], obj[3])
+                rela_temp = [px1, py1, px2, py2, -1] + sbj.tolist()[:5] + obj.tolist()[:5]
+                rela_cands_temp.append(rela_temp + [0.0, sbj[-1], obj[-1]])
+        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, pconf, sconf, oconf
+        rela_cands[img_id] = rela_cands_temp
+    return rela_cands

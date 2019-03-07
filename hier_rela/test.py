@@ -50,6 +50,13 @@ def parse_args():
                         help='whether use CUDA',
                         action='store_true',
                         default=True)
+    parser.add_argument('--mode', dest='mode',
+                        help='Do predicate recognition or relationship detection?',
+                        action='store_true',
+                        default='pre',
+                        # default='rela',
+                        )
+
 
     args = parser.parse_args()
     return args
@@ -125,68 +132,81 @@ if __name__ == '__main__':
     # Initilize the tensor holder here.
     im_data = torch.FloatTensor(1)
     im_info = torch.FloatTensor(1)
-    gt_relas = torch.FloatTensor(1)
-    num_relas = torch.LongTensor(1)
+    relas_box = torch.FloatTensor(1)
+    relas_num = torch.LongTensor(1)
 
     # ship to cuda
     if args.cuda:
         im_data = im_data.cuda()
         im_info = im_info.cuda()
-        num_relas = num_relas.cuda()
-        gt_relas = gt_relas.cuda()
+        relas_num = relas_num.cuda()
+        relas_box = relas_box.cuda()
 
     # make variable
     im_data = Variable(im_data)
     im_info = Variable(im_info)
-    num_relas = Variable(num_relas)
-    gt_relas = Variable(gt_relas)
+    relas_num = Variable(relas_num)
+    relas_box = Variable(relas_box)
 
     if args.cuda:
         cfg.CUDA = True
 
-    # Load gt data
-    gt_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_box_label_%s.bin' % args.dataset)
-    with open(gt_roidb_path, 'rb') as f:
-        gt_roidb = pickle.load(f)
+    if args.mode == 'pre':
+        # Load gt data
+        gt_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_%s.bin' % args.dataset)
+        with open(gt_roidb_path, 'rb') as f:
+            gt_roidb = pickle.load(f)
+            rela_roidb_use = gt_roidb
+    else:
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+        with open(det_roidb_path, 'rb') as f:
+            det_roidb = pickle.load(f)
+        cond_roidb = gen_rela_conds(det_roidb)
+        rela_roidb_use = cond_roidb
 
-    N_count = 1.0
-    TP_score = 0.0
+    N_count = 0.01
     TP_count = 0.0
+    hier_score_sum = 0.0
+    raw_score_sum = 0.0
 
     pred_roidb = {}
     start = time.time()
-    for img_id in gt_roidb:
+    for img_id in rela_roidb_use:
 
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
         img = cv2.imread(img_path)
-        gt_rois = gt_roidb[img_id]
+        rois_use = rela_roidb_use[img_id]
 
-        data = get_input_data(img, gt_rois)
+        data = get_input_data(img, rois_use)
 
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
-        gt_relas.data.resize_(data[2].size()).copy_(data[2])
-        num_relas.data.resize_(data[3].size()).copy_(data[3])
+        relas_box.data.resize_(data[2].size()).copy_(data[2])
+        relas_num.data.resize_(data[3].size()).copy_(data[3])
 
         im_scale = data[4]
 
         det_tic = time.time()
         rois, cls_score, \
-        _, rois_label = hierRela(im_data, im_info, gt_relas, num_relas)
+        _, rois_label = hierRela(im_data, im_info, relas_box, relas_num)
 
         scores = cls_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0])
         pred_scores = torch.zeros(rois[0].shape[0], 1)
 
-        raw_label_inds = prenet.get_raw_indexes()
+        raw_label_inds = set(prenet.get_raw_indexes())
         for ppp in range(scores.size()[1]):
             N_count += 1
 
-            gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
+            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
+
             all_scores = scores[0][ppp].cpu().data.numpy()
 
+            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+            raw_scr = gt_node.score(raw_cate)
+            raw_score_sum += raw_scr
             # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
             # sorted_scrs = np.sort(all_scores)[::-1][:20]
@@ -197,26 +217,30 @@ if __name__ == '__main__':
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
 
-
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
 
-            eval_scr = gt_node.score(pred_cate)
+            hier_scr = gt_node.score(pred_cate)
             pred_node = prenet.get_node_by_index(pred_cate)
-            info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), eval_scr))
-            if eval_scr > 0:
+            info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
+            if hier_scr > 0:
                 TP_count += 1
-                TP_score += eval_scr
+                hier_score_sum += hier_scr
                 info = 'T: ' + info
             else:
                 info = 'F: ' + info
                 pass
             print(info)
 
-        pred = torch.FloatTensor(gt_rois)
+        sbj_scores = torch.FloatTensor(rela_roidb_use[:][-2])
+        obj_scores = torch.FloatTensor(rela_roidb_use[:][-1])
+        rela_scores = pred_scores * sbj_scores * obj_scores
+
+        pred = torch.FloatTensor(rois_use)[:, 15]
         pred[:, 4] = pred_cates
-        pred = torch.cat((pred, pred_scores), dim=1)
+        pred = torch.cat((pred, rela_scores), dim=1)
         pred_roidb[img_id] = pred.numpy()
+        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf
 
 
 
@@ -224,7 +248,8 @@ if __name__ == '__main__':
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
-    print("Rec heir Acc: %.4f" % (TP_score / N_count))
+    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
+    print("Rec raw Acc: %.4f" % (raw_score_sum / N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:

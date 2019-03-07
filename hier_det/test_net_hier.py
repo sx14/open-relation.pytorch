@@ -261,12 +261,10 @@ if __name__ == '__main__':
                 pred_node = objnet.get_node_by_index(pred_cate)
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
                 if eval_scr > 0:
-                    # flat recall
                     TP_score += eval_scr
                     TP_count += 1
                     info = 'T: ' + info
                 else:
-                    # TOOD: hier recalla
                     info = 'F: ' + info
                     pass
                 print(info)

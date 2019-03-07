@@ -42,7 +42,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
             labelnets = [prenet, objnet, objnet]
             # [ p_xmin, p_ymin, p_xmax, p_ymax, p_name,
             #   s_xmin, s_ymin, s_xmax, s_ymax, s_name,
-            #   o_xmin, o_ymin, o_xmax, o_ymax, o_name  ]
+            #   o_xmin, o_ymin, o_xmax, o_ymax, o_name, p_conf, s_conf, o_conf]
             rlt_info = []
             # concatenate three box_label
             for j, thing in enumerate(things):
@@ -52,6 +52,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                 ymax = int(thing['ymax'])
                 label_ind = labelnets[j].get_node_by_name(thing['name']).index()
                 rlt_info += [xmin, ymin, xmax, ymax, label_ind]
+            rlt_info += [1.0, 1.0, 1.0]
             rlt_info_list.append(rlt_info)
         rlts[image_id] = rlt_info_list
     with open(box_label_path, 'wb') as box_label_file:
@@ -209,7 +210,7 @@ if __name__ == '__main__':
     # reformat_anno(vrd_config)
 
     # for eval
-    roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_box_label_vrd.bin')
+    roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')
     anno_root = vrd_config['clean_anno_root']
     anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
     prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, roidb_save_path)

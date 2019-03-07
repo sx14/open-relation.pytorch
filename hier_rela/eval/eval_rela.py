@@ -4,6 +4,14 @@ from ass_fun import *
 
 dataset = 'vrd'
 
+if dataset == 'vrd':
+    from lib.datasets.vrd.label_hier.obj_hier import objnet
+    from lib.datasets.vrd.label_hier.pre_hier import prenet
+else:
+    from lib.datasets.vg.label_hier.obj_hier import objnet
+    from lib.datasets.vg.label_hier.pre_hier import prenet
+
+
 target = 'rela'
 # target = 'pre'
 
@@ -13,7 +21,8 @@ gt_roidb = pickle.load(open(gt_roidb_path))
 pred_roidb_path = '../%s_box_label_%s.bin' % (target, dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
-R50, num_right50 = rela_recall(gt_roidb, pred_roidb, 50)
-R100, num_right100 = rela_recall(gt_roidb, pred_roidb, 100)
+rela_R50, pre_R50,  num_right50 = rela_recall('hier', gt_roidb, pred_roidb, 50, objnet, prenet)
+rela_R100, pre_R100, num_right100 = rela_recall('hier', gt_roidb, pred_roidb, 100, objnet, prenet)
 
-print('R50: {0}, R100: {1}'.format(R50, R100))
+print('rela R50: {0}, rela R100: {1}'.format(rela_R50, rela_R100))
+print('pre R50: {0}, pre R100: {1}'.format(pre_R50, pre_R100))

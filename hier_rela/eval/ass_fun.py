@@ -49,12 +49,16 @@ def compute_iou_each(box1, box2):
     return IoU
 
 
-def rela_recall(gt_roidb, pred_roidb, N_recall):
-    N_right = 0.0
-    N_total = 0.0
-    N_data = len(gt_roidb.keys())
-    N_box_goot = 0.0
-    N_det_goot = 0.0
+def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
+    N_rela_right = 0.0
+    N_pre_right = 0.0
+
+    N_rela_total = 0.0
+    N_obj_total = 0.0
+
+    N_obj_box_goot = 0.0
+    N_obj_det_goot = 0.0
+
     num_right = {}
     for image_id in gt_roidb:
         num_right[image_id] = 0
@@ -72,7 +76,10 @@ def rela_recall(gt_roidb, pred_roidb, N_recall):
         box_gt = np.unique(box_gt, axis=0)
 
         N_rela = len(rela_gt)
-        N_total = N_total + N_rela
+        N_rela_total = N_rela_total + N_rela
+
+        N_obj = len(box_gt)
+        N_obj_total = N_obj_total + N_obj
 
         # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, rlt_score
         curr_pred_roidb = np.array(pred_roidb[image_id])
@@ -84,7 +91,8 @@ def rela_recall(gt_roidb, pred_roidb, N_recall):
         obj_box_dete = curr_pred_roidb[:, 10:15]
         sub_dete = curr_pred_roidb[:, 9]
         obj_dete = curr_pred_roidb[:, 14]
-        box_det = np.unique(sub_box_dete, axis=0)
+        box_det = np.concatenate((sub_box_dete, obj_box_dete))
+        box_det = np.unique(box_det, axis=0)
 
         N_pred = len(rela_pred)
 
@@ -99,10 +107,8 @@ def rela_recall(gt_roidb, pred_roidb, N_recall):
                     if gt[4] == det[4]:
                         det_hit = 1
 
-            N_box_goot += box_hit
-            N_det_goot += det_hit
-
-
+            N_obj_box_goot += box_hit
+            N_obj_det_goot += det_hit
 
         sort_score = np.sort(rela_pred_score)[::-1]
         if N_recall >= N_pred:
@@ -110,23 +116,49 @@ def rela_recall(gt_roidb, pred_roidb, N_recall):
         else:
             thresh = sort_score[N_recall]
 
-        detected_gt = np.zeros([N_rela, ])
+        rela_scores = np.zeros([N_rela, ])
+        pre_scores = np.zeros([N_rela, ])
+
         for j in range(N_pred):
             if rela_pred_score[j] <= thresh:
                 continue
 
             for k in range(N_rela):
-                if detected_gt[k] == 1:
+                if rela_scores[k] == 1:
                     continue
-                if (sub_gt[k] == sub_dete[j]) and (obj_gt[k] == obj_dete[j]) and (rela_gt[k] == rela_pred[j]):
-                    s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
-                    o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
-                    if (s_iou >= 0.5) and (o_iou >= 0.5):
-                        detected_gt[k] = 1
-                        N_right = N_right + 1
-                        num_right[image_id] = num_right[image_id] + 1
 
-    print('Proposal recall: %.4f' % (N_box_goot / N_total))
-    print('Detection recall: %.4f' % (N_det_goot / N_total))
-    acc = N_right / N_total
-    return acc, num_right
+                if mode == 'hier':
+                    sub_gt_node = objnet.get_node_by_index(sub_gt[k])
+                    obj_gt_node = objnet.get_node_by_index(obj_gt[k])
+                    sub_score = sub_gt_node.score(sub_dete[j])
+                    obj_score = obj_gt_node.score(obj_dete[j])
+                    if sub_score > 0 and obj_score > 0:
+                        s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
+                        o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
+                        if (s_iou >= 0.5) and (o_iou >= 0.5):
+                            pre_gt_node = prenet.get_node_by_index(rela_gt[k])
+                            pre_score = pre_gt_node.score(rela_pred[j])
+                            if pre_score > 0:
+                                if rela_scores[k] == 0:
+                                    num_right[image_id] = num_right[image_id] + 1
+
+                                rela_score = (sub_score + obj_score + pre_score)/3.0
+                                rela_scores[k] = max(rela_scores[k], rela_score)
+                                pre_scores[k] = max(pre_scores[k], pre_score)
+                else:
+                    if (sub_gt[k] == sub_dete[j]) and (obj_gt[k] == obj_dete[j]) and rela_gt[k] == rela_pred[j]:
+                        s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
+                        o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
+                        if (s_iou >= 0.5) and (o_iou >= 0.5):
+                            rela_scores[k] = 1
+                            pre_scores[k] = 1
+                            num_right[image_id] = num_right[image_id] + 1
+
+        N_rela_right += np.sum(rela_scores)
+        N_pre_right += np.sum(pre_scores)
+
+    print('Proposal recall: %.4f' % (N_obj_box_goot / N_obj_total))
+    print('Detection recall: %.4f' % (N_obj_det_goot / N_obj_total))
+    det_acc = N_rela_right / N_rela_total
+    rec_acc = N_pre_right / N_rela_total
+    return det_acc, rec_acc, num_right

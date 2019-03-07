@@ -116,7 +116,7 @@ if __name__ == '__main__':
     hierLan.load_state_dict(checkpoint)
 
     # get HierRela
-    hierRela = HierRela(hierVis, None, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
     hierRela.eval()

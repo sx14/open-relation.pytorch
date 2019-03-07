@@ -218,7 +218,7 @@ if __name__ == '__main__':
     TP_score = 0.0
     N_count = 0.1
 
-
+    det_roidb = {}
     for i in range(num_images):
 
         data = next(data_iter)
@@ -226,6 +226,7 @@ if __name__ == '__main__':
         im_info.data.resize_(data[1].size()).copy_(data[1])
         gt_boxes.data.resize_(data[2].size()).copy_(data[2])
         num_boxes.data.resize_(data[3].size()).copy_(data[3])
+        im_id = data[4][0]
 
         det_tic = time.time()
         rois, cls_prob, bbox_pred, \
@@ -289,23 +290,23 @@ if __name__ == '__main__':
 
         pred_boxes /= data[1][0][2].item()
 
-        scores = scores[0].cpu().numpy()
-        pred_boxes = pred_boxes[0].cpu().numpy()
+        scores = scores[0]
+        pred_boxes = pred_boxes[0]
 
         det_toc = time.time()
         detect_time = det_toc - det_tic
         misc_tic = time.time()
 
-        infer_scores = np.zeros((scores.shape[0], 1))
-        infer_labels = np.zeros((scores.shape[0], 1))
-        infer_boxes  = np.zeros((scores.shape[0], 4))
+        infer_labels = torch.zeros((scores.shape[0], 1)).long()
+        infer_scores = torch.zeros((scores.shape[0], 1)).float()
+        infer_boxes  = torch.zeros((scores.shape[0], 4)).float()
         for mmm in range(scores.shape[0]):
             top2 = my_infer(objnet, scores[mmm])
             infer_labels[mmm] = top2[0][0]
             infer_scores[mmm] = top2[0][1]
             infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
 
-        my_dets = np.concatenate((infer_boxes, infer_scores))
+        my_dets = torch.cat([infer_boxes, infer_scores], 1)
         keep = nms(my_dets, 0.5)
         my_dets = my_dets[keep.view(-1).long()]
         if my_dets.shape[0] > max_per_image:
@@ -313,6 +314,8 @@ if __name__ == '__main__':
             ranked_inds = np.argsort(scores)[::-1]
             keep = ranked_inds[:max_per_image]
             my_dets = my_dets[keep]
+
+        det_roidb[im_id] = my_dets
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

@@ -10,7 +10,7 @@ from torch.nn.functional import softmax
 
 class TreeNode:
     def __init__(self, name, index, info_ratio):
-        self._score = -1
+        self._cond_prob = -1
         self._name = name
         self._index = index
         self._parents = []
@@ -18,7 +18,7 @@ class TreeNode:
         self._info_ratio = info_ratio
 
     def __str__(self):
-        return '%s[%.2f]' % (self._name, self._score)
+        return '%s[%.2f]' % (self._name, self.score())
 
     def depth(self):
         min_p_depth = 0
@@ -36,16 +36,17 @@ class TreeNode:
         self._parents.append(parent)
 
     def set_cond_prob(self, score):
-        self._score = score
+        self._cond_prob = score
 
     def cond_prob(self):
-        return self._score
+        return self._cond_prob
 
     def prob(self):
         p = self.cond_prob()
         curr = self
         while len(curr._parents) > 0:
             p *= curr._parents[0].cond_prob()
+            curr = curr._parents[0]
         return p
 
     def score(self):

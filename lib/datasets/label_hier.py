@@ -1,4 +1,5 @@
 import os
+from math import log
 import numpy as np
 
 class LabelNode(object):
@@ -12,6 +13,21 @@ class LabelNode(object):
 
     def __str__(self):
         return self._name
+
+    def info_ratio(self, leaf_sum):
+
+        def leaf_num(start):
+            if len(start.children()) == 0:
+                return 1
+            else:
+                n = 0
+                for c in start.children():
+                    n += leaf_num(c)
+                return n
+
+        n_leaf_child = leaf_num(self)
+        ed = log(leaf_sum, leaf_sum) - log(n_leaf_child, leaf_sum)
+        return ed
 
     def set_index(self, i):
         self._index = i
@@ -149,6 +165,9 @@ class LabelHier:
 
     def label_sum(self):
         return len(self._index2node)
+
+    def pos_leaf_sum(self):
+        return len(self._raw_labels) - 1
 
     def get_all_labels(self):
         all_labels = [node.name() for node in self._index2node]

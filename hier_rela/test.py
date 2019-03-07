@@ -206,7 +206,7 @@ if __name__ == '__main__':
             all_scores = scores[0][ppp].cpu().data.numpy()
 
             raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-            raw_scr = gt_node.score(raw_cate)
+            raw_scr = gt_node.cond_prob(raw_cate)
             raw_score_sum += raw_scr
             # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
@@ -221,7 +221,7 @@ if __name__ == '__main__':
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
 
-            hier_scr = gt_node.score(pred_cate)
+            hier_scr = gt_node.cond_prob(pred_cate)
             pred_node = prenet.get_node_by_index(pred_cate)
             info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
             if hier_scr > 0:

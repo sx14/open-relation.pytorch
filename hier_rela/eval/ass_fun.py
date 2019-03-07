@@ -131,19 +131,20 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                 if mode == 'hier':
                     sub_gt_node = objnet.get_node_by_index(sub_gt[k])
                     obj_gt_node = objnet.get_node_by_index(obj_gt[k])
-                    sub_score = sub_gt_node.score(sub_dete[j])
-                    obj_score = obj_gt_node.score(obj_dete[j])
+                    sub_score = sub_gt_node.cond_prob(sub_dete[j])
+                    obj_score = obj_gt_node.cond_prob(obj_dete[j])
                     if sub_score > 0 and obj_score > 0:
                         s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                         o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
                         if (s_iou >= 0.5) and (o_iou >= 0.5):
                             pre_gt_node = prenet.get_node_by_index(rela_gt[k])
-                            pre_score = pre_gt_node.score(rela_pred[j])
+                            pre_score = pre_gt_node.cond_prob(rela_pred[j])
                             if pre_score > 0:
                                 if rela_scores[k] == 0:
                                     num_right[image_id] = num_right[image_id] + 1
 
-                                rela_score = (sub_score + obj_score + pre_score)/3.0
+                                # rela_score = (sub_score + obj_score + pre_score)/3.0
+                                rela_score = np.min(np.array([sub_score, obj_score, pre_score]))
                                 rela_scores[k] = max(rela_scores[k], rela_score)
                                 pre_scores[k] = max(pre_scores[k], pre_score)
                 else:

@@ -26,7 +26,7 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.heir_rcnn.vgg16 import vgg16
 from lib.model.hier_utils.tree_infer import my_infer
-from global_config import HierLabelConfig
+from global_config import HierLabelConfig, PROJECT_ROOT
 
 import pdb
 
@@ -185,7 +185,6 @@ if __name__ == '__main__':
     start = time.time()
 
     max_per_image = 100
-    # max_per_image = 20
 
     vis = args.vis
 
@@ -219,7 +218,6 @@ if __name__ == '__main__':
     TP_score = 0.0
     N_count = 0.1
 
-    obj_det_roidbs = {}
 
     for i in range(num_images):
 
@@ -257,7 +255,7 @@ if __name__ == '__main__':
                 pred_cate = top2[0][0]
                 pred_scr = top2[0][1]
 
-                eval_scr = gt_node.score(pred_cate)
+                eval_scr = gt_node.cond_prob(pred_cate)
                 pred_node = objnet.get_node_by_index(pred_cate)
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
                 if eval_scr > 0:
@@ -291,55 +289,29 @@ if __name__ == '__main__':
 
         pred_boxes /= data[1][0][2].item()
 
-        scores = scores.squeeze()
-        pred_boxes = pred_boxes.squeeze()
+        scores = scores[0].numpy()
+        pred_boxes = pred_boxes[0].numpy()
 
         det_toc = time.time()
         detect_time = det_toc - det_tic
         misc_tic = time.time()
 
+        infer_scores = np.zeros((scores.shape[0], 1))
+        infer_labels = np.zeros((scores.shape[0], 1))
+        for mmm in range(scores.shape[0]):
+            top2 = my_infer(objnet, scores[mmm])
+            infer_labels[mmm] = top2[0][0]
+            infer_scores[mmm] = top2[0][1]
 
-
-
-
-        for j in xrange(1, imdb.num_classes):
-            inds = torch.nonzero(scores[:, j] > thresh).view(-1)
-            # if there is det
-            if inds.numel() > 0:
-                cls_scores = scores[:, j][inds]
-                _, order = torch.sort(cls_scores, 0, True)
-                if args.class_agnostic:
-                    cls_boxes = pred_boxes[inds, :]
-                else:
-                    cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
-
-                cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
-                # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
-                cls_dets = cls_dets[order]
-                keep = nms(cls_dets, cfg.TEST.NMS)
-                cls_dets = cls_dets[keep.view(-1).long()]
-                if vis:
-                    im2show = vis_detections(im2show, imdb.classes[j], cls_dets.cpu().numpy(), 0.3)
-                all_boxes[j][i] = cls_dets.cpu().numpy()
-
-            else:
-                all_boxes[j][i] = empty_array
-
-        det_temp = []
-        # Limit to max_per_image detections *over all classes*
-        if max_per_image > 0:
-            image_scores = np.hstack([all_boxes[j][i][:, -1] for j in xrange(1, imdb.num_classes)])
-            if len(image_scores) > max_per_image:
-                image_thresh = np.sort(image_scores)[-max_per_image]
-                for j in xrange(1, imdb.num_classes):
-                    keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-                    all_boxes[j][i] = all_boxes[j][i][keep, :]
-                    for box in all_boxes[j][i]:
-                        det_temp.append(box)
-
-        det_temp = np.array(det_temp)
-        img_id = roidb[i]['image'].split('/')[-1].split('.')[0]
-        obj_det_roidbs[img_id] = det_temp
+        infer_boxes = pred_boxes[:, infer_labels]
+        my_dets = np.concatenate((infer_boxes, infer_scores))
+        keep = nms(my_dets, cfg.TEST.NMS)
+        my_dets = my_dets[keep.view(-1).long()]
+        if my_dets.shape[0] > max_per_image:
+            scores = my_dets[:, -1]
+            ranked_inds = np.argsort(scores)[::-1]
+            keep = ranked_inds[:max_per_image]
+            my_dets = my_dets[keep]
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))
@@ -347,6 +319,6 @@ if __name__ == '__main__':
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
     print("Rec heir Acc: %.4f" % (TP_score / N_count))
 
-    det_save_path = args.dataset + '_test_box.bin'
+    det_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
     with open(det_save_path, 'wb') as f:
-        pickle.dump(obj_det_roidbs, f)
+        pickle.dump(my_dets, f)

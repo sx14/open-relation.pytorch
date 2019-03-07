@@ -261,7 +261,7 @@ if __name__ == '__main__':
                 pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
                 gt_node = objnet.get_node_by_index(gt_cate)
-                TP_count += gt_node.score(pred_cate)
+                TP_count += gt_node.cond_prob(pred_cate)
 
         if cfg.TEST.BBOX_REG:
             # Apply bounding-box regression deltas

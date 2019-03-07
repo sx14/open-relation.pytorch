@@ -9,12 +9,13 @@ from torch.nn.functional import softmax
 
 
 class TreeNode:
-    def __init__(self, name, index):
+    def __init__(self, name, index, info_ratio):
         self._score = -1
         self._name = name
         self._index = index
         self._parents = []
         self._children = []
+        self._info_ratio = info_ratio
 
     def __str__(self):
         return '%s[%.2f]' % (self._name, self._score)
@@ -34,11 +35,21 @@ class TreeNode:
     def append_parent(self, parent):
         self._parents.append(parent)
 
-    def set_score(self, score):
+    def set_cond_prob(self, score):
         self._score = score
 
-    def score(self):
+    def cond_prob(self):
         return self._score
+
+    def prob(self):
+        p = self.cond_prob()
+        curr = self
+        while len(curr._parents) > 0:
+            p *= curr._parents[0].cond_prob()
+        return p
+
+    def score(self):
+        return self.prob() * self._info_ratio
 
     def index(self):
         return self._index
@@ -47,15 +58,16 @@ class TreeNode:
         return self._name
 
 
-def construct_tree(label_hier, scores):
+
+def construct_tree(labelnet, scores):
     ind2node = dict()
-    for label in label_hier.get_all_labels():
-        hnode = label_hier.get_node_by_name(label)
-        tnode = TreeNode(label, hnode.index())
+    for label in labelnet.get_all_labels():
+        hnode = labelnet.get_node_by_name(label)
+        tnode = TreeNode(label, hnode.index(), hnode.info_ratio(labelnet.pos_leaf_sum()))
         ind2node[hnode.index()] = tnode
 
-    for label in label_hier.get_all_labels():
-        hnode = label_hier.get_node_by_name(label)
+    for label in labelnet.get_all_labels():
+        hnode = labelnet.get_node_by_name(label)
         tnode = ind2node[hnode.index()]
         hypers = hnode.hypers()
         for hyper in hypers:
@@ -69,7 +81,7 @@ def construct_tree(label_hier, scores):
         # score = (len(ranked_inds) - rank) / len(ranked_inds)
         score = scores[ind]
         tnode = ind2node[ind]
-        tnode.set_score(score.tolist())
+        tnode.set_cond_prob(score.tolist())
 
     return ind2node
 
@@ -92,10 +104,11 @@ def good_thresh(max_depth, depth):
 
 def top_down_search(root, max_depth, threshold=0):
     node = root
+    root.set_cond_prob(1.0)
     while len(node.children()) > 0:
         c_scores = []
         for c in node.children():
-            c_scores.append(c.score())
+            c_scores.append(c.cond_prob())
         c_scores_v = Variable(Tensor(c_scores))
         c_scores_s = softmax(c_scores_v, 0)
         pred_c_ind = torch.argmax(c_scores_s)
@@ -105,12 +118,12 @@ def top_down_search(root, max_depth, threshold=0):
         if pred_c_scr < threshold:
             break
         node = node.children()[pred_c_ind]
-        node.set_score(pred_c_scr.data.numpy().tolist())
+        node.set_cond_prob(pred_c_scr.data.numpy().tolist())
     return node
 
 
-def my_infer(label_hier, scores):
-    tnodes = construct_tree(label_hier, scores)
-    choice = top_down_search(tnodes[label_hier.root().index()], 0.4)
+def my_infer(labelnet, scores):
+    tnodes = construct_tree(labelnet, scores)
+    choice = top_down_search(tnodes[labelnet.root().index()], 0.4)
     return [[choice.index(), choice.score()], [choice.index(), choice.score()]]
 

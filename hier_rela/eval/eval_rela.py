@@ -12,8 +12,8 @@ else:
     from lib.datasets.vg.label_hier.pre_hier import prenet
 
 
-target = 'rela'
-# target = 'pre'
+# target = 'rela'
+target = 'pre'
 
 gt_roidb_path = '../gt_box_label_%s.bin' % dataset
 gt_roidb = pickle.load(open(gt_roidb_path))

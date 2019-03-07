@@ -177,6 +177,7 @@ if __name__ == '__main__':
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
 
+        # Attention: resized image data
         data = get_input_data(img, rois_use)
 
         im_data.data.resize_(data[0].size()).copy_(data[0])
@@ -193,7 +194,7 @@ if __name__ == '__main__':
         scores = cls_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0])
-        pred_scores = torch.zeros(rois[0].shape[0], 1)
+        pred_scores = torch.zeros(rois[0].shape[0])
 
         raw_label_inds = set(prenet.get_raw_indexes())
         for ppp in range(scores.size()[1]):
@@ -232,14 +233,16 @@ if __name__ == '__main__':
                 pass
             print(info)
 
-        sbj_scores = torch.FloatTensor(rela_roidb_use[:][-2])
-        obj_scores = torch.FloatTensor(rela_roidb_use[:][-1])
+        pred_rois = torch.FloatTensor(rois_use)
+        sbj_scores = pred_rois[:, -2]
+        obj_scores = pred_rois[:, -1]
         rela_scores = pred_scores * sbj_scores * obj_scores
+        rela_scores = rela_scores.unsqueeze(1)
 
-        pred = torch.FloatTensor(rois_use)[:, 15]
-        pred[:, 4] = pred_cates
-        pred = torch.cat((pred, rela_scores), dim=1)
-        pred_roidb[img_id] = pred.numpy()
+        pred_rois[:, 4] = pred_cates
+        # remove [pconf, sconf, oconf], cat rela_conf
+        pred_rois = torch.cat((pred_rois[:, :15], rela_scores), dim=1)
+        pred_roidb[img_id] = pred_rois.numpy()
         # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf
 
 
@@ -249,7 +252,7 @@ if __name__ == '__main__':
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
     print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
-    print("Rec raw Acc: %.4f" % (raw_score_sum / N_count))
+    print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:

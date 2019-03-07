@@ -67,11 +67,11 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
 
         if len(curr_gt_roidb) == 0:
             continue
-        rela_gt = curr_gt_roidb[:, 4]
         sub_box_gt = curr_gt_roidb[:, 5:10]
         obj_box_gt = curr_gt_roidb[:, 10:15]
-        sub_gt = curr_gt_roidb[:, 9]
-        obj_gt = curr_gt_roidb[:, 14]
+        rela_gt = curr_gt_roidb[:, 4].astype(np.int).tolist()
+        sub_gt = curr_gt_roidb[:, 9].astype(np.int).tolist()
+        obj_gt = curr_gt_roidb[:, 14].astype(np.int).tolist()
         box_gt = np.concatenate((sub_box_gt, obj_box_gt))
         box_gt = np.unique(box_gt, axis=0)
 
@@ -85,12 +85,13 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         curr_pred_roidb = np.array(pred_roidb[image_id])
         if len(curr_pred_roidb) == 0:
             continue
-        rela_pred = curr_pred_roidb[:, 4]
+
+        rela_pred = curr_pred_roidb[:, 4].astype(np.int).tolist()
         rela_pred_score = curr_pred_roidb[:, -1]
         sub_box_dete = curr_pred_roidb[:, 5:10]
         obj_box_dete = curr_pred_roidb[:, 10:15]
-        sub_dete = curr_pred_roidb[:, 9]
-        obj_dete = curr_pred_roidb[:, 14]
+        sub_dete = curr_pred_roidb[:, 9].astype(np.int).tolist()
+        obj_dete = curr_pred_roidb[:, 14].astype(np.int).tolist()
         box_det = np.concatenate((sub_box_dete, obj_box_dete))
         box_det = np.unique(box_det, axis=0)
 

@@ -18,7 +18,7 @@ def show_boxes(im, dets, cls, confs):
                           edgecolor='red', linewidth=1.5)
         )
         ax.text(bbox[0], bbox[1] - 2,
-                '{}({})'.format(cls[i], confs[i]),
+                '%s (%.2f)' % (cls[i], confs[i]),
                 bbox=dict(facecolor='blue', alpha=0.5),
                 fontsize=14, color='white')
         plt.axis('off')

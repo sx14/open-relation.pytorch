@@ -198,7 +198,6 @@ if __name__ == '__main__':
 
     data_iter = iter(dataloader)
 
-
     hierRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
@@ -237,8 +236,9 @@ if __name__ == '__main__':
 
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
                 gt_node = objnet.get_node_by_index(int(gt_cate))
-                # print('==== %s ====' % gt_node.name())
                 all_scores = scores[0][ppp].cpu().data.numpy()
+
+                # print('==== %s ====' % gt_node.name())
                 #ranked_inds = np.argsort(all_scores)[::-1][:20]
                 #sorted_scrs = np.sort(all_scores)[::-1][:20]
                 # for item in zip(ranked_inds, sorted_scrs):
@@ -310,14 +310,10 @@ if __name__ == '__main__':
 
         det_roidb[im_id] = my_dets
 
-
-    # det_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectDetRCNN.mat')
-    # img_path = os.path.join(PROJECT_ROOT, 'hier_det', 'imagePath.mat')
-    # label_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectListN.mat')
-    # det_roidb = load_vrd_det_boxes(det_path, img_path, label_path, objnet)
-
-    img_hits = det_recall(gt_roidb, det_roidb, 1000, objnet)
-
+    with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
+        pickle.dump(det_roidb, f)
+    with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
+        pickle.dump(gt_roidb, f)
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

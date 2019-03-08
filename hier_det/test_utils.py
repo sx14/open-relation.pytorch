@@ -107,7 +107,6 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
             S_obj_det_score += det_scr
         num_right[image_id] = sum(gt_max_scores) / box_gt.shape[0]
 
-
     print('Proposal recall@%d: %.4f' % (N_recall, N_obj_box_good / N_obj_total))
     print('Detection flat recall@%d: %.4f' % (N_recall, N_obj_det_good / N_obj_total))
     print('Detection hier recall@%d: %.4f' % (N_recall, S_obj_det_score / N_obj_total))

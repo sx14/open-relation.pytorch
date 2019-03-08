@@ -206,6 +206,7 @@ if __name__ == '__main__':
     det_roidb = {}
     gt_roidb = {}
     for i in range(num_images):
+        print('test [%d/%d]' % (num_images, i+1))
         data = next(data_iter)
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])

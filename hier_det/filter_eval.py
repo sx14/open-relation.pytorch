@@ -45,7 +45,7 @@ for img_id in det_roidb:
     infer_scores = np.zeros((pred_scores.shape[0], 1))
 
     for mmm in range(pred_scores.shape[0]):
-        top2 = my_infer(objnet, pred_scores[mmm].cpu().numpy())
+        top2 = my_infer(objnet, pred_scores[mmm])
         infer_labels[mmm] = top2[0][0]
         infer_scores[mmm] = top2[0][1]
 
@@ -54,6 +54,7 @@ for img_id in det_roidb:
     # keep = nms(my_dets, 0.5)
     # my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
     my_dets = my_dets.cpu().data.numpy()
+    det_roidb[img_id] = my_dets
 
 max_per_image = 100
 for img_id in det_roidb:

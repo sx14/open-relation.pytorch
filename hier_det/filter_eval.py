@@ -4,9 +4,10 @@ import pickle
 
 import torch
 
-from global_config import PROJECT_ROOT
-from hier_det.test_utils import det_recall, load_vrd_det_boxes
+from lib.model.nms.nms_wrapper import nms
 from lib.model.hier_utils.tree_infer import my_infer
+from hier_det.test_utils import det_recall, load_vrd_det_boxes
+from global_config import PROJECT_ROOT
 
 dataset = 'vrd'
 
@@ -51,8 +52,8 @@ for img_id in det_roidb:
 
     my_dets = np.concatenate([pred_boxes, infer_labels, infer_scores], 1)
     my_dets = torch.from_numpy(my_dets).cuda()
-    # keep = nms(my_dets, 0.5)
-    # my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
+    keep = nms(my_dets, 0.5)
+    my_dets = my_dets[keep.view(-1).long()]
     my_dets = my_dets.cpu().data.numpy()
     det_roidb[img_id] = my_dets
 

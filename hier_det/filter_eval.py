@@ -19,13 +19,15 @@ else:
 if os.path.exists('det_roidb_%s.bin' % dataset):
     with open('det_roidb_%s.bin' % dataset) as f:
         det_roidb = pickle.load(f)
+    print('Load det_roidb_%s.bin successfully.' % dataset)
 else:
-    print('det_roidb_%s.bin not exists.')
+    print('det_roidb_%s.bin not exists.' % dataset)
     exit(-1)
 
 if os.path.exists('gt_roidb_%s.bin' % dataset):
     with open('gt_roidb_%s.bin' % dataset) as f:
         gt_roidb = pickle.load(f)
+    print('Load gt_roidb_%s.bin successfully.' % dataset)
 else:
     print('gt_roidb_%s.bin not exists' % dataset)
     exit(-1)
@@ -37,7 +39,13 @@ else:
 # det_roidb = load_vrd_det_boxes(det_path, img_path, label_path, objnet)
 
 # process
+
+N_img = len(det_roidb.keys())
+counter = 0
+
 for img_id in det_roidb:
+    counter += 1
+    print('infer [%d/%d]' % (N_img, counter))
     my_dets = det_roidb[img_id]
     pred_boxes = my_dets[:, :4]
     pred_scores = my_dets[:, 4:]
@@ -58,7 +66,10 @@ for img_id in det_roidb:
     det_roidb[img_id] = my_dets
 
 max_per_image = 100
+counter = 0
 for img_id in det_roidb:
+    counter += 1
+    print('filter [%d/%d]' % (N_img, counter))
     my_dets = det_roidb[img_id]
 
     my_dets = my_dets.cpu().data.numpy()

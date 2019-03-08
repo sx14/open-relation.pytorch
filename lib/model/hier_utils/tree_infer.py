@@ -45,7 +45,7 @@ class TreeNode:
         p = self.cond_prob()
         curr = self
         while len(curr._parents) > 0:
-            p *= curr._parents[0].prob()
+            p *= curr._parents[0].cond_prob()
             curr = curr._parents[0]
         return p
 

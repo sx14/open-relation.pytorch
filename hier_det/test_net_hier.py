@@ -326,7 +326,8 @@ if __name__ == '__main__':
 
     det_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectDetRCNN.mat')
     img_path = os.path.join(PROJECT_ROOT, 'hier_det', 'imagePath.mat')
-    det_roidb = load_vrd_det_boxes(det_path, img_path)
+    label_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectListN.mat')
+    det_roidb = load_vrd_det_boxes(det_path, img_path, label_path, objnet)
 
     img_hits = det_recall(gt_roidb, det_roidb, 100, objnet)
 

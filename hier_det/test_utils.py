@@ -110,12 +110,14 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
     return num_right
 
 
-def load_vrd_det_boxes(vrd_box_path, vrd_img_path):
+def load_vrd_det_boxes(vrd_box_path, vrd_img_path, vrd_label_path, objnet):
     import scipy.io as sio
 
     vrd_boxes = sio.loadmat(vrd_box_path)['detection_bboxes'][0]
     vrd_confs = sio.loadmat(vrd_box_path)['detection_confs'][0]
     vrd_labels = sio.loadmat(vrd_box_path)['detection_labels'][0]
+
+    vrd_ind2label = sio.loadmat(vrd_label_path)['objectListN'][0]
 
     vrd_imgs = sio.loadmat(vrd_img_path)['imagePath'][0]
     det_roidb = dict()
@@ -126,6 +128,12 @@ def load_vrd_det_boxes(vrd_box_path, vrd_img_path):
         boxes = vrd_boxes[i]
         confs = vrd_confs[i]
         labels = vrd_labels[i]
+
+        for e, l in enumerate(labels):
+            name = vrd_ind2label[l][0].tolist()[0]
+            node = objnet.get_node_by_name(name)
+            labels[e] = node.index()
+
         roidb = np.concatenate((boxes, labels, confs), axis=1)
         det_roidb[img_id] = roidb
     return det_roidb

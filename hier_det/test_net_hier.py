@@ -1,8 +1,4 @@
-# --------------------------------------------------------
-# Tensorflow Faster R-CNN
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Jiasen Lu, Jianwei Yang, based on code from Ross Girshick
-# --------------------------------------------------------
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,6 +23,7 @@ from lib.model.utils.net_utils import vis_detections
 from lib.model.heir_rcnn.vgg16 import vgg16
 from lib.model.hier_utils.tree_infer import my_infer
 from global_config import HierLabelConfig, PROJECT_ROOT
+from hier_det.test_utils import det_recall
 
 import pdb
 
@@ -109,12 +106,15 @@ if __name__ == '__main__':
         args.imdbval_name = "vg_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg.label_hier.obj_hier import objnet
+        args.class_agnostic = False
+        # TODO: 之后要变成True, 目前训练的是False
 
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
+        args.class_agnostic = True
 
     args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
 
@@ -219,6 +219,7 @@ if __name__ == '__main__':
     N_count = 0.1
 
     det_roidb = {}
+    gt_roidb = {}
     for i in range(num_images):
 
         data = next(data_iter)
@@ -227,6 +228,8 @@ if __name__ == '__main__':
         gt_boxes.data.resize_(data[2].size()).copy_(data[2])
         num_boxes.data.resize_(data[3].size()).copy_(data[3])
         im_id = data[4][0]
+
+        gt_roidb[im_id] = gt_boxes.cpu().data.numpy()
 
         det_tic = time.time()
         rois, cls_prob, bbox_pred, \
@@ -256,7 +259,7 @@ if __name__ == '__main__':
                 pred_cate = top2[0][0]
                 pred_scr = top2[0][1]
 
-                eval_scr = gt_node.cond_prob(pred_cate)
+                eval_scr = gt_node.score(pred_cate)
                 pred_node = objnet.get_node_by_index(pred_cate)
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
                 if eval_scr > 0:
@@ -316,6 +319,9 @@ if __name__ == '__main__':
             my_dets = my_dets[keep]
 
         det_roidb[im_id] = my_dets
+
+    img_hits = det_recall(gt_roidb, det_roidb, 100, objnet)
+
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

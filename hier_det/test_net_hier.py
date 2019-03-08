@@ -306,9 +306,9 @@ if __name__ == '__main__':
             infer_scores[mmm] = top2[0][1]
             infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
 
-        my_dets = torch.cat([infer_boxes, infer_scores], 1)
+        my_dets = torch.cat([infer_boxes, infer_scores], 1).cuda()
         keep = nms(my_dets, 0.5)
-        my_dets = my_dets[keep.view(-1).long()]
+        my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
         if my_dets.shape[0] > max_per_image:
             scores = my_dets[:, -1]
             ranked_inds = np.argsort(scores)[::-1]

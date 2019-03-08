@@ -184,8 +184,6 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 1000
-
     num_images = len(imdb.image_index)
     all_boxes = [[[] for _ in xrange(num_images)]
                  for _ in xrange(imdb.num_classes)]
@@ -199,7 +197,6 @@ if __name__ == '__main__':
     data_iter = iter(dataloader)
 
     hierRCNN.eval()
-    empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
     use_rpn = True
     TP_count = 0.0
@@ -282,33 +279,16 @@ if __name__ == '__main__':
 
         pred_boxes /= data[1][0][2].item()
 
-        scores = scores[0]
+        pred_scores = scores[0]
         pred_boxes = pred_boxes[0]
 
         det_toc = time.time()
         detect_time = det_toc - det_tic
         misc_tic = time.time()
 
-        infer_labels = torch.zeros((scores.shape[0], 1)).long()
-        infer_scores = torch.zeros((scores.shape[0], 1)).float()
-        infer_boxes  = torch.zeros((scores.shape[0], 4)).float()
-        for mmm in range(scores.shape[0]):
-            top2 = my_infer(objnet, scores[mmm].cpu().numpy())
-            infer_labels[mmm] = top2[0][0]
-            infer_scores[mmm] = top2[0][1]
-            infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
-
-        my_dets = torch.cat([infer_boxes, infer_labels.float(), infer_scores], 1).cuda()
-        # keep = nms(my_dets, 0.5)
-        # my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
-        my_dets = my_dets.cpu().data.numpy()
-        if my_dets.shape[0] > max_per_image:
-            scores = my_dets[:, -1]
-            ranked_inds = np.argsort(scores)[::-1]
-            keep = ranked_inds[:max_per_image]
-            my_dets = my_dets[keep]
-
-        det_roidb[im_id] = my_dets
+        # x1,y1,x2,y2,s0,s1,s2,s3,...,sN
+        my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
+        det_roidb[im_id] = my_dets.cpu().data.numpy()
 
     with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
         pickle.dump(det_roidb, f)
@@ -320,7 +300,3 @@ if __name__ == '__main__':
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
     print("Rec heir Acc: %.4f" % (TP_score / N_count))
-
-    # det_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
-    # with open(det_save_path, 'wb') as f:
-    #     pickle.dump(my_dets, f)

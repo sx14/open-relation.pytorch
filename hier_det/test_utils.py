@@ -83,17 +83,19 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
 
         gt_max_scores = [0 for z in range(box_gt.shape[0])]
         for b in range(box_gt.shape[0]):
-            gt = box_gt[b]
+            gt = curr_gt_roidb[b]
             box_hit = 0
             det_hit = 0
             det_scr = 0
             for o in range(box_dete.shape[0]):
-                det = box_dete[o]
+                if det_hit == 1:
+                    break
+                det = curr_pred_roidb[o]
                 if compute_iou_each(gt, det) > 0.5:
                     box_hit = 1
                     if gt[4] == det[4]:
                         det_hit = 1
-                    det_scr = max([det_scr, objnet.get_node_by_index(gt[4]).score(det[4])])
+                    det_scr = max([det_scr, objnet.get_node_by_index(int(gt[4].tolist())).score(int(det[4].tolist()))])
 
             gt_max_scores[b] = det_scr
             N_obj_box_good += box_hit

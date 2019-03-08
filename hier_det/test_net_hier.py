@@ -114,7 +114,7 @@ if __name__ == '__main__':
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
-        args.class_agnostic = True
+        args.class_agnostic = False
 
     args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
 
@@ -229,7 +229,7 @@ if __name__ == '__main__':
         num_boxes.data.resize_(data[3].size()).copy_(data[3])
         im_id = data[4][0]
 
-        gt_roidb[im_id] = gt_boxes.cpu().data.numpy()
+        gt_roidb[im_id] = gt_boxes[0].cpu().data.numpy()
 
         det_tic = time.time()
         rois, cls_prob, bbox_pred, \
@@ -309,7 +309,7 @@ if __name__ == '__main__':
             infer_scores[mmm] = top2[0][1]
             infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
 
-        my_dets = torch.cat([infer_boxes, infer_scores], 1).cuda()
+        my_dets = torch.cat([infer_boxes, infer_labels.float(), infer_scores], 1).cuda()
         keep = nms(my_dets, 0.5)
         my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
         if my_dets.shape[0] > max_per_image:

@@ -68,8 +68,8 @@ else:
         my_dets = my_dets.cpu().data.numpy()
         det_roidb[img_id] = my_dets
 
-    with open('det_infer_roidb_%s.bin' % dataset) as f:
-        pickle.dump(f, det_roidb)
+    with open('det_infer_roidb_%s.bin' % dataset, 'wb') as f:
+        pickle.dump(det_roidb, f)
 
 max_per_image = 100
 counter = 0
@@ -77,8 +77,6 @@ for img_id in det_roidb:
     counter += 1
     print('filter [%d/%d]' % (N_img, counter))
     my_dets = det_roidb[img_id]
-
-    my_dets = my_dets.cpu().data.numpy()
     if my_dets.shape[0] > max_per_image:
         scores = my_dets[:, -1]
         ranked_inds = np.argsort(scores)[::-1]

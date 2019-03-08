@@ -184,21 +184,12 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 100
+    max_per_image = 1000
 
-    vis = args.vis
-
-    if vis:
-        thresh = 0.05
-    else:
-        thresh = 0.0
-
-    save_name = 'hier_rcnn_10'
     num_images = len(imdb.image_index)
     all_boxes = [[[] for _ in xrange(num_images)]
                  for _ in xrange(imdb.num_classes)]
 
-    output_dir = get_output_dir(imdb, save_name)
     dataset = roibatchLoader(roidb, ratio_list, ratio_index, 1, \
                              imdb.num_classes, training=False, normalize=False)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1,
@@ -207,8 +198,6 @@ if __name__ == '__main__':
 
     data_iter = iter(dataloader)
 
-    _t = {'im_detect': time.time(), 'misc': time.time()}
-    det_file = os.path.join(output_dir, 'detections.pkl')
 
     hierRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
@@ -221,8 +210,6 @@ if __name__ == '__main__':
     det_roidb = {}
     gt_roidb = {}
     for i in range(num_images):
-        if i == 100:
-            break
         data = next(data_iter)
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
@@ -233,103 +220,103 @@ if __name__ == '__main__':
         gt_roidb[im_id] = gt_boxes[0].cpu().data.numpy()
         gt_roidb[im_id][:, :4] = gt_roidb[im_id][:, :4] / data[1][0][2].item()
 
-        # det_tic = time.time()
-        # rois, cls_prob, bbox_pred, \
-        # rpn_loss_cls, rpn_loss_box, \
-        # RCNN_loss_cls, RCNN_loss_bbox, \
-        # rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
-        #
-        # scores = cls_prob.data
-        # boxes = rois.data[:, :, 1:5]
-        #
-        # if not use_rpn:
-        #     raw_label_inds = objnet.get_raw_indexes()
-        #
-        #     for ppp in range(scores.size()[1]):
-        #         N_count += 1
-        #
-        #         gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-        #         gt_node = objnet.get_node_by_index(int(gt_cate))
-        #         # print('==== %s ====' % gt_node.name())
-        #         all_scores = scores[0][ppp].cpu().data.numpy()
-        #         #ranked_inds = np.argsort(all_scores)[::-1][:20]
-        #         #sorted_scrs = np.sort(all_scores)[::-1][:20]
-        #         # for item in zip(ranked_inds, sorted_scrs):
-        #         #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
-        #
-        #         top2 = my_infer(objnet, all_scores)
-        #         pred_cate = top2[0][0]
-        #         pred_scr = top2[0][1]
-        #
-        #         eval_scr = gt_node.score(pred_cate)
-        #         pred_node = objnet.get_node_by_index(pred_cate)
-        #         info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
-        #         if eval_scr > 0:
-        #             TP_score += eval_scr
-        #             TP_count += 1
-        #             info = 'T: ' + info
-        #         else:
-        #             info = 'F: ' + info
-        #             pass
-        #         print(info)
-        #
-        # if cfg.TEST.BBOX_REG:
-        #     # Apply bounding-box regression deltas
-        #     box_deltas = bbox_pred.data
-        #     if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
-        #         # Optionally normalize targets by a precomputed mean and stdev
-        #         if args.class_agnostic:
-        #             box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-        #                          + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-        #             box_deltas = box_deltas.view(1, -1, 4)
-        #         else:
-        #             box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-        #                          + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-        #             box_deltas = box_deltas.view(1, -1, 4 * len(imdb.classes))
-        #
-        #     pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
-        #     pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
-        # else:
-        #     # Simply repeat the boxes, once for each class
-        #     pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-        #
-        # pred_boxes /= data[1][0][2].item()
-        #
-        # scores = scores[0]
-        # pred_boxes = pred_boxes[0]
-        #
-        # det_toc = time.time()
-        # detect_time = det_toc - det_tic
-        # misc_tic = time.time()
-        #
-        # infer_labels = torch.zeros((scores.shape[0], 1)).long()
-        # infer_scores = torch.zeros((scores.shape[0], 1)).float()
-        # infer_boxes  = torch.zeros((scores.shape[0], 4)).float()
-        # for mmm in range(scores.shape[0]):
-        #     top2 = my_infer(objnet, scores[mmm].cpu().numpy())
-        #     infer_labels[mmm] = top2[0][0]
-        #     infer_scores[mmm] = top2[0][1]
-        #     infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
-        #
-        # my_dets = torch.cat([infer_boxes, infer_labels.float(), infer_scores], 1).cuda()
-        # # keep = nms(my_dets, 0.5)
-        # # my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
-        # my_dets = my_dets.cpu().data.numpy()
-        # if my_dets.shape[0] > max_per_image:
-        #     scores = my_dets[:, -1]
-        #     ranked_inds = np.argsort(scores)[::-1]
-        #     keep = ranked_inds[:max_per_image]
-        #     my_dets = my_dets[keep]
-        #
-        # det_roidb[im_id] = my_dets
+        det_tic = time.time()
+        rois, cls_prob, bbox_pred, \
+        rpn_loss_cls, rpn_loss_box, \
+        RCNN_loss_cls, RCNN_loss_bbox, \
+        rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
+
+        scores = cls_prob.data
+        boxes = rois.data[:, :, 1:5]
+
+        if not use_rpn:
+            raw_label_inds = objnet.get_raw_indexes()
+
+            for ppp in range(scores.size()[1]):
+                N_count += 1
+
+                gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
+                gt_node = objnet.get_node_by_index(int(gt_cate))
+                # print('==== %s ====' % gt_node.name())
+                all_scores = scores[0][ppp].cpu().data.numpy()
+                #ranked_inds = np.argsort(all_scores)[::-1][:20]
+                #sorted_scrs = np.sort(all_scores)[::-1][:20]
+                # for item in zip(ranked_inds, sorted_scrs):
+                #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
+
+                top2 = my_infer(objnet, all_scores)
+                pred_cate = top2[0][0]
+                pred_scr = top2[0][1]
+
+                eval_scr = gt_node.score(pred_cate)
+                pred_node = objnet.get_node_by_index(pred_cate)
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
+                if eval_scr > 0:
+                    TP_score += eval_scr
+                    TP_count += 1
+                    info = 'T: ' + info
+                else:
+                    info = 'F: ' + info
+                    pass
+                print(info)
+
+        if cfg.TEST.BBOX_REG:
+            # Apply bounding-box regression deltas
+            box_deltas = bbox_pred.data
+            if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
+                # Optionally normalize targets by a precomputed mean and stdev
+                if args.class_agnostic:
+                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                                 + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                    box_deltas = box_deltas.view(1, -1, 4)
+                else:
+                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                                 + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                    box_deltas = box_deltas.view(1, -1, 4 * len(imdb.classes))
+
+            pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
+            pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
+        else:
+            # Simply repeat the boxes, once for each class
+            pred_boxes = np.tile(boxes, (1, scores.shape[1]))
+
+        pred_boxes /= data[1][0][2].item()
+
+        scores = scores[0]
+        pred_boxes = pred_boxes[0]
+
+        det_toc = time.time()
+        detect_time = det_toc - det_tic
+        misc_tic = time.time()
+
+        infer_labels = torch.zeros((scores.shape[0], 1)).long()
+        infer_scores = torch.zeros((scores.shape[0], 1)).float()
+        infer_boxes  = torch.zeros((scores.shape[0], 4)).float()
+        for mmm in range(scores.shape[0]):
+            top2 = my_infer(objnet, scores[mmm].cpu().numpy())
+            infer_labels[mmm] = top2[0][0]
+            infer_scores[mmm] = top2[0][1]
+            infer_boxes[mmm] = pred_boxes[mmm, infer_labels[mmm]*4:(infer_labels[mmm]+1)*4]
+
+        my_dets = torch.cat([infer_boxes, infer_labels.float(), infer_scores], 1).cuda()
+        # keep = nms(my_dets, 0.5)
+        # my_dets = my_dets[keep.view(-1).long()].cpu().data.numpy()
+        my_dets = my_dets.cpu().data.numpy()
+        if my_dets.shape[0] > max_per_image:
+            scores = my_dets[:, -1]
+            ranked_inds = np.argsort(scores)[::-1]
+            keep = ranked_inds[:max_per_image]
+            my_dets = my_dets[keep]
+
+        det_roidb[im_id] = my_dets
 
 
-    det_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectDetRCNN.mat')
-    img_path = os.path.join(PROJECT_ROOT, 'hier_det', 'imagePath.mat')
-    label_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectListN.mat')
-    det_roidb = load_vrd_det_boxes(det_path, img_path, label_path, objnet)
+    # det_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectDetRCNN.mat')
+    # img_path = os.path.join(PROJECT_ROOT, 'hier_det', 'imagePath.mat')
+    # label_path = os.path.join(PROJECT_ROOT, 'hier_det', 'objectListN.mat')
+    # det_roidb = load_vrd_det_boxes(det_path, img_path, label_path, objnet)
 
-    img_hits = det_recall(gt_roidb, det_roidb, 100, objnet)
+    img_hits = det_recall(gt_roidb, det_roidb, 1000, objnet)
 
 
     end = time.time()

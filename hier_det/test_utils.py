@@ -70,6 +70,10 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
         N_obj_total = N_obj_total + N_obj
 
         # x1, y1, x2, y2, name, score
+        if image_id not in pred_roidb:
+            print(image_id)
+            continue
+
         curr_pred_roidb = np.array(pred_roidb[image_id])
         if len(curr_pred_roidb) == 0:
             continue
@@ -112,13 +116,12 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
 
 def load_vrd_det_boxes(vrd_box_path, vrd_img_path, vrd_label_path, objnet):
     import scipy.io as sio
+    import copy
 
     vrd_boxes = sio.loadmat(vrd_box_path)['detection_bboxes'][0]
     vrd_confs = sio.loadmat(vrd_box_path)['detection_confs'][0]
     vrd_labels = sio.loadmat(vrd_box_path)['detection_labels'][0]
-
     vrd_ind2label = sio.loadmat(vrd_label_path)['objectListN'][0]
-
     vrd_imgs = sio.loadmat(vrd_img_path)['imagePath'][0]
     det_roidb = dict()
 
@@ -127,12 +130,14 @@ def load_vrd_det_boxes(vrd_box_path, vrd_img_path, vrd_label_path, objnet):
         img_id = img.split('.')[0]
         boxes = vrd_boxes[i]
         confs = vrd_confs[i]
-        labels = vrd_labels[i]
+        labels = copy.deepcopy(vrd_labels[i])
 
-        for e, l in enumerate(labels):
-            name = vrd_ind2label[l][0].tolist()[0]
+        for e in range(labels.shape[0]):
+            # break
+            l = labels[e, 0]
+            name = vrd_ind2label[l-1][0]
             node = objnet.get_node_by_name(name)
-            labels[e] = node.index()
+            labels[e, 0] = node.index()
 
         roidb = np.concatenate((boxes, labels, confs), axis=1)
         det_roidb[img_id] = roidb

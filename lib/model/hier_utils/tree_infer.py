@@ -148,6 +148,9 @@ def top_down_search(root, max_depth, threshold=0):
 
         print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
 
+        if node.entropy() >= 1:
+            a = 1
+
         node = node.children()[pred_c_ind]
     print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
     return node

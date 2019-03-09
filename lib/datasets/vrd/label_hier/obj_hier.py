@@ -15,6 +15,7 @@ class ObjNet(LabelHier):
             syns = wn.synsets(vrd_label)
             if len(syns) > 0:
                 raw2wn[vrd_label] = [syns[0].name()]
+
             else:
                 raw2wn[vrd_label] = ['']
         # fix auto annotation
@@ -22,7 +23,7 @@ class ObjNet(LabelHier):
         raw2wn['bike'] = ['bicycle.n.01']
         raw2wn['plate'] = ['plate.n.04']
         raw2wn['trash can'] = ['ashcan.n.01']
-        raw2wn['traffic light'] = ['traffic_light.n.01']
+        raw2wn['traffic light'] = ['light.n.02']
         raw2wn['truck'] = ['truck.n.01']
         raw2wn['van'] = ['van.n.05']
         raw2wn['mouse'] = ['mouse.n.04']
@@ -31,6 +32,22 @@ class ObjNet(LabelHier):
         raw2wn['jeans'] = ['trouser.n.01']
         raw2wn['monitor'] = ['monitor.n.04']
         raw2wn['post'] = ['post.n.04']
+
+        raw2wn['bus'] = ['motor_vehicle.n.01']
+        raw2wn['table'] = ['table.n.02']
+        raw2wn['train'] = ['motor_vehicle.n.01']
+        raw2wn['bowl'] = ['tableware.n.01']
+        raw2wn['computer'] = ['electronic_device.n.01']
+        raw2wn['laptop'] = ['electronic_device.n.01']
+        raw2wn['plant'] = ['plant.n.02']
+        raw2wn['skis'] = ['footwear.n.02']
+        raw2wn['keyboard'] = ['electronic_device.n.01']
+        raw2wn['ball'] = ['ball.n.06']
+        raw2wn['paper'] = ['paper.n.04']
+        raw2wn['kite'] = ['kite.n.03']
+        raw2wn['helmet'] = ['helmet.n.02']
+        raw2wn['sand'] = ['beach.n.01']
+
         return raw2wn
 
     def _create_label_nodes(self, raw2wn):
@@ -55,8 +72,10 @@ class ObjNet(LabelHier):
             'sand': 1,
             'cart': 1,
             'pot': 1,
-            'paper': 1,
             'tie': 1,
+            'bus': 1,
+            'train': 1,
+            'helmet': 1,
         }
 
         next_label_index = 1
@@ -110,3 +129,8 @@ class ObjNet(LabelHier):
 
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_labels.txt')
 objnet = ObjNet(label_path, '')
+
+# raw_inds = objnet.get_raw_indexes()
+# for ind in raw_inds:
+#     n = objnet.get_node_by_index(ind)
+#     n.show_hyper_paths()

@@ -57,7 +57,7 @@ class TreeNode:
                 p *= curr._parents[0].cond_prob()
                 curr = curr._parents[0]
             self._prob = p
-        return p
+        return self._prob
 
     def info_ratio(self):
         return self._info_ratio
@@ -126,38 +126,53 @@ def good_thresh(max_depth, depth):
 
 
 def top_down_search(root, max_depth, threshold=0):
+    path = []
+    down_scrs = []
+
+    # init root probability
     root.set_cond_prob(1.0)
     node = root
+
     print('P0\t\tP1\t\tE\t\tI')
-    while len(node.children()) > 0:
+    while node is not None:
         c_scores = []
         for c in node.children():
             c_scores.append(c.raw_score())
-        c_scores_v = Variable(Tensor(c_scores))
-        c_scores_s = softmax(c_scores_v, 0)
+
+        if len(node.children()) > 0:
+            c_scores_v = Variable(Tensor(c_scores))
+            c_scores_s = softmax(c_scores_v, 0)
 
         for i, c in enumerate(node.children()):
             c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
-        pred_c_ind = torch.argmax(c_scores_s)
-        pred_c_scr = c_scores_s[pred_c_ind]
-
-        threshold = good_thresh(node.depth(), max_depth)
-        if pred_c_scr < threshold:
-            break
+        curr_info = node.info_ratio()
+        if curr_info > 0.4:
+            down_scr = (1 - node.entropy()) * node.info_ratio()
+        else:
+            down_scr = 0
+        path.append(node)
+        down_scrs.append(down_scr)
 
         print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
 
-        if node.entropy() >= 1:
-            a = 1
+        if len(node.children()) > 0:
+            pred_c_ind = torch.argmax(c_scores_s)
+            node = node.children()[pred_c_ind]
+        else:
+            node = None
 
-        node = node.children()[pred_c_ind]
-    print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
-    return node
+    down_scrs = np.array(down_scrs[:-1])    # without leaf
+    if np.sum(down_scrs) > 0:
+        pred_path_ind = np.argmax(down_scrs) + 1
+    else:
+        pred_path_ind = len(path) - 1
+
+    return path[pred_path_ind]
 
 
 def my_infer(labelnet, scores):
     tnodes = construct_tree(labelnet, scores)
-    choice = top_down_search(tnodes[labelnet.root().index()], 0.4)
+    choice = top_down_search(tnodes[labelnet.root().index()], 0.5)
     return [[choice.index(), choice.score()], [choice.index(), choice.score()]]
 

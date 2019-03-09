@@ -30,7 +30,7 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
 
 if __name__ == '__main__':
 
-    dataset = 'vg'
+    dataset = 'vrd'
     target = 'object'
     if dataset == 'vrd':
         from lib.datasets.vrd.label_hier.obj_hier import objnet

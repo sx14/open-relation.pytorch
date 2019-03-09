@@ -1,4 +1,4 @@
 config = {}
-config.dataset_name = 'vg'
+config.dataset_name = 'vrd'
 config.target = 'object'
 return config

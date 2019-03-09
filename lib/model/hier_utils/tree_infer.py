@@ -49,8 +49,16 @@ class TreeNode:
             curr = curr._parents[0]
         return p
 
+    def info_ratio(self):
+        return self._info_ratio
+
     def score(self):
         return self.prob() * self._info_ratio
+
+    def entropy(self):
+        e = 0.0
+        for c in self._children:
+            e -= c.cond_prob() * log(c.cond_prob, len(self._children))
 
     def index(self):
         return self._index
@@ -104,9 +112,13 @@ def good_thresh(max_depth, depth):
 
 
 def top_down_search(root, max_depth, threshold=0):
-    node = root
     root.set_cond_prob(1.0)
+    node = root
+    print('\t\tP0\t\tP1\t\tE\t\tI')
     while len(node.children()) > 0:
+        print('%s:\t(%.2f)\t\t(%.2f)\t\t(%.2f)\t\t(%.2f)' % (node.name(), node.prob(), node.cond_prob(), node.entropy(), node.info_ratio()))
+
+
         c_scores = []
         for c in node.children():
             c_scores.append(c.cond_prob())

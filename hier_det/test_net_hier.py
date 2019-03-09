@@ -236,7 +236,7 @@ if __name__ == '__main__':
                 gt_node = objnet.get_node_by_index(int(gt_cate))
                 all_scores = scores[0][ppp].cpu().data.numpy()
 
-                # print('==== %s ====' % gt_node.name())
+                print('==== %s ====' % gt_node.name())
                 #ranked_inds = np.argsort(all_scores)[::-1][:20]
                 #sorted_scrs = np.sort(all_scores)[::-1][:20]
                 # for item in zip(ranked_inds, sorted_scrs):

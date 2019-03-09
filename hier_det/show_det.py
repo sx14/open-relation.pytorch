@@ -26,4 +26,4 @@ for img_id in det_roidb:
         cls_labels.append(node.name())
 
     confs = dets[:, 5]
-    show_boxes(im, dets_temp[:, :4], cls_inds, confs)
+    show_boxes(im, dets_temp[:, :4], cls_labels, confs)

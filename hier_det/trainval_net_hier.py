@@ -74,7 +74,8 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--cag', dest='class_agnostic',
                       help='whether perform class_agnostic bbox regression',
-                      action='store_true')
+                      action='store_true',
+                      default=True)
 
 # config optimization
   parser.add_argument('--o', dest='optimizer',

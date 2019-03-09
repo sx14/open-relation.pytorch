@@ -41,53 +41,42 @@ else:
 
 # process
 N_img = len(det_roidb.keys())
-counter = 0
 if os.path.exists('det_infer_roidb_%s.bin' % dataset):
     with open('det_infer_roidb_%s.bin' % dataset, 'rb') as f:
         det_roidb = pickle.load(f)
 else:
-    for img_id in det_roidb:
+    for i, img_id in enumerate(det_roidb.keys()):
+        print('nms [%d/%d]' % (N_img, i + 1))
         img_dets = det_roidb[img_id]
         my_dets = nms_dets(img_dets, 100, objnet)
         det_roidb[img_id] = my_dets
-    #     counter += 1
-    #     print('infer [%d/%d]' % (N_img, counter))
-    #     my_dets = det_roidb[img_id]
-    #     pred_boxes = my_dets[:, :4]
-    #     pred_scores = my_dets[:, 4:]
-    #
-    #     infer_labels = np.zeros((pred_scores.shape[0], 1))
-    #     infer_scores = np.zeros((pred_scores.shape[0], 1))
-    #
-    #     for mmm in range(pred_scores.shape[0]):
-    #         top2 = my_infer(objnet, pred_scores[mmm])
-    #         infer_labels[mmm] = top2[0][0]
-    #         infer_scores[mmm] = top2[0][1]
-    #
-    #     my_dets = np.concatenate([pred_boxes, infer_labels, infer_scores], 1)
-    #     my_dets = torch.from_numpy(my_dets).cuda()
-    #     keep = nms(my_dets, 0.5)
-    #     my_dets = my_dets[keep.view(-1).long()]
-    #     my_dets = my_dets.cpu().data.numpy()
-    #     det_roidb[img_id] = my_dets
-    #
-    # with open('det_infer_roidb_%s.bin' % dataset, 'wb') as f:
-    #     pickle.dump(det_roidb, f)
+
+    for i, img_id in enumerate(det_roidb.keys()):
+        print('infer [%d/%d]' % (N_img, i+1))
+        my_dets = det_roidb[img_id]
+        pred_boxes = my_dets[:, :4]
+        pred_scores = my_dets[:, 4:]
+
+        infer_labels = np.zeros((pred_scores.shape[0], 1))
+        infer_scores = np.zeros((pred_scores.shape[0], 1))
+
+        for mmm in range(pred_scores.shape[0]):
+            top2 = my_infer(objnet, pred_scores[mmm])
+            infer_labels[mmm] = top2[0][0]
+            infer_scores[mmm] = top2[0][1]
+
+        my_dets = np.concatenate([pred_boxes, infer_labels, infer_scores], 1)
+        my_dets = torch.from_numpy(my_dets).cuda()
+        keep = nms(my_dets, 0.5)
+        my_dets = my_dets[keep.view(-1).long()]
+        my_dets = my_dets.cpu().data.numpy()
+        det_roidb[img_id] = my_dets
+
+    with open('det_infer_roidb_%s.bin' % dataset, 'wb') as f:
+        pickle.dump(det_roidb, f)
 
 
-max_per_image = 100
-counter = 0
-for img_id in det_roidb:
-    counter += 1
-    print('filter [%d/%d]' % (N_img, counter))
-    my_dets = det_roidb[img_id]
-    if my_dets.shape[0] > max_per_image:
-        scores = my_dets[:, -1]
-        ranked_inds = np.argsort(scores)[::-1]
-        keep = ranked_inds[:max_per_image]
-        my_dets = my_dets[keep]
-    det_roidb[img_id] = my_dets
 
-img_hits = det_recall(gt_roidb, det_roidb, 1000, objnet)
+img_hits = det_recall(gt_roidb, det_roidb, 100, objnet)
 
 

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import json
+import random
 from lang_config import data_config
 from lib.datasets.vrd.label_hier.obj_hier import objnet
 from lib.datasets.vrd.label_hier.pre_hier import prenet
@@ -36,6 +37,17 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             sbj_ind = objnet.get_node_by_name(anno_sbj['name']).index()
             pre_ind = prenet.get_node_by_name(anno_pre['name']).index()
             raw_rlts.append([sbj_ind, pre_ind, obj_ind, pre_ind])
+
+    pos_num = len(raw_rlts)
+    neg_num = int(pos_num * 0.01)
+
+    pos_subset = random.sample(pos_num, neg_num)
+    neg_rlts = []
+    for rlt in pos_subset:
+        neg_rlt = [rlt[2], 0, rlt[0], 0]
+        neg_rlts.append(neg_rlt)
+
+    raw_rlts += neg_rlts
 
     raw_rlts = np.array(raw_rlts)
     np.save(rlt_save_path, raw_rlts)

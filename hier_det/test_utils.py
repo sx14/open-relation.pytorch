@@ -160,7 +160,8 @@ def nms_dets(img_dets, max_det_num, objnet):
     threshold = -2
     empty_box = np.transpose(np.array([[], [], [], []]), (1, 0))
     empty_det = np.transpose(np.array([[], [], [], [], []]), (1, 0))
-    empty_cls = np.transpose(np.array([[] for _ in N_classes]), (1, 0))
+    empty_cls = np.transpose(np.array([[] for _ in range(N_classes)]), (1, 0))
+
 
     for j in xrange(1, len(leaf_cls)):
         leaf_c = leaf_cls[j]
@@ -174,7 +175,8 @@ def nms_dets(img_dets, max_det_num, objnet):
             cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
             cls_dets = cls_dets[order]
             keep = nms(cls_dets, 0.3)
-            all_dets[j] = all_dets[keep.view(-1).long()]
+            cls_dets = cls_dets[keep.view(-1).long()]
+            all_dets[j] = cls_dets.cpu().numpy()
 
             box_scores = scores[inds, :]
             box_scores = box_scores[order]
@@ -183,7 +185,7 @@ def nms_dets(img_dets, max_det_num, objnet):
             cls_boxes = cls_boxes[keep.view(-1).long()]
             all_boxes[j] = cls_boxes.cpu().numpy()
             all_scrs[j] = box_scores.cpu().numpy()
-            all_dets[j] = cls_dets.cpu().numpy()
+
         else:
             all_boxes[j] = empty_box
             all_scrs[j] = empty_cls
@@ -198,10 +200,18 @@ def nms_dets(img_dets, max_det_num, objnet):
         for j in xrange(1, len(leaf_cls)):
             keep = np.where(all_dets[j][:, -1] >= image_thresh)[0]
             all_dets[j] = all_dets[j][keep, :]
-            all_boxes[j] = all_dets[j][keep, :]
-            all_scrs[j] = all_dets[j][keep, :]
-            if all_dets.shape[0] > 0:
-                box_scores = np.concatenate((all_boxes, all_scrs), axis=1)
+            all_boxes[j] = all_boxes[j][keep, :]
+            all_scrs[j] = all_scrs[j][keep, :]
+            if all_dets[j].shape[0] > 0:
+                box_scores = np.concatenate((all_boxes[j], all_scrs[j]), axis=1)
+                nms_det_scores += box_scores.tolist()
+    else:
+        for j in xrange(1, len(leaf_cls)):
+            all_dets[j] = all_dets[j][:, :]
+            all_boxes[j] = all_boxes[j][:, :]
+            all_scrs[j] = all_scrs[j][:, :]
+            if all_dets[j].shape[0] > 0:
+                box_scores = np.concatenate((all_boxes[j], all_scrs[j]), axis=1)
                 nms_det_scores += box_scores.tolist()
     return np.array(nms_det_scores)
 

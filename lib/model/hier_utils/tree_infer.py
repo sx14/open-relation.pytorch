@@ -63,7 +63,7 @@ class TreeNode:
         return self._info_ratio
 
     def score(self):
-        return self.prob() * self._info_ratio
+        return self.cond_prob() * self._info_ratio
 
     def entropy(self):
         e = 0.0

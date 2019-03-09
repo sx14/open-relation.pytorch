@@ -3,6 +3,8 @@
 import os
 import numpy as np
 import cv2
+import torch
+from lib.model.nms.nms_wrapper import nms
 
 
 def compute_iou(box, proposal):
@@ -141,3 +143,70 @@ def load_vrd_det_boxes(vrd_box_path, vrd_img_path, vrd_label_path, objnet):
         roidb = np.concatenate((boxes, labels, confs), axis=1)
         det_roidb[img_id] = roidb
     return det_roidb
+
+
+def nms_dets(img_dets, max_det_num, objnet):
+    pred_boxes = torch.from_numpy(img_dets[:, :4]).cuda()
+    scores = torch.from_numpy(img_dets[:, 4:]).cuda()
+    N_classes = scores.shape[1]
+
+    all_dets = [[] for _ in xrange(N_classes)]
+    threshold = -2
+    empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
+    for j in xrange(1, N_classes):
+        # for each class
+        cls_node = objnet.get_node_by_index(j)
+        if cls_node.info_ratio(objnet.pos_leaf_sum()) < 0.4:
+            # info ratio too low
+            all_dets[j] = empty_array
+            continue
+
+        inds = torch.nonzero(scores[:, j] > threshold).view(-1)
+        # if there is det
+        if inds.numel() > 0:
+            cls_scores = scores[:, j][inds]
+            _, order = torch.sort(cls_scores, 0, True)
+            cls_boxes = pred_boxes[inds, :]
+            cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
+            cls_dets = cls_dets[order]
+            keep = nms(cls_dets, 0.3)
+            cls_dets = cls_dets[keep.view(-1).long()]
+            all_dets[j] = cls_dets.cpu().numpy()
+        else:
+            all_dets[j] = empty_array
+
+    # Limit to max_det_num detections *over all classes*
+    result = []
+    image_scores = np.hstack([all_dets[j][:, -1] for j in xrange(1, N_classes)])
+    if len(image_scores) > max_det_num:
+        image_thresh = np.sort(image_scores)[-max_det_num]
+        for j in xrange(1, N_classes):
+            keep = np.where(all_dets[j][:, -1] >= image_thresh)[0]
+            all_dets[j] = all_dets[j][keep, :]
+            cls_vec = np.zeros((keep.shape[0], 1)).astype(np.int)
+            cls_vec[:, :] = j
+            scr_vec = all_dets[j][:, -1]
+            box_vec = all_dets[j][:, :4]
+            det = np.concatenate((box_vec, cls_vec, scr_vec), axis=1)
+            result += det.tolist()
+    return np.array(result)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

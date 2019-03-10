@@ -159,7 +159,10 @@ def top_down_search(root, max_depth, threshold=0):
     return node
 
 
-def cal_condition_prob(node):
+def cal_pos_cond_prob(node):
+    if len(node.children()) == 0:
+        return
+
     c_scores = []
     for c in node.children():
         c_scores.append(c.raw_score())
@@ -168,8 +171,8 @@ def cal_condition_prob(node):
     for i, c in enumerate(node.children()):
         c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
-    for c in node.children():
-        cal_condition_prob(c)
+    pred_c_ind = torch.argmax(c_scores_s)
+    cal_pos_cond_prob(node.children()[pred_c_ind])
 
 
 
@@ -183,12 +186,12 @@ def my_infer(labelnet, scores):
 def raw2cond_prob(labelnet, batch_scores):
 
     cond_probs = np.zeros(batch_scores.shape)
-    for i in range(batch_scores[0]):
+    for i in range(batch_scores.shape[0]):
         scores = batch_scores[i]
         tnodes = construct_tree(labelnet, scores)
         root = tnodes[labelnet.root().index()]
         root.set_cond_prob(1.0)
-        cal_condition_prob(root)
+        cal_pos_cond_prob(root)
 
         for j in range(batch_scores.shape[1]):
             cond_probs[i][j] = tnodes[j].cond_prob()

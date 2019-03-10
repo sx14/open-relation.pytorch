@@ -225,14 +225,19 @@ def nms_dets1(img_dets, max_det_num, objnet):
     pred_boxes = torch.from_numpy(img_dets[:, :4]).cuda()
     scores = torch.from_numpy(img_dets[:, 4:]).cuda()
 
-    N_classes = scores.shape[0]
+    N_classes = scores.shape[1]
     all_dets = [[] for _ in xrange(N_classes)]
+
+    all_dets_list = []
 
     empty_det = np.transpose(np.array([[], [], [], [], []]), (1, 0))
     for j in xrange(1, N_classes):
         # for each class
         cls_node = objnet.get_node_by_index(j)
-        thresh = 1.0 / len(cls_node.children()) + 0.1
+        if len(cls_node.hypers()) == 0:
+            thresh = 0.9
+        else:
+            thresh = 1.0 / len(cls_node.hypers()[0].children()) + 0.1
         inds = torch.nonzero(scores[:, j] > thresh).view(-1)
         # if there is det
         if inds.numel() > 0:
@@ -243,11 +248,22 @@ def nms_dets1(img_dets, max_det_num, objnet):
             cls_dets = cls_dets[order]
             keep = nms(cls_dets, 0.3)
             cls_dets = cls_dets[keep.view(-1).long()]
-            all_dets[j] = cls_dets.cpu().numpy()
+            cls_dets = cls_dets.cpu().numpy()
+            all_dets[j] = cls_dets
+
+            cls_inds = np.zeros((cls_dets.shape[0], 1))
+            cls_inds[:,:] = j
+
+            cls_rois = np.concatenate((cls_dets, cls_inds), 1)
+            all_dets_list += cls_rois.tolist()
+
         else:
             all_dets[j] = empty_det
 
-    a = 1
+    return np.array(all_dets_list)
+
+
+
 
 
 

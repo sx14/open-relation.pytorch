@@ -47,12 +47,9 @@ else:
         img_det_cond_p = raw2cond_prob(objnet, img_det_scores)
         img_dets[:, 4:] = img_det_cond_p
 
-        nms_dets1(img_dets, 100, objnet)
+        curr_roidb = nms_dets1(img_dets, 300, objnet)
+        det_roidb[img_id] = curr_roidb
 
-
-
-
-
-# img_hits = det_recall(gt_roidb, det_roidb, 100, objnet)
+img_hits = det_recall(gt_roidb, det_roidb, 300, objnet)
 
 

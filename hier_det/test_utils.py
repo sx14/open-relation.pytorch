@@ -219,6 +219,36 @@ def nms_dets(img_dets, max_det_num, objnet):
 
 
 
+def nms_dets1(img_dets, max_det_num, objnet):
+    from lib.datasets.vrd.label_hier.obj_hier import objnet
+
+    pred_boxes = torch.from_numpy(img_dets[:, :4]).cuda()
+    scores = torch.from_numpy(img_dets[:, 4:]).cuda()
+
+    N_classes = scores.shape[0]
+    all_dets = [[] for _ in xrange(N_classes)]
+
+    empty_det = np.transpose(np.array([[], [], [], [], []]), (1, 0))
+    for j in xrange(1, N_classes):
+        # for each class
+        cls_node = objnet.get_node_by_index(j)
+        thresh = 1.0 / len(cls_node.children()) + 0.1
+        inds = torch.nonzero(scores[:, j] > thresh).view(-1)
+        # if there is det
+        if inds.numel() > 0:
+            cls_scores = scores[:, j][inds]
+            _, order = torch.sort(cls_scores, 0, True)
+            cls_boxes = pred_boxes[inds, :]
+            cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
+            cls_dets = cls_dets[order]
+            keep = nms(cls_dets, 0.3)
+            cls_dets = cls_dets[keep.view(-1).long()]
+            all_dets[j] = cls_dets.cpu().numpy()
+        else:
+            all_dets[j] = empty_det
+
+    a = 1
+
 
 
 

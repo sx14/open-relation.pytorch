@@ -104,8 +104,10 @@ def get_input_data(im, rois):
 
 def gen_rela_conds(det_roidb):
     # det: x1, y1, x2, y2, conf, cls
+    N_img = len(det_roidb.keys())
     rela_cands = dict()
-    for img_id in det_roidb:
+    for i, img_id in enumerate(det_roidb.keys()):
+        print('gen rela [%d/%d]' % (N_img, i+1))
         rela_cands_temp = []
         rois = det_roidb[img_id]
         for i, sbj in enumerate(rois):

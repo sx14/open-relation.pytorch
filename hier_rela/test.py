@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre',
+                        default='rela',
                         # default='rela',
                         )
 
@@ -126,6 +126,8 @@ if __name__ == '__main__':
     hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
+    hierVis.eval()
+    hierLan.eval()
     hierRela.eval()
     print('load model successfully!')
 
@@ -171,8 +173,9 @@ if __name__ == '__main__':
 
     pred_roidb = {}
     start = time.time()
-    for img_id in rela_roidb_use:
-
+    N_img = len(rela_roidb_use.keys())
+    for i, img_id in enumerate(rela_roidb_use.keys()):
+        print('pred [%d/%d]' % (N_img, i+1))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
@@ -188,8 +191,9 @@ if __name__ == '__main__':
         im_scale = data[4]
 
         det_tic = time.time()
-        rois, cls_score, \
-        _, rois_label = hierRela(im_data, im_info, relas_box, relas_num)
+        with torch.no_grad():
+            rois, cls_score, \
+            _, rois_label = hierRela(im_data, im_info, relas_box, relas_num)
 
         scores = cls_score.data
 

@@ -102,7 +102,7 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
                     box_hit = 1
                     if gt[4] == det[4]:
                         det_hit = 1
-                    det_scr = max([det_scr, objnet.get_node_by_index(int(gt[4].tolist())).score(int(det[5].tolist()))])
+                    det_scr = max([det_scr, objnet.get_node_by_index(int(gt[4].tolist())).score(int(det[4].tolist()))])
 
             gt_max_scores[b] = det_scr
             N_obj_box_good += box_hit
@@ -266,11 +266,13 @@ def nms_dets1(img_dets, max_det_num, objnet):
             keep = np.where(all_dets[j][:, -1] >= image_thresh)[0]
             all_dets[j] = all_dets[j][keep, :]
 
-            cls_dets = all_dets[j]
-            cls_inds = np.zeros((cls_dets.shape[0], 1))
-            cls_inds[:, :] = j
-            cls_rois = np.concatenate((cls_dets[:, :4], cls_inds, cls_dets[:, 4]), 1)
-            all_dets_list += cls_rois.tolist()
+            if keep.shape[0] > 0:
+                cls_dets = all_dets[j]
+                cls_inds = np.zeros((cls_dets.shape[0], 1))
+                cls_inds[:, :] = j
+
+                cls_rois = np.concatenate((cls_dets[:, :4], cls_inds, cls_dets[:, 4][:, np.newaxis]), 1)
+                all_dets_list += cls_rois.tolist()
 
     return np.array(all_dets_list)
 

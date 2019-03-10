@@ -57,7 +57,7 @@ class TreeNode:
                 p *= curr._parents[0].cond_prob()
                 curr = curr._parents[0]
             self._prob = p
-        return p
+        return self._prob
 
     def info_ratio(self):
         return self._info_ratio
@@ -131,7 +131,7 @@ def good_thresh(max_depth, depth):
 def top_down_search(root, max_depth, threshold=0):
     root.set_cond_prob(1.0)
     node = root
-    print('P0\t\tP1\t\tE\t\tI')
+    # print('P0\t\tP1\t\tE\t\tI')
     while len(node.children()) > 0:
         c_scores = []
         for c in node.children():
@@ -149,13 +149,13 @@ def top_down_search(root, max_depth, threshold=0):
         if pred_c_scr < threshold:
             break
 
-        print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
+        # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
 
         if node.entropy() >= 1:
             a = 1
 
         node = node.children()[pred_c_ind]
-    print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
+    # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
     return node
 
 

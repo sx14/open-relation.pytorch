@@ -27,7 +27,7 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
         print('processsing [%d/%d]' % (anno_num, i+1))
         anno_path = os.path.join(anno_root, anno_list[i]+'.json')
         anno = json.load(open(anno_path, 'r'))
-        anno_rlts = anno['relations']
+        anno_rlts = anno['relationships']
         for rlt in anno_rlts:
             anno_obj = rlt['object']
             anno_sbj = rlt['subject']
@@ -39,9 +39,9 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             raw_rlts.append([sbj_ind, pre_ind, obj_ind, pre_ind])
 
     pos_num = len(raw_rlts)
-    neg_num = int(pos_num * 0.01)
+    neg_num = int(pos_num * 0.1)
 
-    pos_subset = random.sample(pos_num, neg_num)
+    pos_subset = random.sample(raw_rlts, neg_num)
     neg_rlts = []
     for rlt in pos_subset:
         neg_rlt = [rlt[2], 0, rlt[0], 0]

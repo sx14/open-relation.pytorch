@@ -68,9 +68,8 @@ save_model_root = 'output/%s/' % dataset
 if not os.path.isdir(save_model_root):
     os.makedirs(save_model_root)
 
-save_model_path = train_params['save_model_path']+dataset
-new_model_path = train_params['latest_model_path']+dataset+'.pth'
-best_model_path = train_params['best_model_path']+dataset+'.pth'
+new_model_path = os.path.join(save_model_root, train_params['latest_model_path']+dataset+'.pth')
+best_model_path = os.path.join(save_model_root, train_params['best_model_path']+dataset+'.pth')
 
 input_length = train_set.obj_vec_length() * 2
 gt_label_vec_path = pre_label_vec_path
@@ -129,7 +128,6 @@ for epoch in range(epoch_num):
         best_acc = avg_acc
         torch.save(model.state_dict(), best_model_path)
     print('>>>> Eval Acc: % .2f <<<<\n' % avg_acc)
-    torch.save(model.state_dict(), save_model_path+str(epoch)+'.pth')
     torch.save(model.state_dict(), new_model_path)
 
 

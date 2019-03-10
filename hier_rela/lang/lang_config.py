@@ -16,6 +16,5 @@ train_params = {
     'batch_size': 32,
     'latest_model_path': 'hier_rela_lan_new_',
     'best_model_path': 'hier_rela_lan_best_',
-    'save_model_path': 'hier_rela_lan_'
 }
 

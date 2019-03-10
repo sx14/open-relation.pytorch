@@ -71,7 +71,7 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
         N_obj = len(box_gt)
         N_obj_total = N_obj_total + N_obj
 
-        # x1, y1, x2, y2, name, score
+        # x1, y1, x2, y2, score, name
         if image_id not in pred_roidb:
             print(image_id)
             continue
@@ -79,13 +79,14 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
         curr_pred_roidb = np.array(pred_roidb[image_id])
         if len(curr_pred_roidb) == 0:
             continue
-        box_dete = curr_pred_roidb[:, :4]
-        scr_dete = curr_pred_roidb[:, 5]
-        ranked_inds = np.argsort(scr_dete)[::-1]
-        box_dete = box_dete[ranked_inds]
 
-        if box_dete.shape[0] > N_recall:
-            box_dete = box_dete[:N_recall]
+        # sort predictions with scores
+        scr_dete = curr_pred_roidb[:, 4]
+        ranked_inds = np.argsort(scr_dete)[::-1]
+        curr_pred_roidb = curr_pred_roidb[ranked_inds]
+
+        if curr_pred_roidb.shape[0] > N_recall:
+            curr_pred_roidb = curr_pred_roidb[:N_recall]
 
         gt_max_scores = [0 for z in range(box_gt.shape[0])]
         for b in range(box_gt.shape[0]):
@@ -93,15 +94,15 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
             box_hit = 0
             det_hit = 0
             det_scr = 0
-            for o in range(box_dete.shape[0]):
+            for o in range(curr_pred_roidb.shape[0]):
                 if det_hit == 1:
                     break
                 det = curr_pred_roidb[o]
-                if compute_iou_each(gt, det) > 0.5:
+                if compute_iou_each(gt, det[:4]) > 0.5:
                     box_hit = 1
-                    if gt[4] == det[4]:
+                    if gt[4] == det[5]:
                         det_hit = 1
-                    det_scr = max([det_scr, objnet.get_node_by_index(int(gt[4].tolist())).score(int(det[4].tolist()))])
+                    det_scr = max([det_scr, objnet.get_node_by_index(int(gt[4].tolist())).score(int(det[5].tolist()))])
 
             gt_max_scores[b] = det_scr
             N_obj_box_good += box_hit
@@ -249,16 +250,29 @@ def nms_dets1(img_dets, max_det_num, objnet):
             keep = nms(cls_dets, 0.3)
             cls_dets = cls_dets[keep.view(-1).long()]
             cls_dets = cls_dets.cpu().numpy()
+
+            cls_info_ratio = objnet.get_node_by_index(j).info_ratio(objnet.label_sum())
+            cls_info_ratio = np.array(cls_info_ratio)
+            cls_info_ratio = np.sqrt(cls_info_ratio)
+            cls_dets[:, 4] = cls_dets[:, 4] * cls_info_ratio
             all_dets[j] = cls_dets
-
-            cls_inds = np.zeros((cls_dets.shape[0], 1))
-            cls_inds[:,:] = j
-
-            cls_rois = np.concatenate((cls_dets, cls_inds), 1)
-            all_dets_list += cls_rois.tolist()
 
         else:
             all_dets[j] = empty_det
+
+        # Limit to max_det_num detections *over all classes*
+        image_scores = np.hstack([all_dets[j][:, -1] for j in xrange(1, N_classes)])
+        if len(image_scores) > max_det_num:
+            image_thresh = np.sort(image_scores)[-max_det_num]
+            for j in xrange(1, N_classes):
+                keep = np.where(all_dets[j][:, -1] >= image_thresh)[0]
+                all_dets[j] = all_dets[j][keep, :]
+
+                cls_dets = all_dets[j]
+                cls_inds = np.zeros((cls_dets.shape[0], 1))
+                cls_inds[:, :] = j
+                cls_rois = np.concatenate((cls_dets, cls_inds), 1)
+                all_dets_list += cls_rois.tolist()
 
     return np.array(all_dets_list)
 

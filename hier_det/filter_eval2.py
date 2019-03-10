@@ -35,22 +35,23 @@ else:
 
 # process
 N_img = len(det_roidb.keys())
-if os.path.exists('det_infer_roidb_%s.bin' % dataset):
-    with open('det_infer_roidb_%s.bin' % dataset, 'rb') as f:
-        det_roidb = pickle.load(f)
-else:
-    nms_roidb = {}
-    for i, img_id in enumerate(det_roidb.keys()):
-        print('nms [%d/%d]' % (N_img, i + 1))
-        img_dets = det_roidb[img_id]
 
-        img_det_scores = img_dets[:, 4:]
-        img_det_cond_p = raw2cond_prob(objnet, img_det_scores)
-        img_dets[:, 4:] = img_det_cond_p
+nms_roidb = {}
+for i, img_id in enumerate(det_roidb.keys()):
+    print('nms [%d/%d]' % (N_img, i + 1))
+    img_dets = det_roidb[img_id]
 
-        curr_rois = nms_dets1(img_dets, 300, objnet)
-        nms_roidb[img_id] = curr_rois
+    img_det_scores = img_dets[:, 4:]
+    img_det_cond_p = raw2cond_prob(objnet, img_det_scores)
+    img_dets[:, 4:] = img_det_cond_p
 
-img_hits = det_recall(gt_roidb, nms_roidb, 300, objnet)
+    curr_rois = nms_dets1(img_dets, 100, objnet)
+    nms_roidb[img_id] = curr_rois
+
+
+with open('det_infer_roidb_%s.bin' % dataset, 'wb') as f:
+    pickle.dump(nms_roidb, f)
+
+img_hits = det_recall(gt_roidb, nms_roidb, 100, objnet)
 
 

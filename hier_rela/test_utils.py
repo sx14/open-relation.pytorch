@@ -103,7 +103,7 @@ def get_input_data(im, rois):
 
 
 def gen_rela_conds(det_roidb):
-    # det: x1, y1, x2, y2, cls, conf
+    # det: x1, y1, x2, y2, conf, cls
     rela_cands = dict()
     for img_id in det_roidb:
         rela_cands_temp = []

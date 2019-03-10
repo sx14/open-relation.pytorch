@@ -71,7 +71,7 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
         N_obj = len(box_gt)
         N_obj_total = N_obj_total + N_obj
 
-        # x1, y1, x2, y2, score, name
+        # x1, y1, x2, y2, name, score
         if image_id not in pred_roidb:
             print(image_id)
             continue
@@ -80,15 +80,15 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
         if len(curr_pred_roidb) == 0:
             continue
 
-        # sort predictions with scores
-        scr_dete = curr_pred_roidb[:, 4]
+        # sort predictions
+        scr_dete = curr_pred_roidb[:, 5]
         ranked_inds = np.argsort(scr_dete)[::-1]
         curr_pred_roidb = curr_pred_roidb[ranked_inds]
 
         if curr_pred_roidb.shape[0] > N_recall:
             curr_pred_roidb = curr_pred_roidb[:N_recall]
 
-        gt_max_scores = [0 for z in range(box_gt.shape[0])]
+        gt_max_scores = [0 for _ in range(box_gt.shape[0])]
         for b in range(box_gt.shape[0]):
             gt = curr_gt_roidb[b]
             box_hit = 0
@@ -100,7 +100,7 @@ def det_recall(gt_roidb, pred_roidb, N_recall, objnet):
                 det = curr_pred_roidb[o]
                 if compute_iou_each(gt, det[:4]) > 0.5:
                     box_hit = 1
-                    if gt[4] == det[5]:
+                    if gt[4] == det[4]:
                         det_hit = 1
                     det_scr = max([det_scr, objnet.get_node_by_index(int(gt[4].tolist())).score(int(det[5].tolist()))])
 
@@ -217,20 +217,16 @@ def nms_dets(img_dets, max_det_num, objnet):
     return np.array(nms_det_scores)
 
 
-
-
-
 def nms_dets1(img_dets, max_det_num, objnet):
     from lib.datasets.vrd.label_hier.obj_hier import objnet
 
+    # 300 proposal
+    # 300 * N_classes scores
     pred_boxes = torch.from_numpy(img_dets[:, :4]).cuda()
     scores = torch.from_numpy(img_dets[:, 4:]).cuda()
 
     N_classes = scores.shape[1]
     all_dets = [[] for _ in xrange(N_classes)]
-
-    all_dets_list = []
-
     empty_det = np.transpose(np.array([[], [], [], [], []]), (1, 0))
     for j in xrange(1, N_classes):
         # for each class
@@ -251,6 +247,7 @@ def nms_dets1(img_dets, max_det_num, objnet):
             cls_dets = cls_dets[keep.view(-1).long()]
             cls_dets = cls_dets.cpu().numpy()
 
+            # score = conditional probability * info ratio
             cls_info_ratio = objnet.get_node_by_index(j).info_ratio(objnet.label_sum())
             cls_info_ratio = np.array(cls_info_ratio)
             cls_info_ratio = np.sqrt(cls_info_ratio)
@@ -260,19 +257,20 @@ def nms_dets1(img_dets, max_det_num, objnet):
         else:
             all_dets[j] = empty_det
 
-        # Limit to max_det_num detections *over all classes*
-        image_scores = np.hstack([all_dets[j][:, -1] for j in xrange(1, N_classes)])
-        if len(image_scores) > max_det_num:
-            image_thresh = np.sort(image_scores)[-max_det_num]
-            for j in xrange(1, N_classes):
-                keep = np.where(all_dets[j][:, -1] >= image_thresh)[0]
-                all_dets[j] = all_dets[j][keep, :]
+    # Limit to max_det_num detections *over all classes*
+    all_dets_list = []
+    image_scores = np.hstack([all_dets[j][:, -1] for j in xrange(1, N_classes)])
+    if len(image_scores) > max_det_num:
+        image_thresh = np.sort(image_scores)[-max_det_num]
+        for j in xrange(1, N_classes):
+            keep = np.where(all_dets[j][:, -1] >= image_thresh)[0]
+            all_dets[j] = all_dets[j][keep, :]
 
-                cls_dets = all_dets[j]
-                cls_inds = np.zeros((cls_dets.shape[0], 1))
-                cls_inds[:, :] = j
-                cls_rois = np.concatenate((cls_dets, cls_inds), 1)
-                all_dets_list += cls_rois.tolist()
+            cls_dets = all_dets[j]
+            cls_inds = np.zeros((cls_dets.shape[0], 1))
+            cls_inds[:, :] = j
+            cls_rois = np.concatenate((cls_dets[:, :4], cls_inds, cls_dets[:, 4]), 1)
+            all_dets_list += cls_rois.tolist()
 
     return np.array(all_dets_list)
 

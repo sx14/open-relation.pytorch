@@ -40,7 +40,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -74,10 +74,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=14, type=int)
+                        default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=85991, type=int)
+                        default=7574, type=int)
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
@@ -291,7 +291,7 @@ if __name__ == '__main__':
         misc_tic = time.time()
 
         # x1,y1,x2,y2,s0,s1,s2,s3,...,sN
-        my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
+        my_dets = torch.cat([pred_boxes[:, 4:8], pred_scores], 1)
         det_roidb[im_id] = my_dets.cpu().data.numpy()
 
     with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:

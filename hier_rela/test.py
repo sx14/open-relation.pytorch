@@ -166,10 +166,17 @@ if __name__ == '__main__':
         cond_roidb = gen_rela_conds(det_roidb)
         rela_roidb_use = cond_roidb
 
-    N_count = 0.01
+    N_count = 1e-10
     TP_count = 0.0
     hier_score_sum = 0.0
     raw_score_sum = 0.0
+
+    zero_N_count = 1e-10
+    zero_TP_count = 0.0
+    zero_hier_score_sum = 0.0
+    zero_raw_score_sum = 0.0
+
+
 
     pred_roidb = {}
     start = time.time()
@@ -187,6 +194,7 @@ if __name__ == '__main__':
         im_info.data.resize_(data[1].size()).copy_(data[1])
         relas_box.data.resize_(data[2].size()).copy_(data[2])
         relas_num.data.resize_(data[3].size()).copy_(data[3])
+        relas_zero = rois_use[:, -1]
 
         im_scale = data[4]
 
@@ -204,6 +212,10 @@ if __name__ == '__main__':
 
         for ppp in range(scores.size()[1]):
             N_count += 1
+
+            if relas_zero[ppp] == 1:
+                zero_N_count += 1
+
             all_scores = scores[0][ppp].cpu().data.numpy()
 
             # print('==== %s ====' % gt_node.name())
@@ -227,12 +239,20 @@ if __name__ == '__main__':
                 raw_scr = gt_node.score(raw_cate)
                 raw_score_sum += raw_scr
 
+                if relas_zero == 1:
+                    zero_raw_score_sum += raw_scr
+
                 hier_scr = gt_node.score(pred_cate)
                 pred_node = prenet.get_node_by_index(pred_cate)
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
                 if hier_scr > 0:
                     TP_count += 1
                     hier_score_sum += hier_scr
+
+                    if relas_zero == 1:
+                        zero_TP_count += 1
+                        zero_hier_score_sum += hier_scr
+
                     info = 'T: ' + info
                 else:
                     info = 'F: ' + info
@@ -256,9 +276,15 @@ if __name__ == '__main__':
     end = time.time()
     print("test time: %0.4fs" % (end - start))
 
+    print("==== overall test result ==== ")
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
     print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
     print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
+
+    print("==== zero-shot test result ==== ")
+    print("Rec flat Acc: %.4f" % (zero_TP_count / zero_N_count))
+    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
+    print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:

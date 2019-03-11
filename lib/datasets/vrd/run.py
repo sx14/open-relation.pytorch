@@ -13,7 +13,50 @@ from lib.datasets.vrd.process.split_anno_pkg import split_anno_pkg
 from global_config import PROJECT_ROOT
 
 
-def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_label_path):
+def all_relationships(anno_root, anno_list_path):
+    # sbj -> obj -> pre
+    rlts = dict()
+
+    # load img id list
+    with open(anno_list_path, 'r') as anno_list_file:
+        anno_list = anno_list_file.read().splitlines()
+
+    # for each anno file
+    for i in range(len(anno_list)):
+
+        # load anno file
+        anno_file_id = anno_list[i]
+        print('ext reltionships [%d/%d] %s' % (len(anno_list), (i + 1), anno_file_id))
+        anno_path = os.path.join(anno_root, anno_list[i]+'.json')
+        anno = json.load(open(anno_path, 'r'))
+        image_id = anno_list[i]
+        anno_rlts = anno['relationships']
+        if len(anno_rlts) == 0:
+            continue
+
+        # collect boxes and labels
+        rlt_info_list = []
+
+        for rlt in anno_rlts:
+            sbj = rlt['subject']
+            obj = rlt['object']
+            pre = rlt['predicate']
+
+            if sbj['name'] not in rlts:
+                rlts[sbj['name']] = {}
+
+            obj2pre = rlts[sbj['name']]
+            if obj['name'] not in obj2pre:
+                obj2pre[obj['name']] = set()
+
+            pres = obj2pre[obj['name']]
+            pres.add(pre['name'])
+    return rlts
+
+
+
+
+def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_label_path, train_rlts):
     # image id -> rlt info
     rlts = dict()
 
@@ -38,12 +81,27 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
         rlt_info_list = []
 
         for rlt in anno_rlts:
-            things = [rlt['predicate'], rlt['subject'], rlt['object']]
+            sbj = rlt['subject']
+            obj = rlt['object']
+            pre = rlt['predicate']
+
+            zero_shot = 1
+            if sbj['name'] in train_rlts:
+                obj2pre = train_rlts[sbj['name']]
+                if obj['name'] in obj2pre:
+                    pres = obj2pre[obj['name']]
+                    if pre['name'] in pres:
+                        # not zero shot
+                        zero_shot = 0
+
+
+            things = [pre, sbj, obj]
             labelnets = [prenet, objnet, objnet]
             # [ p_xmin, p_ymin, p_xmax, p_ymax, p_name,
             #   s_xmin, s_ymin, s_xmax, s_ymax, s_name,
             #   o_xmin, o_ymin, o_xmax, o_ymax, o_name, p_conf, s_conf, o_conf]
             rlt_info = []
+
             # concatenate three box_label
             for j, thing in enumerate(things):
                 xmin = int(thing['xmin'])
@@ -52,7 +110,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                 ymax = int(thing['ymax'])
                 label_ind = labelnets[j].get_node_by_name(thing['name']).index()
                 rlt_info += [xmin, ymin, xmax, ymax, label_ind]
-            rlt_info += [1.0, 1.0, 1.0]
+            rlt_info += [1.0, 1.0, 1.0, zero_shot]
             rlt_info_list.append(rlt_info)
         rlts[image_id] = rlt_info_list
     with open(box_label_path, 'wb') as box_label_file:
@@ -212,7 +270,11 @@ if __name__ == '__main__':
     # for eval
     roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')
     anno_root = vrd_config['clean_anno_root']
-    anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
-    prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, roidb_save_path)
+
+    train_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
+    train_rlts = all_relationships(anno_root, train_anno_list_path)
+
+    test_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
+    prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, roidb_save_path)
 
 

@@ -52,12 +52,16 @@ def compute_iou_each(box1, box2):
 def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
     N_rela_right = 0.0
     N_pre_right = 0.0
-
     N_rela_total = 0.0
-    N_obj_total = 0.0
 
-    N_obj_box_goot = 0.0
-    N_obj_det_goot = 0.0
+    N_obj_total = 0.0
+    N_obj_box_good = 0.0
+    N_obj_det_good = 0.0
+
+
+    N_zero_rela_right = 0.0
+    N_zero_pre_right = 0.0
+    N_zero_rela_total = 0.0
 
     num_right = {}
     for image_id in gt_roidb:
@@ -108,8 +112,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                     if gt[4] == det[4]:
                         det_hit = 1
 
-            N_obj_box_goot += box_hit
-            N_obj_det_goot += det_hit
+            N_obj_box_good += box_hit
+            N_obj_det_good += det_hit
 
         sort_score = np.sort(rela_pred_score)[::-1]
         if N_recall >= N_pred:
@@ -159,8 +163,9 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         N_rela_right += np.sum(rela_scores)
         N_pre_right += np.sum(pre_scores)
 
-    print('Proposal recall: %.4f' % (N_obj_box_goot / N_obj_total))
-    print('Detection recall: %.4f' % (N_obj_det_goot / N_obj_total))
+    print('Proposal recall: %.4f' % (N_obj_box_good / N_obj_total))
+    print('Detection recall: %.4f' % (N_obj_det_good / N_obj_total))
+
     det_acc = N_rela_right / N_rela_total
     rec_acc = N_pre_right / N_rela_total
     return det_acc, rec_acc, num_right

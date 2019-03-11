@@ -35,7 +35,7 @@ def im_list_to_blob(ims):
 
 
 def get_roi_blob(boxes, scale):
-    # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, pconf, sconf, oconf
+    # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, pconf, sconf, oconf, zero
     boxes_np = np.array(boxes)
     boxes_np[:, 0:4] = boxes_np[:, 0:4] * scale
     boxes_np[:, 5:9] = boxes_np[:, 5:9] * scale

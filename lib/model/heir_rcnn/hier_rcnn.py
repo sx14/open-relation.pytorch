@@ -148,7 +148,7 @@ class _HierRCNN(nn.Module):
         vis_embedding_use = self.order_embedding(pooled_feat_use)
         # compute order similarity for hier labels
         start = time.time()
-        if vis_embedding_use.size(0) > 10:
+        if vis_embedding_use.size(0) > 20:
             cls_score_use = self.order_score.forward1(self.label_vecs, vis_embedding_use)
         else:
             cls_score_use = self.order_score.forward(self.label_vecs, vis_embedding_use)
@@ -200,23 +200,6 @@ class _HierRCNN(nn.Module):
         y = Variable(torch.zeros(len(loss_scores))).long().cuda()
         return loss_scores, y
 
-
-    # def _process_scores(self, cls_scores, rois_label):
-    #     # remove background scores
-    #     rois_label_use = rois_label
-    #     cls_scores_use = cls_scores
-    #     # rois_label_use = rois_label[rois_label > 0]
-    #     # cls_scores_use = cls_scores[rois_label > 0, :]
-    #     cls_scores_use = cls_scores_use + (-0.00001)    # for zeros
-    #
-    #     # raw and negs is 1, others is +Inf
-    #     mask = self.objnet.raw_neg_mask(rois_label_use)
-    #     with torch.no_grad():
-    #         mask_v = Variable(torch.from_numpy(mask)).float().cuda()
-    #     cls_scores_use = cls_scores_use.mul(mask_v)
-    #     return cls_scores_use, rois_label_use
-
-
     # prepare labels [pos, neg1, neg2, ...]
     def _loss_labels(self, rois_label):
         loss_labels = np.zeros((rois_label.size()[0], 1+self.n_neg_classes)).astype(np.int)
@@ -227,9 +210,6 @@ class _HierRCNN(nn.Module):
             all_neg_inds = list(set(range(self.objnet.label_sum())) - all_pos_inds)
             loss_labels[i] = [rois_label[i]] + all_neg_inds[:self.n_neg_classes]
         return loss_labels
-
-
-
 
     # extract roi fc7
     def ext_feat(self, im_data, im_info, gt_boxes, num_boxes, use_rpn=True):

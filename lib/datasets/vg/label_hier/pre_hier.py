@@ -13,7 +13,7 @@ class PreNet(LabelHier):
         # root node
         next_index = 1
         root = LabelNode('relation', next_index, False)
-        for raw_label in self._raw_labels:
+        for raw_label in self._raw_labels[1:]:
             next_index += 1
             node = LabelNode(raw_label, next_index, True)
             node.add_hyper(root)

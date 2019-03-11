@@ -252,6 +252,8 @@ class LabelHier:
                     node.del_child(c)
 
     def _dfs_compress(self, curr):
+        if curr.name() == 'extremity.n.01':
+            a = 1
         # dfs based compression
         if len(curr.children()) > 1:
             # keep curr
@@ -277,6 +279,21 @@ class LabelHier:
         else:
             return
 
+    def _check_dead_node(self):
+        root = self.root()
+        background = self.get_node_by_name('__background__')
+        c = 1
+        for i in range(self.label_sum()):
+            n = self.get_node_by_index(i)
+            if len(n.hypers()) == 0 and n.index() != root.index() and n.index() != background.index():
+                print('%d: <%s> is dead. (no parent)' % (c, n.name()))
+                c += 1
+            if len(n.children()) == 0 and not n.is_raw():
+                print('%d: <%s> is dead. (no children)' % (c, n.name()))
+                c += 1
+            if len(n.children()) == 1:
+                print('%d: <%s> is dead. (one children)' % (c, n.name()))
+
     def _construct_hier(self):
         raise NotImplementedError
 
@@ -288,6 +305,7 @@ class LabelHier:
         self._index2node = [bk]
         self._construct_hier()
         self._compress()
+        self._check_dead_node()
         self._raw2path = None
 
         for node in self._index2node:

@@ -7,19 +7,6 @@ from global_config import PROJECT_ROOT
 
 class ObjNet(LabelHier):
 
-    def _check_dead_node(self):
-        root = self.root()
-        background = self.get_node_by_name('__background__')
-        c = 1
-        for i in range(self.label_sum()):
-            n = self.get_node_by_index(i)
-            if len(n.hypers()) == 0 and n.index() != root.index() and n.index() != background.index():
-                print('%d: <%s> is dead. (no parent)' % (c, n.name()))
-                c += 1
-            if len(n.children()) == 0 and not n.is_raw():
-                print('%d: <%s> is dead. (no children)' % (c, n.name()))
-                c += 1
-
     def _export_split(self):
         records = []
         for node in self._index2node:
@@ -39,6 +26,19 @@ class ObjNet(LabelHier):
         return splits
 
     def _prone_and_check(self, splits):
+
+        def _prone_one_split(red_hyper, ind2node):
+            if red_hyper.is_raw() or len(red_hyper.children()) > 0:
+                # not dead
+                return
+
+            # dead
+            ind2node[red_hyper.index()] = None
+            for h in red_hyper.hypers():
+                h.del_child(red_hyper)
+                _prone_one_split(h, ind2node)
+
+        # annual hyper choice
         c2p = {}
         for split in splits:
             names = split.strip().split('|')
@@ -47,6 +47,7 @@ class ObjNet(LabelHier):
             c2p[c] = p
 
         # check and prone
+        # bottom up
         root_node = self.root()
         raw_labels = self.get_raw_labels()[1:]  # no 'background'
         for raw_label in raw_labels:
@@ -54,22 +55,27 @@ class ObjNet(LabelHier):
             curr_node = raw_node
             while curr_node.index() != root_node.index():
                 if len(curr_node.hypers()) > 1:
+                    # multiple hypers
                     next = None
-                    remove = []
+                    redundant_hypers = []
+                    # find the only hyper
+                    # other hypers are redundant
                     for h in curr_node.hypers():
                         if h.name() == c2p[curr_node.name()]:
                             next = h
                         else:
-                            remove.append(h)
+                            redundant_hypers.append(h)
                     if next is None:
-                        print('%s -> %s' % (raw_label, curr_node.name()))
+                        print('<%s> hypers not split.' % curr_node.name())
                         exit(-1)
                     else:
-                        for r in remove:
+                        # prone the redundant split completely
+                        for r in redundant_hypers:
+                            # break connections between redundant hypers and current node
                             r.del_child(curr_node)
-                            if len(r.children()) == 0:
-                                self._index2node[r.index()] = None
                             curr_node.del_hyper(r)
+                            # try to prone redundant split
+                            _prone_one_split(r, self._index2node)
                         curr_node = next
 
                 elif len(curr_node.hypers()) == 1:
@@ -134,4 +140,3 @@ class ObjNet(LabelHier):
 raw_label_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'object_labels.txt')
 raw2wn_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'object_label2wn.txt')
 objnet = ObjNet(raw_label_path, raw2wn_path)
-

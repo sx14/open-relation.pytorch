@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     # split_anno_pkg(vg_config)
     # reformat_anno(vg_config)
-    # collect_labels(vg_config)
+    collect_labels(vg_config)
 
     from process.filter_anno import filter_anno
     from process.split_dataset import split_dataset

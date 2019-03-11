@@ -44,10 +44,9 @@ def count(vg_config):
             else:
                 pre2wn[predicate] = synsets
 
-
     counters = {
-        'object': (obj_counter, obj2wn, 2000),
-        'predicate': (pre_counter, pre2wn, 1000)
+        'object': (obj_counter, obj2wn, 1000),
+        'predicate': (pre_counter, pre2wn, 500)
     }
 
     return counters

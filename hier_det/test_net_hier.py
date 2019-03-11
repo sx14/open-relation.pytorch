@@ -40,7 +40,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -74,10 +74,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=20, type=int)
+                        default=14, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=7547, type=int)
+                        default=85991, type=int)
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
@@ -106,6 +106,9 @@ if __name__ == '__main__':
         args.imdbval_name = "vg_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg.label_hier.obj_hier import objnet
+
+        
+
         args.class_agnostic = False
         # TODO: 之后要变成True, 目前训练的是False
 
@@ -196,7 +199,7 @@ if __name__ == '__main__':
 
     hierRCNN.eval()
 
-    use_rpn = True
+    use_rpn = False
     TP_count = 0.0
     TP_score = 0.0
     N_count = 0.1
@@ -216,10 +219,12 @@ if __name__ == '__main__':
         gt_roidb[im_id][:, :4] = gt_roidb[im_id][:, :4] / data[1][0][2].item()
 
         det_tic = time.time()
-        rois, cls_prob, bbox_pred, \
-        rpn_loss_cls, rpn_loss_box, \
-        RCNN_loss_cls, RCNN_loss_bbox, \
-        rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
+
+        with torch.no_grad():
+            rois, cls_prob, bbox_pred, \
+            rpn_loss_cls, rpn_loss_box, \
+            RCNN_loss_cls, RCNN_loss_bbox, \
+            rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
 
         scores = cls_prob.data
         boxes = rois.data[:, :, 1:5]
@@ -234,7 +239,7 @@ if __name__ == '__main__':
                 gt_node = objnet.get_node_by_index(int(gt_cate))
                 all_scores = scores[0][ppp].cpu().data.numpy()
 
-                print('==== %s ====' % gt_node.name())
+                # print('==== %s ====' % gt_node.name())
                 #ranked_inds = np.argsort(all_scores)[::-1][:20]
                 #sorted_scrs = np.sort(all_scores)[::-1][:20]
                 # for item in zip(ranked_inds, sorted_scrs):
@@ -277,11 +282,6 @@ if __name__ == '__main__':
             pred_boxes = np.tile(boxes, (1, scores.shape[1]))
 
         pred_boxes /= data[1][0][2].item()
-
-        scores = scores.squeeze()
-        pred_boxes = pred_boxes.squeeze()
-
-
 
         pred_scores = scores[0]
         pred_boxes = pred_boxes[0]

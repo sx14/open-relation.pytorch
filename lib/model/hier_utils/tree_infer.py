@@ -10,9 +10,9 @@ from torch.nn.functional import softmax
 
 class TreeNode:
     def __init__(self, name, index, info_ratio):
-        self._cond_prob = 0.0
+        self._cond_prob = None
         self._raw_score = None
-        self._prob = 0.0
+        self._prob = None
         self._name = name
         self._index = index
         self._parents = []
@@ -26,7 +26,10 @@ class TreeNode:
         return self._raw_score
 
     def set_raw_score(self, raw_score):
-        self._raw_score = raw_score
+        if raw_score <= -1:
+            self._raw_score = (1.0 / max(-raw_score, 0.01)) ** 0.5
+        else:
+            self._raw_score = raw_score + 2
 
     def depth(self):
         min_p_depth = 0
@@ -44,7 +47,7 @@ class TreeNode:
         self._parents.append(parent)
 
     def set_cond_prob(self, cond_prob):
-        self._cond_prob = cond_prob
+        self._cond_prob = min(cond_prob, 0.0001)
 
     def cond_prob(self):
         return self._cond_prob
@@ -63,7 +66,7 @@ class TreeNode:
         return self._info_ratio
 
     def score(self):
-        return self.cond_prob() * self._info_ratio
+        return self.prob() * self._info_ratio
 
     def entropy(self):
         e = 0.0
@@ -80,17 +83,12 @@ class TreeNode:
 
 
 def construct_tree(labelnet, scores):
-    ind2node = []
+    ind2node = dict()
     # node meta info
-    for ind in range(labelnet.label_sum()):
-        hnode = labelnet.get_node_by_index(ind)
-        tnode = TreeNode(hnode.name(), ind, hnode.info_ratio(labelnet.pos_leaf_sum()))
-        ind2node.append(tnode)
-
-    # for label in labelnet.get_all_labels():
-    #     hnode = labelnet.get_node_by_name(label)
-    #     tnode = TreeNode(label, hnode.index(), hnode.info_ratio(labelnet.pos_leaf_sum()))
-    #     ind2node[hnode.index()] = tnode
+    for label in labelnet.get_all_labels():
+        hnode = labelnet.get_node_by_name(label)
+        tnode = TreeNode(label, hnode.index(), hnode.info_ratio(labelnet.pos_leaf_sum()))
+        ind2node[hnode.index()] = tnode
 
     # node hierarchy
     for label in labelnet.get_all_labels():
@@ -105,6 +103,8 @@ def construct_tree(labelnet, scores):
     # node raw score
     ranked_inds = np.argsort(scores)[::-1]
     for r, ind in enumerate(ranked_inds):
+        # rank = r + 1.0  # 1 based
+        # score = (len(ranked_inds) - rank) / len(ranked_inds)
         score = scores[ind]
         tnode = ind2node[ind]
         tnode.set_raw_score(score.tolist())
@@ -129,72 +129,53 @@ def good_thresh(max_depth, depth):
 
 
 def top_down_search(root, max_depth, threshold=0):
+    path = []
+    down_scrs = []
+
+    # init root probability
     root.set_cond_prob(1.0)
     node = root
+
     # print('P0\t\tP1\t\tE\t\tI')
-    while len(node.children()) > 0:
+    while node is not None:
         c_scores = []
         for c in node.children():
             c_scores.append(c.raw_score())
-        c_scores_v = Variable(Tensor(c_scores))
-        c_scores_s = softmax(c_scores_v, 0)
+
+        if len(node.children()) > 0:
+            c_scores_v = Variable(Tensor(c_scores))
+            c_scores_s = softmax(c_scores_v, 0)
 
         for i, c in enumerate(node.children()):
             c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
-        pred_c_ind = torch.argmax(c_scores_s)
-        pred_c_scr = c_scores_s[pred_c_ind]
-
-        threshold = good_thresh(node.depth(), max_depth)
-        if pred_c_scr < threshold:
-            break
+        curr_info = node.info_ratio()
+        if curr_info > 0.1:
+            down_scr = (1 - node.entropy()) * node.info_ratio()
+        else:
+            down_scr = 0
+        path.append(node)
+        down_scrs.append(down_scr)
 
         # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
 
-        if node.entropy() >= 1:
-            a = 1
+        if len(node.children()) > 0:
+            pred_c_ind = torch.argmax(c_scores_s)
+            node = node.children()[pred_c_ind]
+        else:
+            node = None
 
-        node = node.children()[pred_c_ind]
-    # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
-    return node
+    down_scrs = np.array(down_scrs[:-1])    # without leaf
+    if np.sum(down_scrs) > 0:
+        pred_path_ind = np.argmax(down_scrs) + 1
+    else:
+        pred_path_ind = len(path) - 1
 
-
-def cal_pos_cond_prob(node):
-    if len(node.children()) == 0:
-        return
-
-    c_scores = []
-    for c in node.children():
-        c_scores.append(c.raw_score())
-    c_scores_v = Variable(Tensor(c_scores))
-    c_scores_s = softmax(c_scores_v, 0)
-    for i, c in enumerate(node.children()):
-        c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
-
-    pred_c_ind = torch.argmax(c_scores_s)
-    cal_pos_cond_prob(node.children()[pred_c_ind])
-
-
+    return path[pred_path_ind]
 
 
 def my_infer(labelnet, scores):
     tnodes = construct_tree(labelnet, scores)
-    choice = top_down_search(tnodes[labelnet.root().index()], 0.4)
+    choice = top_down_search(tnodes[labelnet.root().index()], 0.5)
     return [[choice.index(), choice.score()], [choice.index(), choice.score()]]
-
-
-def raw2cond_prob(labelnet, batch_scores):
-
-    cond_probs = np.zeros(batch_scores.shape)
-    for i in range(batch_scores.shape[0]):
-        scores = batch_scores[i]
-        tnodes = construct_tree(labelnet, scores)
-        root = tnodes[labelnet.root().index()]
-        root.set_cond_prob(1.0)
-        cal_pos_cond_prob(root)
-
-        for j in range(batch_scores.shape[1]):
-            cond_probs[i][j] = tnodes[j].cond_prob()
-
-    return cond_probs
 

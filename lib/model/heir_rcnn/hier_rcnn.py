@@ -148,7 +148,10 @@ class _HierRCNN(nn.Module):
         vis_embedding_use = self.order_embedding(pooled_feat_use)
         # compute order similarity for hier labels
         start = time.time()
-        cls_score_use = self.order_score(self.label_vecs, vis_embedding_use)
+        if vis_embedding_use.size(0) > 10:
+            cls_score_use = self.order_score.forward1(self.label_vecs, vis_embedding_use)
+        else:
+            cls_score_use = self.order_score.forward(self.label_vecs, vis_embedding_use)
         end = time.time()
         # print('Order Scoring Time: %.2f s' % (end - start))
         # ===== order embedding here =====/

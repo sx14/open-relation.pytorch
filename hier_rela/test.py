@@ -201,17 +201,11 @@ if __name__ == '__main__':
         pred_scores = torch.zeros(rois[0].shape[0])
 
         raw_label_inds = set(prenet.get_raw_indexes())
+
         for ppp in range(scores.size()[1]):
             N_count += 1
-
-            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-            gt_node = prenet.get_node_by_index(int(gt_cate))
-
             all_scores = scores[0][ppp].cpu().data.numpy()
 
-            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-            raw_scr = gt_node.score(raw_cate)
-            raw_score_sum += raw_scr
             # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
             # sorted_scrs = np.sort(all_scores)[::-1][:20]
@@ -225,17 +219,25 @@ if __name__ == '__main__':
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
 
-            hier_scr = gt_node.score(pred_cate)
-            pred_node = prenet.get_node_by_index(pred_cate)
-            info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
-            if hier_scr > 0:
-                TP_count += 1
-                hier_score_sum += hier_scr
-                info = 'T: ' + info
-            else:
-                info = 'F: ' + info
-                pass
-            print(info)
+            if args.mode == 'pre':
+                gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
+                gt_node = prenet.get_node_by_index(int(gt_cate))
+
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+                raw_scr = gt_node.score(raw_cate)
+                raw_score_sum += raw_scr
+
+                hier_scr = gt_node.score(pred_cate)
+                pred_node = prenet.get_node_by_index(pred_cate)
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
+                if hier_scr > 0:
+                    TP_count += 1
+                    hier_score_sum += hier_scr
+                    info = 'T: ' + info
+                else:
+                    info = 'F: ' + info
+                    pass
+                print(info)
 
         pred_rois = torch.FloatTensor(rois_use)
         sbj_scores = pred_rois[:, -2]

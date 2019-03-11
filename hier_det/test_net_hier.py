@@ -107,7 +107,7 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg.label_hier.obj_hier import objnet
 
-        
+
 
         args.class_agnostic = False
         # TODO: 之后要变成True, 目前训练的是False

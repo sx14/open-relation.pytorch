@@ -34,6 +34,11 @@ def split_anno_pkg(vg_config):
     relationship_path = os.path.join(org_anno_root, 'relationships.json')
     output_json_root = vg_config['dirty_anno_root']
 
+    if os.path.exists(output_json_root):
+        import shutil
+        shutil.rmtree(output_json_root)
+        os.makedirs(output_json_root)
+
     split_json(image_data_path, output_json_root, u'image_info', False)
     split_json(relationship_path, output_json_root, u'relationships', True)
 

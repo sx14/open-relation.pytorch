@@ -28,6 +28,12 @@ def convert_anno(org_anno):
 def vg2pascal(vg_config):
     json_anno_root = vg_config['clean_anno_root']
     pascal_anno_root = vg_config['Annotations']
+
+    if os.path.exists(pascal_anno_root):
+        import shutil
+        shutil.rmtree(pascal_anno_root)
+        os.makedirs(pascal_anno_root)
+
     json_annos = os.listdir(json_anno_root)
     for i in range(len(json_annos)):
         print('processing vg2pascal: [%d/%d]' % (len(json_annos), i + 1))

@@ -47,7 +47,8 @@ class TreeNode:
         self._parents.append(parent)
 
     def set_cond_prob(self, cond_prob):
-        self._cond_prob = min(cond_prob, 0.0001)
+        # 0 is not allowed
+        self._cond_prob = min(cond_prob, 1e-10)
 
     def cond_prob(self):
         return self._cond_prob
@@ -179,3 +180,34 @@ def my_infer(labelnet, scores):
     choice = top_down_search(tnodes[labelnet.root().index()], 0.5)
     return [[choice.index(), choice.score()], [choice.index(), choice.score()]]
 
+
+def cal_pos_cond_prob(node):
+    if len(node.children()) == 0:
+        return
+
+    c_scores = []
+    for c in node.children():
+        c_scores.append(c.raw_score())
+    c_scores_v = Variable(Tensor(c_scores))
+    c_scores_s = softmax(c_scores_v, 0)
+    for i, c in enumerate(node.children()):
+        c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
+
+    pred_c_ind = torch.argmax(c_scores_s)
+    cal_pos_cond_prob(node.children()[pred_c_ind])
+
+
+def raw2cond_prob(labelnet, batch_scores):
+
+    cond_probs = np.zeros(batch_scores.shape)
+    for i in range(batch_scores.shape[0]):
+        scores = batch_scores[i]
+        tnodes = construct_tree(labelnet, scores)
+        root = tnodes[labelnet.root().index()]
+        root.set_cond_prob(1.0)
+        cal_pos_cond_prob(root)
+
+        for j in range(batch_scores.shape[1]):
+            cond_probs[i][j] = tnodes[j].cond_prob()
+
+    return cond_probs

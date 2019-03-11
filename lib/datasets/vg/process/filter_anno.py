@@ -8,6 +8,11 @@ def filter_anno(vg_config):
     dirty_anno_root = vg_config['dirty_anno_root']
     clean_anno_root = vg_config['clean_anno_root']
 
+    if os.path.exists(clean_anno_root):
+        import shutil
+        shutil.rmtree(clean_anno_root)
+        os.makedirs(clean_anno_root)
+
     anno_list = os.listdir(dirty_anno_root)
     anno_num = len(anno_list)
 

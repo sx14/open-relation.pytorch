@@ -2,6 +2,7 @@ import os
 from math import log
 import numpy as np
 
+
 class LabelNode(object):
     def __init__(self, name, index, is_raw):
         self._weight = 0
@@ -31,7 +32,7 @@ class LabelNode(object):
         else:
             n_leaf_child = leaf_num(self)
             info_ratio = log(leaf_sum, leaf_sum) - log(n_leaf_child, leaf_sum)
-            self._info_ratio = info_ratio
+            self._info_ratio = info_ratio ** 0.5
         return info_ratio
 
     def set_index(self, i):
@@ -49,7 +50,6 @@ class LabelNode(object):
                     best_score = max((i+1.0) / (len(h_path)), best_score)
                     break
         return best_score
-
 
     def depth(self):
         h_paths = self.hyper_paths()

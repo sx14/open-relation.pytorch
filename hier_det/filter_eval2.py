@@ -41,17 +41,17 @@ for i, img_id in enumerate(det_roidb.keys()):
     print('nms [%d/%d]' % (N_img, i + 1))
     img_dets = det_roidb[img_id]
 
-    img_det_scores = img_dets[:, 4:]
-    img_det_cond_p = raw2cond_prob(objnet, img_det_scores)
-    img_dets[:, 4:] = img_det_cond_p
+    # img_det_scores = img_dets[:, 4:]
+    # img_det_cond_p = raw2cond_prob(objnet, img_det_scores)
+    # img_dets[:, 4:] = img_det_cond_p
 
-    curr_rois = nms_dets1(img_dets, 100, objnet)
+    curr_rois = nms_dets1(img_dets, 10000, objnet)
     nms_roidb[img_id] = curr_rois
 
 
 with open('det_infer_roidb_%s.bin' % dataset, 'wb') as f:
     pickle.dump(nms_roidb, f)
 
-img_hits = det_recall(gt_roidb, nms_roidb, 100, objnet)
+img_hits = det_recall(gt_roidb, nms_roidb, 10000, objnet)
 
 

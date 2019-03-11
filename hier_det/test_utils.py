@@ -230,11 +230,7 @@ def nms_dets1(img_dets, max_det_num, objnet):
     empty_det = np.transpose(np.array([[], [], [], [], []]), (1, 0))
     for j in xrange(1, N_classes):
         # for each class
-        cls_node = objnet.get_node_by_index(j)
-        if len(cls_node.hypers()) == 0:
-            thresh = 0.9
-        else:
-            thresh = 1.0 / len(cls_node.hypers()[0].children()) + 0.1
+        thresh = -2
         inds = torch.nonzero(scores[:, j] > thresh).view(-1)
         # if there is det
         if inds.numel() > 0:
@@ -256,6 +252,7 @@ def nms_dets1(img_dets, max_det_num, objnet):
 
         else:
             all_dets[j] = empty_det
+
 
     # Limit to max_det_num detections *over all classes*
     all_dets_list = []

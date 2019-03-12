@@ -44,6 +44,10 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
 
             # part1: image_info
             img_path = os.path.join(img_root, img_id+'.jpg')
+            if not os.path.exists(img_path):
+                print(img_path+' not exists.')
+                continue
+
             img = cv2.imread(img_path)
             img_h = img.shape[0]
             img_w = img.shape[1]

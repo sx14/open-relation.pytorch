@@ -194,7 +194,7 @@ if __name__ == '__main__':
         im_info.data.resize_(data[1].size()).copy_(data[1])
         relas_box.data.resize_(data[2].size()).copy_(data[2])
         relas_num.data.resize_(data[3].size()).copy_(data[3])
-        relas_zero = rois_use[:, -1]
+        relas_zero = np.array(rois_use)[:, -1]
 
         im_scale = data[4]
 

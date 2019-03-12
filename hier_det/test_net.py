@@ -43,7 +43,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vrd_voc', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -54,7 +54,7 @@ def parse_args():
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument('--load_dir', dest='load_dir',
-                        help='directory to load models', default="faster_output",
+                        help='directory to load models', default="fast_output",
                         type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
@@ -103,28 +103,15 @@ if __name__ == '__main__':
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
     np.random.seed(cfg.RNG_SEED)
-    if args.dataset == "pascal_voc":
+    if args.dataset == "vrd_voc":
         args.imdb_name = "voc_2007_trainval"
         args.imdbval_name = "voc_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "pascal_voc_0712":
-        args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
-        args.imdbval_name = "voc_2007_test"
-        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "coco":
-        args.imdb_name = "coco_2014_train+coco_2014_valminusminival"
-        args.imdbval_name = "coco_2014_minival"
-        args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "imagenet":
-        args.imdb_name = "imagenet_train"
-        args.imdbval_name = "imagenet_val"
-        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
     elif args.dataset == "vg":
-        args.imdb_name = "vg_150-50-50_minitrain"
-        args.imdbval_name = "vg_150-50-50_minival"
-        args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+        args.imdb_name = "vg_2007_trainval"
+        args.imdbval_name = "vg_2007_test"
+        args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg.label_hier.obj_hier import objnet
-
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
@@ -202,8 +189,8 @@ if __name__ == '__main__':
         fasterRCNN.cuda()
 
     start = time.time()
-    # max_per_image = 100
-    max_per_image = 20
+
+    max_per_image = 100
 
     vis = args.vis
 
@@ -234,7 +221,7 @@ if __name__ == '__main__':
 
     use_rpn = False
     TP_count = 0.0
-    N_count = 0.1
+    N_count = 0.0
 
     obj_det_roidbs = {}
 
@@ -260,95 +247,8 @@ if __name__ == '__main__':
                 N_count += 1
                 pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                gt_node = objnet.get_node_by_index(gt_cate)
-                TP_count += gt_node.cond_prob(pred_cate)
-
-        if cfg.TEST.BBOX_REG:
-            # Apply bounding-box regression deltas
-            box_deltas = bbox_pred.data
-            if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
-                # Optionally normalize targets by a precomputed mean and stdev
-                if args.class_agnostic:
-                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                                 + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    box_deltas = box_deltas.view(1, -1, 4)
-                else:
-                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                                 + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    box_deltas = box_deltas.view(1, -1, 4 * len(imdb.classes))
-
-            pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
-            pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
-        else:
-            # Simply repeat the boxes, once for each class
-            pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-
-        pred_boxes /= data[1][0][2].item()
-
-        scores = scores.squeeze()
-        pred_boxes = pred_boxes.squeeze()
-        det_toc = time.time()
-        detect_time = det_toc - det_tic
-        misc_tic = time.time()
-        if vis:
-            im = cv2.imread(imdb.image_path_at(i))
-            im2show = np.copy(im)
-
-        for j in xrange(1, imdb.num_classes):
-            inds = torch.nonzero(scores[:, j] > thresh).view(-1)
-            # if there is det
-            if inds.numel() > 0:
-                cls_scores = scores[:, j][inds]
-                _, order = torch.sort(cls_scores, 0, True)
-                if args.class_agnostic:
-                    cls_boxes = pred_boxes[inds, :]
-                else:
-                    cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
-
-                cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
-                # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
-                cls_dets = cls_dets[order]
-                keep = nms(cls_dets, cfg.TEST.NMS)
-                cls_dets = cls_dets[keep.view(-1).long()]
-                if vis:
-                    im2show = vis_detections(im2show, imdb.classes[j], cls_dets.cpu().numpy(), 0.3)
-                all_boxes[j][i] = cls_dets.cpu().numpy()
-
-            else:
-                all_boxes[j][i] = empty_array
-
-        det_temp = []
-        # Limit to max_per_image detections *over all classes*
-        if max_per_image > 0:
-            image_scores = np.hstack([all_boxes[j][i][:, -1]
-                                      for j in xrange(1, imdb.num_classes)])
-            if len(image_scores) > max_per_image:
-                image_thresh = np.sort(image_scores)[-max_per_image]
-                for j in xrange(1, imdb.num_classes):
-                    keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-                    all_boxes[j][i] = all_boxes[j][i][keep, :]
-                    for box in all_boxes[j][i]:
-                        det_temp.append(box)
-
-        det_temp = np.array(det_temp)
-        img_id = roidb[i]['image'].split('/')[-1].split('.')[0]
-        obj_det_roidbs[img_id] = det_temp
-
-        misc_toc = time.time()
-        nms_time = misc_toc - misc_tic
-
-        sys.stdout.write('im_detect: {:d}/{:d} {:.3f}s {:.3f}s   \r' \
-                         .format(i + 1, num_images, detect_time, nms_time))
-        sys.stdout.flush()
-
-        if vis:
-            cv2.imwrite('result.png', im2show)
-            pdb.set_trace()
-            # cv2.imshow('test', im2show)
-            # cv2.waitKey(0)
-
-    with open(det_file, 'wb') as f:
-        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
+                if pred_cate == gt_cate:
+                    TP_count += 1
 
     print('Evaluating detections')
     imdb.evaluate_detections(all_boxes, output_dir)

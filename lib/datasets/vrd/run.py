@@ -59,6 +59,7 @@ def all_relationships(anno_root, anno_list_path):
 def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_label_path, train_rlts):
     # image id -> rlt info
     rlts = dict()
+    zero_count = 0
 
     # load img id list
     with open(anno_list_path, 'r') as anno_list_file:
@@ -111,8 +112,10 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                 label_ind = labelnets[j].get_node_by_name(thing['name']).index()
                 rlt_info += [xmin, ymin, xmax, ymax, label_ind]
             rlt_info += [1.0, 1.0, 1.0, zero_shot]
+            zero_count += zero_shot
             rlt_info_list.append(rlt_info)
         rlts[image_id] = rlt_info_list
+    print('zero: %d' % zero_count)
     with open(box_label_path, 'wb') as box_label_file:
         pickle.dump(rlts, box_label_file)
 
@@ -271,10 +274,10 @@ if __name__ == '__main__':
     roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')
     anno_root = vrd_config['clean_anno_root']
 
-    train_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
+    train_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'trainval.txt')
     train_rlts = all_relationships(anno_root, train_anno_list_path)
 
     test_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
-    prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, roidb_save_path)
+    prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, roidb_save_path, train_rlts)
 
 

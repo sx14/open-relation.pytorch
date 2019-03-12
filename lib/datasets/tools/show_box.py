@@ -65,10 +65,16 @@ if __name__ == '__main__':
     else:
         dataset_root = VRD_ROOT
 
-    img_root = os.path.join(dataset_root, 'VOC2007', 'JPEGImages')
-    anno_root = os.path.join(dataset_root, 'VOC2007', 'anno')
+    img_root = os.path.join(dataset_root, 'JPEGImages')
+    anno_root = os.path.join(dataset_root, 'anno')
 
     for img_name in os.listdir(img_root):
+
+        img_id = img_name.split('.')[0]
+        anno_path = os.path.join(anno_root, img_id+'.json')
+        if not os.path.exists(anno_path):
+            continue
+
         if target == 'object':
             im, cls, boxes = get_objs(img_root, anno_root, img_name)
         else:

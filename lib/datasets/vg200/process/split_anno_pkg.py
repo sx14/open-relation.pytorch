@@ -9,6 +9,67 @@ import json
 import numpy as np
 
 
+def nms_cpu(dets, thresh):
+    x1 = dets[:, 0]
+    y1 = dets[:, 1]
+    x2 = dets[:, 2]
+    y2 = dets[:, 3]
+    scores = dets[:, 4]
+
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+    order = scores.argsort()[::-1]
+
+    keep = []
+    while order.size > 0:
+        i = order.item(0)
+        keep.append(i)
+        xx1 = np.maximum(x1[i], x1[order[1:]])
+        yy1 = np.maximum(y1[i], y1[order[1:]])
+        xx2 = np.minimum(x2[i], x2[order[1:]])
+        yy2 = np.minimum(y2[i], y2[order[1:]])
+
+        w = np.maximum(0.0, xx2 - xx1 + 1)
+        h = np.maximum(0.0, yy2 - yy1 + 1)
+        inter = w * h
+        ovr = inter / (areas[i] + areas[order[1:]] - inter)
+
+        inds = np.where(ovr <= thresh)[0]
+        order = order[inds + 1]
+
+    return keep
+
+
+def nms(boxes, labels):
+    uni_labels = np.unique(labels)
+
+    nms_boxes = []
+    nms_labels = []
+
+    # for each class
+    for uni_label in uni_labels:
+        same_cls_inds = np.where(labels == uni_label)[0]
+        same_cls_boxes = boxes[same_cls_inds, :]
+
+        fake_scores = np.ones((same_cls_boxes.shape[0], 1))
+        fake_dets = np.concatenate((same_cls_boxes, fake_scores), axis=1)
+
+        keep = nms_cpu(fake_dets, 0.6)
+        same_cls_boxes = same_cls_boxes[keep].tolist()
+        same_labels = np.zeros((same_cls_boxes.shape[0])).astype(np.int)
+        same_labels[:] = uni_label
+        same_labels = same_labels.tolist()
+
+        nms_boxes += same_cls_boxes
+        nms_labels += same_labels
+
+    return nms_boxes, nms_labels
+
+
+
+
+
+
+
 def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_root):
     if not os.path.exists(vts_anno_path):
         print(vts_anno_path+' not exists.')
@@ -65,14 +126,16 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
 
             vts_all_obj_boxes = np.concatenate((vts_sbj_boxes, vts_obj_boxes), 0)
             vts_all_obj_labels = np.concatenate((vts_rlt_triplets[:, 0], vts_rlt_triplets[:, 2]))
-            # TODO: sbj, pre, obj ?
+
+            # remove redundant
             vts_all_obj_boxes, inds = np.unique(vts_all_obj_boxes, return_index=True, axis=0)
             vts_all_obj_labels = vts_all_obj_labels[inds]
+            vts_all_obj_boxes, vts_all_obj_labels = nms(vts_all_obj_boxes, vts_all_obj_labels)
+
 
             # part2: objects
             objs = []
             for o, vts_obj_box in enumerate(vts_all_obj_boxes):
-                # TODO: xmin, ymin, xmax, ymax?
                 obj = {
                     'xmin': int(vts_obj_box[0]),
                     'ymin': int(vts_obj_box[1]),

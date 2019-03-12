@@ -108,7 +108,14 @@ class pascal_voc(imdb):
         assert os.path.exists(image_set_file), \
             'Path does not exist: {}'.format(image_set_file)
         with open(image_set_file) as f:
-            image_index = [x.strip() for x in f.readlines()]
+            # image_index = [x.strip() for x in f.readlines()]
+            image_index = []
+            raw_img_indexes = f.readlines()
+            for index in raw_img_indexes:
+                index = index.strip()
+                roi = self._load_pascal_annotation(index)
+                if len(roi['boxes']) > 0:
+                    image_index.append(index)
         return image_index
 
     def _get_default_path(self):
@@ -130,8 +137,15 @@ class pascal_voc(imdb):
             print('{} gt roidb loaded from {}'.format(self.name, cache_file))
             return roidb
 
-        gt_roidb = [self._load_pascal_annotation(index)
-                    for index in self.image_index]
+        # gt_roidb = [self._load_pascal_annotation(index)
+        #             for index in self.image_index]
+
+        gt_roidb = []
+        for index in self.image_index:
+            roi = self._load_pascal_annotation(index)
+            if len(roi['boxes']) > 0:
+                gt_roidb.append(roi)
+
         with open(cache_file, 'wb') as fid:
             pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)
         print('wrote gt roidb to {}'.format(cache_file))

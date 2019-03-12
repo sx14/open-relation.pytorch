@@ -32,7 +32,7 @@ def get_pres(img_root, anno_root, img_name):
     anno_path = os.path.join(anno_root, img_name.split('.')[0] + '.json')
     with open(anno_path, 'r') as anno_file:
         anno = json.load(anno_file)
-    rlts = anno['relations']
+    rlts = anno['relationships']
     cls = []
     boxes = []
     for rlt in rlts:
@@ -73,3 +73,4 @@ if __name__ == '__main__':
             im, cls, boxes = get_objs(img_root, anno_root, img_name)
         else:
             im, cls, boxes = get_pres(img_root, anno_root, img_name)
+        show_boxes(im, boxes, cls)

@@ -1,5 +1,8 @@
 import os
 from global_config import PROJECT_ROOT
+from process.split_anno_pkg import split_anno_pkg
+from process.vg2pascal import vg2pascal
+from process.raw2wn import raw2wn
 
 if __name__ == '__main__':
     vg_root = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007')
@@ -18,13 +21,11 @@ if __name__ == '__main__':
         'ds_root': vg_root
     }
 
-    from process.split_anno_pkg import split_anno_pkg
-    from process.reformat_anno import reformat_anno
-    from process.collect_labels import collect_labels
-    from process.vg2pascal import vg2pascal
+
 
     split_anno_pkg(vg_config)
     vg2pascal(vg_config)
+    raw2wn(vg_config['obj_raw_label_path'], vg_config['obj_raw2wn_path'])
 
     # TODO: predicate part
     pass

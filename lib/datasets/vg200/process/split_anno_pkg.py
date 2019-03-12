@@ -66,7 +66,7 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
             vts_all_obj_boxes = np.concatenate((vts_sbj_boxes, vts_obj_boxes), 0)
             vts_all_obj_labels = np.concatenate((vts_rlt_triplets[:, 0], vts_rlt_triplets[:, 2]))
             # TODO: sbj, pre, obj ?
-            inds, vts_all_obj_boxes = np.unique(vts_all_obj_boxes)
+            vts_all_obj_boxes, inds = np.unique(vts_all_obj_boxes, return_index=True, axis=0)
             vts_all_obj_labels = vts_all_obj_labels[inds]
 
             # part2: objects
@@ -74,10 +74,10 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
             for o, vts_obj_box in enumerate(vts_all_obj_boxes):
                 # TODO: xmin, ymin, xmax, ymax?
                 obj = {
-                    'xmin': vts_obj_box[0],
-                    'ymin': vts_obj_box[1],
-                    'xmax': vts_obj_box[2],
-                    'ymax': vts_obj_box[3],
+                    'xmin': int(vts_obj_box[0]),
+                    'ymin': int(vts_obj_box[1]),
+                    'xmax': int(vts_obj_box[2]),
+                    'ymax': int(vts_obj_box[3]),
                     'name': obj_cls[vts_all_obj_labels[o]-1],
                     'synsets': ['entity.n.01']
                 }
@@ -90,43 +90,43 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
                 vts_obj_box = vts_obj_boxes[r]
                 rlt = {
                     'subject': {
-                        'xmin': vts_sbj_box[0],
-                        'ymin': vts_sbj_box[1],
-                        'xmax': vts_sbj_box[2],
-                        'ymax': vts_sbj_box[3],
+                        'xmin': int(vts_sbj_box[0]),
+                        'ymin': int(vts_sbj_box[1]),
+                        'xmax': int(vts_sbj_box[2]),
+                        'ymax': int(vts_sbj_box[3]),
                         'name': obj_cls[vts_rlt_triplet[0]-1],
                         'synsets': ['entity.n.01']
                     },
 
                     'object': {
-                        'xmin': vts_obj_box[0],
-                        'ymin': vts_obj_box[1],
-                        'xmax': vts_obj_box[2],
-                        'ymax': vts_obj_box[3],
+                        'xmin': int(vts_obj_box[0]),
+                        'ymin': int(vts_obj_box[1]),
+                        'xmax': int(vts_obj_box[2]),
+                        'ymax': int(vts_obj_box[3]),
                         'name': obj_cls[vts_rlt_triplet[2]-1],
                         'synsets': ['entity.n.01']
                     },
 
                     'predicate': {
-                        'xmin': min(vts_sbj_box[0], vts_obj_box[0]),
-                        'ymin': min(vts_sbj_box[1], vts_obj_box[1]),
-                        'xmax': max(vts_sbj_box[2], vts_obj_box[2]),
-                        'ymax': max(vts_sbj_box[3], vts_obj_box[3]),
+                        'xmin': int(min(vts_sbj_box[0], vts_obj_box[0])),
+                        'ymin': int(min(vts_sbj_box[1], vts_obj_box[1])),
+                        'xmax': int(max(vts_sbj_box[2], vts_obj_box[2])),
+                        'ymax': int(max(vts_sbj_box[3], vts_obj_box[3])),
                         'name': pre_cls[vts_rlt_triplet[1]],
                         'synsets': ['relation']
                     }
                 }
                 rlts.append(rlt)
 
-                new_anno = {
-                    'relationships': rlts,
-                    'objects': objs,
-                    'image_info': img_info
-                }
+            new_anno = {
+                'relationships': rlts,
+                'objects': objs,
+                'image_info': img_info
+            }
 
-                json_path = os.path.join(json_root, img_id + '.json')
-                with open(json_path, 'w') as f:
-                    json.dump(new_anno, f)
+            json_path = os.path.join(json_root, img_id + '.json')
+            with open(json_path, 'w') as f:
+                json.dump(new_anno, f)
 
         # save split image list
         for l in range(len(img_ids)):

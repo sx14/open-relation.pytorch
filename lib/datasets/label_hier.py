@@ -254,10 +254,13 @@ class LabelHier:
     def _dfs_compress(self, curr):
         # dfs based compression
         if len(curr.children()) > 1:
+            assert not curr.is_raw()
             # keep curr
             for child in curr.children():
                 self._dfs_compress(child)
         elif len(curr.children()) == 1:
+            assert not curr.is_raw()
+
             # remove curr
             hypers = curr.hypers()
             for h in hypers:
@@ -270,9 +273,6 @@ class LabelHier:
             curr.children()[0].del_hyper(curr)
             self._index2node[curr.index()] = None
             self._label2node[curr.name()] = None
-
-            if curr.is_raw():
-                self._raw_labels.remove(curr.name())
             self._dfs_compress(curr.children()[0])
         else:
             return

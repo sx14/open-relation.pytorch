@@ -27,7 +27,7 @@ class PreNet(LabelHier):
         # basic level
         basic_level = {
             'on.s': 'spatial.a',
-            'wear.p': 'possess.a',
+            'wear.i': 'interact.a',
             'has.p': 'possess.a',
             'behind.s': 'spatial.a',
             'in the front of.s': 'spatial.a',
@@ -41,7 +41,7 @@ class PreNet(LabelHier):
             'look.i': 'interact.a',
             'use.i': 'interact.a',
             'at.s': 'spatial.a',
-            'attach to.p': 'possess.a',
+            'attach to.i': 'interact.a',
             'touch.i': 'interact.a',
             'against.s': 'spatial.a',
             'across.s': 'spatial.a',
@@ -58,6 +58,8 @@ class PreNet(LabelHier):
             'feed.i': 'interact.a',
             'kick.i': 'interact.a',
             'cover.i': 'interact.a',
+            'drive.i': 'interact.a',
+            'ride.i': 'interact.a',
         }
 
 
@@ -72,7 +74,7 @@ class PreNet(LabelHier):
 
         concrete_level = {
             'on': 'on.s',
-            'wear': 'wear.p',
+            'wear': 'wear.i',
             'has': 'has.p',
             'next to': 'next to.s',
             'sleep next to': 'next to.s',
@@ -90,9 +92,9 @@ class PreNet(LabelHier):
             'stand under': 'under.s',
             'sit under': 'under.s',
             'near': 'near.s',
-            'walk to': 'beside.s',
+            'walk to': 'walk.i',
             'walk': 'walk.i',
-            'walk past': 'beside.s',
+            'walk past': 'walk.i',
             'in': 'in.s',
             'below': 'below.s',
             'beside': 'beside.s',
@@ -100,19 +102,19 @@ class PreNet(LabelHier):
             'over': 'over.s',
             'hold': 'hold.i',
             'by': 'beside.s',
-            'beneath': 'on.s',
+            'beneath': 'under.s',
             'with': 'with.p',
             'on the top of': 'on.s',
             'on the left of': 'beside.s',
             'on the right of': 'beside.s',
             'sit on': 'on.s',
-            'ride': 'on.s',
+            'ride': 'ride.i',
             'carry': 'carry.i',
             'look': 'look.i',
             'stand on': 'on.s',
             'use': 'use.i',
             'at': 'at.s',
-            'attach to': 'attach to.p',
+            'attach to': 'attach to.i',
             'cover': 'cover.i',
             'touch': 'touch.i',
             'watch': 'look.i',
@@ -121,7 +123,7 @@ class PreNet(LabelHier):
             'adjacent to': 'next to.s',
             'across': 'across.s',
             'contain': 'contain.p',
-            'drive': 'in.s',
+            'drive': 'drive.i',
             'drive on': 'on.s',
             'taller than': 'than.c',
             'eat': 'eat.i',
@@ -165,3 +167,14 @@ class PreNet(LabelHier):
 
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'predicate_labels.txt')
 prenet = PreNet(label_path)
+
+# for i in prenet.get_raw_indexes():
+#     n = prenet.get_node_by_index(i)
+#     n.show_hyper_paths()
+#
+# for i in range(prenet.label_sum()):
+#     n = prenet.get_node_by_index(i)
+#     cs = ''
+#     for c in n.children():
+#         cs = cs + ' | ' + c.name()
+#     print(n.name()+ ':' + cs)

@@ -145,36 +145,21 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
     with open(pre_cls_path, 'w') as f:
         f.writelines(pre_cls)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     vts_anno_pkg.close()
-
-
-
-
 
 
 def split_anno_pkg(vg_config):
     vts_anno_path = vg_config['vts_anno_path']
-    output_json_root = vg_config['clean_anno_root']
+    json_root = vg_config['clean_anno_root']
     img_root = vg_config['JPEGImages']
+    img_list_root = vg_config['ImageSets']
+    ds_root = vg_config['ds_root']
 
-    if os.path.exists(output_json_root):
+    if os.path.exists(json_root):
         import shutil
-        shutil.rmtree(output_json_root)
-        os.makedirs(output_json_root)
+        shutil.rmtree(json_root)
+        os.makedirs(json_root)
 
-    split_vts_pkg(vts_anno_path, img_root)
+    split_vts_pkg(vts_anno_path, ds_root, img_root, json_root, img_list_root)
 
 

@@ -15,6 +15,7 @@ if __name__ == '__main__':
         'Annotations': os.path.join(vg_root, 'Annotations'),
         'ImageSets': os.path.join(vg_root, 'ImageSets', 'Main'),
         'JPEGImages': os.path.join(vg_root, 'JPEGImages'),
+        'ds_root': vg_root
     }
 
     from process.split_anno_pkg import split_anno_pkg

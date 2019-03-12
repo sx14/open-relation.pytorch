@@ -116,7 +116,7 @@ class ObjNet(LabelHier):
     def _construct_hier(self):
         raw2wn = self._raw2wn
         self._create_label_nodes(raw2wn)
-        # self._export_split()
+        self._export_split()
         # TODO: annual prone
         splits = self._import_split()
         self._prone_and_check(splits)

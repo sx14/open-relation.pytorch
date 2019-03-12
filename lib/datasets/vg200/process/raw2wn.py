@@ -14,6 +14,8 @@ def raw2wn(raw_label_path, raw2wn_path):
         wn_syns = wn.synsets(raw_labels[i])
         if len(wn_syns) > 0:
             raw_labels[i] = raw_labels[i] + '|' + wn_syns[0].name()+'\n'
+        else:
+            raw_labels[i] = raw_labels[i] + '\n'
 
-    with open(raw2wn_path, 'w') as f:
+    with open(raw2wn_path+'.gen', 'w') as f:
         f.writelines(raw_labels)

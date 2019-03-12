@@ -1,4 +1,4 @@
 config = {}
 config.dataset_name = 'vrd'
-config.target = 'object'
+config.target = 'predicate'
 return config

@@ -160,7 +160,7 @@ if __name__ == '__main__':
       args.imdb_name = "vg_2007_trainval"
       args.imdbval_name = "vg_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-      from lib.datasets.vg.label_hier.obj_hier import objnet
+      from lib.datasets.vg1000.label_hier.obj_hier import objnet
   elif args.dataset == "vrd":
       args.imdb_name = "vrd_2007_trainval"
       args.imdbval_name = "vrd_2007_test"

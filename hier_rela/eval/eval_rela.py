@@ -8,8 +8,8 @@ if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.obj_hier import objnet
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
-    from lib.datasets.vg.label_hier.obj_hier import objnet
-    from lib.datasets.vg.label_hier.pre_hier import prenet
+    from lib.datasets.vg1000.label_hier.obj_hier import objnet
+    from lib.datasets.vg1000.label_hier.pre_hier import prenet
 
 
 # target = 'rela'

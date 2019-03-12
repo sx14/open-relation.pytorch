@@ -10,10 +10,6 @@ from global_config import VRD_ROOT, VG_ROOT
 
 def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
 
-    if os.path.exists(rlt_save_path+'.npy'):
-        raw_rlts = np.load(rlt_save_path+'.npy')
-        return raw_rlts
-
     # load id list
     with open(id_list_path, 'r') as id_list_file:
         anno_list = id_list_file.read().splitlines()
@@ -38,17 +34,6 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             pre_ind = prenet.get_node_by_name(anno_pre['name']).index()
             raw_rlts.append([sbj_ind, pre_ind, obj_ind, pre_ind])
 
-    pos_num = len(raw_rlts)
-    neg_num = int(pos_num * 0.1)
-
-    pos_subset = random.sample(raw_rlts, neg_num)
-    neg_rlts = []
-    for rlt in pos_subset:
-        neg_rlt = [rlt[2], 0, rlt[0], 0]
-        neg_rlts.append(neg_rlt)
-
-    raw_rlts += neg_rlts
-
     raw_rlts = np.array(raw_rlts)
     np.save(rlt_save_path, raw_rlts)
     return raw_rlts
@@ -61,10 +46,6 @@ def equal_interval_prob(num):
 
 
 def extend_rlts(raw_rlts, rlt_save_path):
-    if os.path.exists(rlt_save_path+'.npy'):
-        ext_rlts = np.load(rlt_save_path+'.npy')
-        return ext_rlts
-
     new_rlts = []
     raw_rlt_num = len(raw_rlts)
     for i, raw_rlt in enumerate(raw_rlts):

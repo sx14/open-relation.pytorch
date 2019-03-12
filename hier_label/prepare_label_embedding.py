@@ -30,13 +30,13 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
 if __name__ == '__main__':
 
     dataset = 'vrd'
-    target = 'object'
+    target = 'predicate'
     if dataset == 'vrd':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
     else:
-        from lib.datasets.vg.label_hier.obj_hier import objnet
-        from lib.datasets.vg.label_hier.pre_hier import prenet
+        from lib.datasets.vg1000.label_hier.obj_hier import objnet
+        from lib.datasets.vg1000.label_hier.pre_hier import prenet
 
     if target == 'object':
         labelnet = objnet

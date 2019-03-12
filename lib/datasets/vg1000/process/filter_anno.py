@@ -1,7 +1,7 @@
 import os
 import json
-from lib.datasets.vg.label_hier.obj_hier import objnet
-from lib.datasets.vg.label_hier.pre_hier import prenet
+from lib.datasets.vg1000.label_hier.obj_hier import objnet
+from lib.datasets.vg1000.label_hier.pre_hier import prenet
 
 
 def filter_anno(vg_config):

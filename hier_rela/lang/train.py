@@ -43,7 +43,7 @@ dataset = 'vrd'
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
-    from lib.datasets.vg.label_hier.pre_hier import prenet
+    from lib.datasets.vg1000.label_hier.pre_hier import prenet
 
 # training hyper params
 lr = train_params['lr']

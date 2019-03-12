@@ -14,7 +14,7 @@ dataset = 'vrd'
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.obj_hier import objnet
 else:
-    from lib.datasets.vg.label_hier.obj_hier import objnet
+    from lib.datasets.vg1000.label_hier.obj_hier import objnet
 
 if os.path.exists('det_roidb_%s.bin' % dataset):
     with open('det_roidb_%s.bin' % dataset) as f:

@@ -1,0 +1,150 @@
+person.n.01|causal_agent.n.01 organism.n.01
+man.n.01|adult.n.01 male.n.02
+woman.n.01|female.n.02 adult.n.01
+clothing.n.01|consumer_goods.n.01 covering.n.02
+substance.n.01|matter.n.03 part.n.01
+water.n.01|liquid.n.03 binary_compound.n.01
+wheeled_vehicle.n.01|container.n.01 vehicle.n.01
+dog.n.01|canine.n.02 domestic_animal.n.01
+elephant.n.01|pachyderm.n.01 proboscidean.n.01
+skateboard.n.01|board.n.03 wheeled_vehicle.n.01
+letter.n.01|text.n.01 document.n.02
+jean.n.01|workwear.n.01 trouser.n.01
+house.n.01|building.n.01 dwelling.n.01
+cup.n.01|container.n.01 crockery.n.01
+brick.n.01|building_material.n.01 ceramic.n.01
+disk.n.02|circle.n.08 plate.n.02
+frisbee.n.01|disk.n.02 plaything.n.01
+finger.n.01|extremity.n.05 digit.n.03
+piece_of_cloth.n.01|piece.n.01 fabric.n.01
+pot.n.01|vessel.n.03 cooking_utensil.n.01
+space.n.02|amorphous_shape.n.01 location.n.01
+cheese.n.01|food.n.02 dairy_product.n.01
+bread.n.01|baked_goods.n.01 starches.n.01
+edible_fruit.n.01|produce.n.01 fruit.n.01
+apple.n.01|edible_fruit.n.01 pome.n.01
+spoon.n.01|cutlery.n.02 container.n.01
+drawer.n.01|container.n.01 storage_space.n.01
+curtain.n.01|blind.n.03 furnishing.n.02
+ballplayer.n.01|athlete.n.01 player.n.01
+sculpture.n.01|plastic_art.n.01 solid_figure.n.01
+dish.n.01|container.n.01 crockery.n.01
+rug.n.01|floor_cover.n.01 furnishing.n.02
+water_faucet.n.01|faucet.n.01 plumbing_fixture.n.01
+ski pole|ski_pole.n.01 ski.n.01
+paint.n.01|coating.n.01 coloring_material.n.01
+blue sky|sky.n.01 blue_sky.n.01
+beverage.n.01|liquid.n.01 food.n.01
+alcohol.n.01|beverage.n.01 drug_of_abuse.n.01
+agent.n.03|causal_agent.n.01 substance.n.07
+atmospheric_electricity.n.01|atmospheric_phenomenon.n.01 electrical_discharge.n.01
+concrete.n.01|paving.n.01 building_material.n.01
+municipality.n.01|urban_area.n.01 administrative_district.n.01
+parking lot|batch.n.02 parking_lot.n.01
+athletic_game.n.01|game.n.01 sport.n.01
+scissors.n.01|compound_lever.n.01 edge_tool.n.01
+trash can|ashcan.n.01 rubbish.n.01
+pitcher.n.01|thrower.n.02 ballplayer.n.01
+tank.n.01|tracked_vehicle.n.01 armored_vehicle.n.01 military_vehicle.n.01
+tennis_player.n.01|athlete.n.01 player.n.01
+square.n.01|regular_polygon.n.01 rectangle.n.01
+plant_fiber.n.01|natural_fiber.n.01 plant_product.n.01
+toothbrush.n.01|brush.n.02 toiletry.n.01
+roman numeral|roman_numeral.n.01 numeral.n.01
+feather.n.01|body_covering.n.01 animal_material.n.01
+tongue.n.01|articulator.n.02 organ.n.01
+right hand|hand.n.01 right.n.05
+white line|line.n.01 white_line.n.01
+rim.n.01|round_shape.n.01 boundary.n.02
+mask.n.01|covering.n.02 disguise.n.02
+left hand|left.n.03 hand.n.01
+wet suit|suit.n.01 wet_suit.n.01
+prison_guard.n.01|keeper.n.01 lawman.n.01
+undercarriage.n.01|support.n.10 framework.n.03
+section.n.01|writing.n.02 music.n.01
+tattoo.n.01|bugle_call.n.01 drumbeat.n.02
+metric_linear_unit.n.01|metric_unit.n.01 linear_unit.n.01
+rice.n.01|grain.n.02 starches.n.01
+freeze.n.01|cooling.n.01 phase_change.n.01
+parking meter|parking_meter.n.01 meter.n.01
+helium.n.01|chemical_element.n.01 noble_gas.n.01
+noble_gas.n.01|chemical_element.n.01 gas.n.02
+skin.n.01|body_covering.n.01 connective_tissue.n.01
+lip.n.01|articulator.n.02 external_body_part.n.01
+grassland.n.01|biome.n.01 tract.n.01
+bell.n.01|acoustic_device.n.01 signaling_device.n.01
+potato.n.01|root_vegetable.n.01 starches.n.01 solanaceous_vegetable.n.01
+magazine.n.01|press.n.02 publication.n.01
+living room|living_room.n.01 room.n.01
+roman numerals|roman_numeral.n.01 numeral.n.01
+remote control|remote_control.n.01 control.n.01
+baseball_bat.n.01|baseball_equipment.n.01 bat.n.05
+polar bear|ice_bear.n.01 bear.n.01
+white lines|line.n.01 white_line.n.01
+garbage can|ashcan.n.01 garbage.n.01
+red light|red_light.n.01 light.n.01
+milk.n.01|beverage.n.01 dairy_product.n.01
+ski lift|ski_tow.n.01 ski.n.01
+pine tree|tree.n.01 pine.n.01
+butter.n.01|food.n.02 dairy_product.n.01
+tobacco.n.01|drug_of_abuse.n.01 plant_product.n.01
+decal.n.01|design.n.04 transfer_paper.n.01
+toothpick.n.01|pick.n.06 strip.n.05
+toe.n.01|extremity.n.05 digit.n.03
+plastic bag|bag.n.01 plastic_bag.n.01
+man's head|head.n.01 man.n.01
+man's hand|man.n.01 hand.n.01
+judge.n.01|official.n.01 adjudicator.n.01
+cardboard.n.01|packing_material.n.01 paper.n.01
+puppy.n.01|dog.n.01 pup.n.01
+flower_arrangement.n.01|arrangement.n.02 decoration.n.01
+memory.n.04|hardware.n.03 memory_device.n.01
+asian.n.01|inhabitant.n.01 person_of_color.n.01
+minute hand|minute_hand.n.01 hand.n.01
+pear.n.01|edible_fruit.n.01 pome.n.01
+brace.n.01|strengthener.n.01 support.n.10
+exhaust.n.01|waste.n.01 gas.n.02
+spouse.n.01|relative.n.01 domestic_partner.n.01
+soccer_player.n.01|athlete.n.01 player.n.01
+orange juice|orange_juice.n.01 juice.n.01
+audio_system.n.01|electronic_equipment.n.01 system.n.01
+football.n.01|contact_sport.n.01 field_game.n.01
+desert.n.01|biome.n.01 tract.n.01
+piano.n.01|stringed_instrument.n.01 keyboard_instrument.n.01 percussion_instrument.n.01
+plaster.n.01|covering_material.n.01 mixture.n.01
+left wing|left.n.02 wing.n.01
+right wing|wing.n.01 right.n.04
+computer_keyboard.n.01|data_input_device.n.01 keyboard.n.01
+police.n.01|law_enforcement_agency.n.01 force.n.04
+macromolecule.n.01|organic_compound.n.01 molecule.n.01
+man's face|man.n.01 face.n.01
+oxygen.n.01|chemical_element.n.01 gas.n.02
+minivan.n.01|passenger_van.n.01 car.n.01
+pine trees|tree.n.01 pine.n.01
+handicraft.n.02|arts_and_crafts.n.01 trade.n.02
+street signs|street.n.01 street_sign.n.01
+tail fin|vertical_stabilizer.n.01 tail.n.01
+scoreboard.n.01|board.n.03 signboard.n.01
+green pepper|pepper.n.01 green_pepper.n.01
+vitamin_e.n.01|fat-soluble_vitamin.n.01 antioxidant.n.01
+polka dots|point.n.09 polka_dot.n.01
+public_toilet.n.01|facility.n.04 toilet.n.01
+gusto.n.01|enjoyment.n.01 enthusiasm.n.01
+speculator.n.02|adventurer.n.01 gambler.n.01
+woman's hand|woman.n.01 hand.n.01
+white paper|paper.n.01 white_book.n.01
+red wine|red_wine.n.01 wine.n.01
+green light|green_light.n.01 light.n.01
+life_preserver.n.01|float.n.06 rescue_equipment.n.01
+lysergic_acid_diethylamide.n.01|hallucinogen.n.01 controlled_substance.n.01 drug_of_abuse.n.01
+young girl|girl.n.01 lass.n.01
+woman's head|head.n.01 woman.n.01
+place_mat.n.01|mat.n.07 table_linen.n.01
+light bulb|bulb.n.01 light_bulb.n.01
+barbed wire|wire.n.01 barbed_wire.n.01
+nitrogen.n.01|chemical_element.n.01 gas.n.02
+mythical_monster.n.01|mythical_being.n.01 monster.n.01
+procession.n.02|collection.n.01 group_action.n.01
+group_action.n.01|act.n.02 event.n.01
+shopping bag|bag.n.01 shopping_bag.n.01
+movie.n.01|product.n.02 show.n.03

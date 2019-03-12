@@ -252,8 +252,6 @@ class LabelHier:
                     node.del_child(c)
 
     def _dfs_compress(self, curr):
-        if curr.name() == 'extremity.n.01':
-            a = 1
         # dfs based compression
         if len(curr.children()) > 1:
             # keep curr
@@ -267,9 +265,9 @@ class LabelHier:
                 h.del_child(curr)
                 h.add_child(curr.children()[0])
                 # curr.children -> curr.hyper
-                curr.children()[0].del_hyper(curr)
                 curr.children()[0].add_hyper(h)
 
+            curr.children()[0].del_hyper(curr)
             self._index2node[curr.index()] = None
             self._label2node[curr.name()] = None
 

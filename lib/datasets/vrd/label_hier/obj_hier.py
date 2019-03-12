@@ -129,7 +129,6 @@ class ObjNet(LabelHier):
 
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_labels.txt')
 objnet = ObjNet(label_path, '')
-
 # raw_inds = objnet.get_raw_indexes()
 # for ind in raw_inds:
 #     n = objnet.get_node_by_index(ind)

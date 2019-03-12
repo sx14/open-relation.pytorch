@@ -23,6 +23,7 @@ function graph.transitiveClosure(edges)
         if e ~= s then
             table.insert(edges, {s,e})
         end
+        -- print(s .. ' -> ' .. e)
         if adj[e] then
             for _, e in ipairs(adj[e]) do
                 dfs(s, e)

@@ -53,9 +53,10 @@ def nms(boxes, labels):
         fake_scores = np.ones((same_cls_boxes.shape[0], 1))
         fake_dets = np.concatenate((same_cls_boxes, fake_scores), axis=1)
 
-        keep = nms_cpu(fake_dets, 0.6)
+        keep = nms_cpu(fake_dets, 0.8)
+
         same_cls_boxes = same_cls_boxes[keep].tolist()
-        same_labels = np.zeros((same_cls_boxes.shape[0])).astype(np.int)
+        same_labels = np.zeros((len(same_cls_boxes))).astype(np.int)
         same_labels[:] = uni_label
         same_labels = same_labels.tolist()
 

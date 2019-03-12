@@ -14,7 +14,7 @@ __sets = {}
 from lib.datasets.pascal_voc import pascal_voc
 from lib.datasets.coco import coco
 from lib.datasets.imagenet import imagenet
-from lib.datasets.vg1000.vg import vg
+from lib.datasets.vg200.vg import vg
 from lib.datasets.vrd.vrd import vrd
 from lib.datasets.vrd.vrd_rela import vrd_rela
 

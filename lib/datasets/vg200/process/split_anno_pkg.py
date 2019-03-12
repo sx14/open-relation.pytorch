@@ -195,9 +195,29 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
         # save split image list
         for l in range(len(img_ids)):
             img_ids[l] = img_ids[l] + '\n'
-        img_list_path = os.path.join(img_list_root, split + '.txt')
-        with open(img_list_path, 'w') as f:
-            f.writelines(img_ids)
+
+        if split == 'train':
+            # original train split -> trainval
+            # split original train split -> train and val
+            trainval_img_list_path = os.path.join(img_list_root, 'trainval.txt')
+            with open(trainval_img_list_path, 'w') as f:
+                f.writelines(img_ids)
+
+            val_size = 400
+            val_img_list_path = os.path.join(img_list_root, 'val.txt')
+            train_img_list_path = os.path.join(img_list_root, 'train.txt')
+
+            val_img_ids = img_ids[:val_size]
+            train_img_ids = img_ids[val_size:]
+
+            with open(val_img_list_path, 'w') as f:
+                f.writelines(val_img_ids)
+            with open(train_img_list_path, 'w') as f:
+                f.writelines(train_img_ids)
+        else:
+            img_list_path = os.path.join(img_list_root, split + '.txt')
+            with open(img_list_path, 'w') as f:
+                f.writelines(img_ids)
 
     # save class list
     for i in range(len(obj_cls)):

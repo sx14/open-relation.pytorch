@@ -110,6 +110,7 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg1000.label_hier.obj_hier import objnet
         from lib.datasets.vg1000.label_hier.pre_hier import prenet
+        args.class_agnostic = True
 
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2016_trainval"
@@ -117,6 +118,7 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
+        args.class_agnostic = True
 
     args.cfg_file = "../../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../../cfgs/{}.yml".format(args.net)
 

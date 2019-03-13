@@ -77,7 +77,7 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=7574, type=int)
+                        default=7547, type=int)
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         args.imdbval_name = "vg_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg1000.label_hier.obj_hier import objnet
-        args.class_agnostic = False
+        args.class_agnostic = True
         # TODO: 之后要变成True, 目前训练的是False
 
     elif args.dataset == "vrd":
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
-        args.class_agnostic = False
+        args.class_agnostic = True
 
     args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
 
@@ -288,7 +288,7 @@ if __name__ == '__main__':
         misc_tic = time.time()
 
         # x1,y1,x2,y2,s0,s1,s2,s3,...,sN
-        my_dets = torch.cat([pred_boxes[:, 4:8], pred_scores], 1)
+        my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
         det_roidb[im_id] = my_dets.cpu().data.numpy()
 
     with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:

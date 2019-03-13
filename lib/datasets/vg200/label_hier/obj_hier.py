@@ -21,6 +21,10 @@ class ObjNet(LabelHier):
 
     def _import_split(self):
         file_path = os.path.join(os.path.dirname(__file__), 'splits1.txt')
+        if not os.path.exists(file_path):
+            print(file_path+' not exists.')
+            exit(-1)
+
         with open(file_path, 'r') as f:
             splits = f.readlines()
         return splits

@@ -35,7 +35,6 @@ class PreNet(LabelHier):
             'under.s': 'spatial.a',
             'walk.i': 'interact.a',
             'in.s': 'spatial.a',
-            'hold.i': 'interact.a',
             'with.p': 'possess.a',
             'carry.i': 'interact.a',
             'look.i': 'interact.a',
@@ -71,7 +70,7 @@ class PreNet(LabelHier):
 
         sup_level1 = {
             'beside': 'near',
-            'next to': 'beside',
+            'next to': 'near',
             'rest on': 'on',
         }
 
@@ -141,13 +140,13 @@ class PreNet(LabelHier):
             'skate on': 'on'
         }
 
-        levels = [abs_level, basic_level, sup_level, concrete_level]
+        levels = [abs_level, basic_level, sup_level, sup_level1, concrete_level]
         for level in levels:
             for label in level:
                 parent_label = level[label]
                 parent_node = self._label2node[parent_label]
                 assert parent_node is not None
-                if label in concrete_level.keys():
+                if label in concrete_level.keys() or label in sup_level.keys() or label in sup_level1.keys():
                     node = LabelNode(label, next_label_ind, True)
                 else:
                     node = LabelNode(label, next_label_ind, False)
@@ -168,9 +167,9 @@ prenet = PreNet(label_path)
 #     n = prenet.get_node_by_index(i)
 #     n.show_hyper_paths()
 #
-# for i in range(prenet.label_sum()):
-#     n = prenet.get_node_by_index(i)
-#     cs = ''
-#     for c in n.children():
-#         cs = cs + ' | ' + c.name()
-#     print(n.name()+ ':' + cs)
+for i in range(prenet.label_sum()):
+    n = prenet.get_node_by_index(i)
+    cs = ''
+    for c in n.children():
+        cs = cs + ' | ' + c.name()
+    print(n.name()+ ':' + cs)

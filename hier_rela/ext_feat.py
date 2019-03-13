@@ -47,11 +47,11 @@ def extend_neg_samples(im_boxes):
     rand_obj_boxes = obj_boxes[rand_obj_inds, :]
     neg_samples[:, 10:15] = rand_obj_boxes
 
-    neg_pre_xmins = torch.min(torch.cat(sbj_boxes[:, 0], rand_obj_boxes[:, 0], 1), dim=1)
-    neg_pre_ymins = torch.min(torch.cat(sbj_boxes[:, 1], rand_obj_boxes[:, 1], 1), dim=1)
-    neg_pre_xmaxs = torch.max(torch.cat(sbj_boxes[:, 2], rand_obj_boxes[:, 2], 1), dim=1)
-    neg_pre_ymaxs = torch.max(torch.cat(sbj_boxes[:, 3], rand_obj_boxes[:, 3], 1), dim=1)
-    neg_pre_labels = torch.zeros(neg_pre_xmaxs.shape)
+    neg_pre_xmins = torch.min(torch.stack([sbj_boxes[:, 0], rand_obj_boxes[:, 0]], 1), dim=1)[0]
+    neg_pre_ymins = torch.min(torch.stack([sbj_boxes[:, 1], rand_obj_boxes[:, 1]], 1), dim=1)[0]
+    neg_pre_xmaxs = torch.max(torch.stack([sbj_boxes[:, 2], rand_obj_boxes[:, 2]], 1), dim=1)[0]
+    neg_pre_ymaxs = torch.max(torch.stack([sbj_boxes[:, 3], rand_obj_boxes[:, 3]], 1), dim=1)[0]
+    neg_pre_labels = torch.zeros(neg_pre_xmaxs.shape[0])
     neg_samples[:, 0] = neg_pre_xmins
     neg_samples[:, 1] = neg_pre_ymins
     neg_samples[:, 2] = neg_pre_xmaxs
@@ -59,7 +59,7 @@ def extend_neg_samples(im_boxes):
     neg_samples[:, 4] = neg_pre_labels
 
     pos_neg_samples = torch.cat((pos_samples, neg_samples), dim=0)
-    pos_neg_samples.unsqueeze(0)
+    pos_neg_samples = pos_neg_samples.unsqueeze(0)
     return pos_neg_samples
 
 
@@ -88,9 +88,12 @@ def parse_args():
                         default=True)
     parser.add_argument('--split', dest='split',
                         help='Do predicate recognition or relationship detection?',
-                        action='store_true',
                         default='trainval',
                         # default='test',
+                        )
+    parser.add_argument('--feat', dest='feat',
+                        default='vis',
+                        # default='wordbox',
                         )
 
     args = parser.parse_args()
@@ -199,7 +202,7 @@ if __name__ == '__main__':
     start = time.time()
     N_img = len(rela_roidb_use.keys())
     for i, img_id in enumerate(rela_roidb_use.keys()):
-        print('pred [%d/%d]' % (N_img, i+1))
+        print('ext [%d/%d]' % (N_img, i+1))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
@@ -217,17 +220,20 @@ if __name__ == '__main__':
         relas_num = relas_num * 2
 
         with torch.no_grad():
-            fc7 = hierRela.ext_fc7(im_data, im_info, relas_box, relas_num)
+            if args.feat == 'vis':
+                feat = hierRela.ext_fc7(im_data, im_info, relas_box, relas_num)
+            else:
+                feat = hierRela.ext_wordbox(im_data, im_info, relas_box, relas_num)
 
-        pos_fc7 = fc7[:relas_num/2, :].cpu().data.numpy()
-        neg_fc7 = fc7[relas_num/2:, :].cpu().data.numpy()
+        pos_feat = feat[:relas_num / 2, :].cpu().data.numpy()
+        neg_feat = feat[relas_num / 2:, :].cpu().data.numpy()
 
         if pos_feats is None:
-            pos_feats = pos_fc7
-            neg_feats = neg_fc7
+            pos_feats = pos_feat
+            neg_feats = neg_feat
         else:
-            pos_feats = np.concatenate((pos_feats, pos_fc7))
-            neg_feats = np.concatenate((neg_feats, neg_fc7))
+            pos_feats = np.concatenate((pos_feats, pos_feat))
+            neg_feats = np.concatenate((neg_feats, neg_feat))
 
     np.save('%s_%s_pos_feat' % (args.dataset, args.split), pos_feats)
     np.save('%s_%s_neg_feat' % (args.dataset, args.split), neg_feats)

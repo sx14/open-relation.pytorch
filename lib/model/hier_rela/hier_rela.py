@@ -73,5 +73,47 @@ class HierRela(nn.Module):
         else:
             return None
 
+    def ext_wordbox(self, im_data, im_info, gt_relas, num_relas):
+        batch_size = im_data.size(0)
+
+        # language feats
+        sbj_label = gt_relas[:, :, 9][0].long()
+        obj_label = gt_relas[:, :, 14][0].long()
+
+        sbj_lab_vecs = self._obj_lab_vecs[sbj_label]
+        obj_lab_vecs = self._obj_lab_vecs[obj_label]
+
+        # spacial feats
+        sbj_boxes = gt_relas[:, :, 5:9]
+        obj_boxes = gt_relas[:, :, 10:14]
+
+        sbj_boxes_w = sbj_boxes[:, 2] - sbj_boxes[:, 0]
+        sbj_boxes_h = sbj_boxes[:, 3] - sbj_boxes[:, 1]
+
+        obj_boxes_w = obj_boxes[:, 2] - obj_boxes[:, 0]
+        obj_boxes_h = obj_boxes[:, 3] - obj_boxes[:, 1]
+
+        sbj_tx = (sbj_boxes[:, 0] - obj_boxes[:, 0]) / sbj_boxes_w
+        sbj_ty = (sbj_boxes[:, 1] - obj_boxes[:, 1]) / sbj_boxes_h
+        sbj_tw = torch.log(sbj_boxes_w / obj_boxes_w)
+        sbj_th = torch.log(sbj_boxes_h / obj_boxes_h)
+
+        obj_tx = (obj_boxes[:, 0] - sbj_boxes[:, 0]) / obj_boxes_w
+        obj_ty = (obj_boxes[:, 1] - sbj_boxes[:, 1]) / obj_boxes_h
+        obj_tw = torch.log(obj_boxes_w / sbj_boxes_w)
+        obj_th = torch.log(obj_boxes_h / sbj_boxes_h)
+
+        sbj_feat_vecs = torch.cat([sbj_lab_vecs, sbj_tx, sbj_ty, sbj_tw, sbj_th], dim=1)
+        obj_feat_vecs = torch.cat([obj_lab_vecs, obj_tx, obj_ty, obj_tw, obj_th], dim=1)
+
+        # transe
+        transe_vecs = sbj_feat_vecs - obj_feat_vecs
+        return transe_vecs
+
+
+
+
+
+
 
 

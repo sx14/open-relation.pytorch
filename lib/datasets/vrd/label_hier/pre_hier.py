@@ -11,17 +11,17 @@ class PreNet(LabelHier):
         # root node
         # 0 is background
         next_label_ind = 1
-        root = LabelNode('relation', next_label_ind, False)
+        root = LabelNode('relation.r.01', next_label_ind, False)
         self._index2node.append(root)
-        self._label2node['relation'] = root
+        self._label2node['relation.r.01'] = root
         next_label_ind += 1
 
         # abstract level
         # interact, spatial, belong, comparison
-        abs_level = {'interact.a': 'relation',
-                     'spatial.a': 'relation',
-                     'possess.a': 'relation',
-                     'compare.a': 'relation'}
+        abs_level = {'interact.a': 'relation.r.01',
+                     'spatial.a': 'relation.r.01',
+                     'possess.a': 'relation.r.01',
+                     'compare.a': 'relation.r.01'}
 
 
         # basic level
@@ -62,56 +62,53 @@ class PreNet(LabelHier):
             'ride.i': 'interact.a',
         }
 
-
         sup_level = {
-            'next to.s': 'near.s',
-            'above.s': 'on.s',
-            'over.s': 'on.s',
-            'below.s': 'under.s',
-            'beside.s': 'near.s',
-            'rest on.s': 'on.s',
+            'near': 'near.s',
+            'behind': 'behind.s',
+            'under': 'under.s',
+            'on': 'on.s',
+        }
+
+        sup_level1 = {
+            'beside': 'near',
+            'next to': 'beside',
+            'rest on': 'on',
         }
 
         concrete_level = {
-            'on': 'on.s',
             'wear': 'wear.i',
             'has': 'has.p',
-            'next to': 'next to.s',
-            'sleep next to': 'next to.s',
-            'sit next to': 'next to.s',
-            'stand next to': 'next to.s',
-            'park next to': 'next to.s',
-            'walk next to': 'next to.s',
-            'above': 'above.s',
-            'behind': 'behind.s',
-            'stand behind': 'behind.s',
-            'sit behind': 'behind.s',
-            'park behind': 'behind.s',
+            'sleep next to': 'next to',
+            'sit next to': 'next to',
+            'stand next to': 'next to',
+            'park next to': 'next to',
+            'walk next to': 'next to',
+            'above': 'on.s',
+            'stand behind': 'behind',
+            'sit behind': 'behind',
+            'park behind': 'behind',
             'in the front of': 'in the front of.s',
-            'under': 'under.s',
-            'stand under': 'under.s',
-            'sit under': 'under.s',
-            'near': 'near.s',
+            'stand under': 'under',
+            'sit under': 'under',
             'walk to': 'walk.i',
             'walk': 'walk.i',
             'walk past': 'walk.i',
             'in': 'in.s',
-            'below': 'below.s',
-            'beside': 'beside.s',
-            'walk beside': 'beside.s',
-            'over': 'over.s',
-            'hold': 'hold.i',
-            'by': 'beside.s',
-            'beneath': 'under.s',
+            'below': 'under',
+            'walk beside': 'beside',
+            'over': 'on.s',
+            'hold': 'carry.i',
+            'by': 'beside',
+            'beneath': 'under',
             'with': 'with.p',
-            'on the top of': 'on.s',
-            'on the left of': 'beside.s',
-            'on the right of': 'beside.s',
-            'sit on': 'on.s',
+            'on the top of': 'on',
+            'on the left of': 'beside',
+            'on the right of': 'beside',
+            'sit on': 'on',
             'ride': 'ride.i',
             'carry': 'carry.i',
             'look': 'look.i',
-            'stand on': 'on.s',
+            'stand on': 'on',
             'use': 'use.i',
             'at': 'at.s',
             'attach to': 'attach to.i',
@@ -120,29 +117,28 @@ class PreNet(LabelHier):
             'watch': 'look.i',
             'against': 'against.s',
             'inside': 'in.s',
-            'adjacent to': 'next to.s',
+            'adjacent to': 'next to',
             'across': 'across.s',
             'contain': 'contain.p',
             'drive': 'drive.i',
-            'drive on': 'on.s',
+            'drive on': 'on',
             'taller than': 'than.c',
             'eat': 'eat.i',
-            'park on': 'on.s',
-            'lying on': 'rest on.s',
+            'park on': 'on',
+            'lying on': 'rest on',
             'pull': 'pull.i',
             'talk': 'talk.i',
-            'lean on': 'on.s',
+            'lean on': 'on',
             'fly': 'fly.i',
             'face': 'face.i',
             'play with': 'play with.i',
-            'sleep on': 'rest on.s',
+            'sleep on': 'rest on',
             'outside of': 'outside of.s',
-            'rest on': 'rest on.s',
-            'follow': 'behind.s',
+            'follow': 'behind',
             'hit': 'hit.i',
             'feed': 'feed.i',
             'kick': 'kick.i',
-            'skate on': 'on.s'
+            'skate on': 'on'
         }
 
         levels = [abs_level, basic_level, sup_level, concrete_level]

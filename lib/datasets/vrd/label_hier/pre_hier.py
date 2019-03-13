@@ -7,6 +7,21 @@ from global_config import PROJECT_ROOT
 
 class PreNet(LabelHier):
 
+    def pos_leaf_sum(self):
+        # overwrite
+
+        def dfs_count(node):
+            if len(node.children()) == 0:
+                return 1
+            else:
+                count = 0
+                for c in node.children():
+                    count += dfs_count(c)
+                return count
+
+        root = self.root()
+        return dfs_count(root)
+
     def _construct_hier(self):
         # root node
         # 0 is background
@@ -167,9 +182,9 @@ prenet = PreNet(label_path)
 #     n = prenet.get_node_by_index(i)
 #     n.show_hyper_paths()
 #
-for i in range(prenet.label_sum()):
-    n = prenet.get_node_by_index(i)
-    cs = ''
-    for c in n.children():
-        cs = cs + ' | ' + c.name()
-    print(n.name()+ ':' + cs)
+# for i in range(prenet.label_sum()):
+#     n = prenet.get_node_by_index(i)
+#     cs = ''
+#     for c in n.children():
+#         cs = cs + ' | ' + c.name()
+#     print(n.name()+ ':' + cs)

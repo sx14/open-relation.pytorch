@@ -27,6 +27,7 @@ def generate_direct_hypernyms(labelnet, hypernym_save_path):
     f.create_dataset('hypernyms', data=hypernyms)
     f.close()
 
+
 if __name__ == '__main__':
 
     dataset = 'vrd'

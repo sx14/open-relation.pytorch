@@ -131,6 +131,7 @@ class LabelNode(object):
     def set_weight(self, w):
         self._weight = w
 
+
 class LabelHier:
 
     def background(self):
@@ -212,7 +213,6 @@ class LabelHier:
             all_pos_inds = set(raw_node.trans_hyper_inds())
             all_neg_inds = list(all_inds - all_pos_inds)
             raw2pns[raw_ind] = [raw_ind] + all_neg_inds[:self.neg_num()]
-
 
     def _load_raw_label(self, raw_label_path):
         labels = []

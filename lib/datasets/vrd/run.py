@@ -271,13 +271,19 @@ if __name__ == '__main__':
     # reformat_anno(vrd_config)
 
     # for eval
-    roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')
     anno_root = vrd_config['clean_anno_root']
 
     train_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'trainval.txt')
     train_rlts = all_relationships(anno_root, train_anno_list_path)
+    train_roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_trainval_vrd.bin')
+    prepare_relationship_roidb(objnet, prenet, anno_root, train_anno_list_path, train_roidb_save_path, train_rlts)
 
     test_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
-    prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, roidb_save_path, train_rlts)
+    test_roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_test_vrd.bin')
+    prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, test_roidb_save_path, train_rlts)
+
+
+
+
 
 

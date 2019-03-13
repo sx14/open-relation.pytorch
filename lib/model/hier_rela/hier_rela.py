@@ -60,7 +60,18 @@ class HierRela(nn.Module):
         return rois, score, cls_score, rois_label
 
 
+    def ext_fc7(self, im_data, im_info, gt_relas, num_relas):
+        batch_size = im_data.size(0)
 
+        pre_label = gt_relas[:, :, 4][0].long()
+        sbj_label = gt_relas[:, :, 9][0].long()
+        obj_label = gt_relas[:, :, 14][0].long()
+
+        if self._hierVis is not None:
+            fc7 = self._hierVis.ext_fc7(im_data, im_info, gt_relas, num_relas)
+            return fc7
+        else:
+            return None
 
 
 

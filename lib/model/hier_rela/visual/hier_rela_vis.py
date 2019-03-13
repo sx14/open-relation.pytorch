@@ -155,6 +155,63 @@ class _HierRelaVis(nn.Module):
 
         return rois, cls_score, RCNN_loss_cls, rois_label
 
+    def ext_fc7(self, im_data, im_info, gt_boxes, num_boxes):
+        batch_size = im_data.size(0)
+
+        im_info = im_info.data
+        gt_boxes = gt_boxes.data
+        num_boxes = num_boxes.data
+
+        # feed image data to base model to obtain base feature map
+        base_feat = self.RCNN_base(im_data)
+
+        pre_label = gt_boxes[:, :, 4][0]
+        sbj_label = gt_boxes[:, :, 9][0]
+        obj_label = gt_boxes[:, :, 14][0]
+
+        pre_boxes = gt_boxes[:, :, :5]
+        sbj_boxes = gt_boxes[:, :, 5:10]
+        obj_boxes = gt_boxes[:, :, 10:15]
+
+        raw_pre_rois = torch.zeros(pre_boxes.size())
+        raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]
+        rois = Variable(raw_pre_rois).cuda()
+
+        if cfg.POOLING_MODE == 'crop':
+            # pdb.set_trace()
+            # pooled_feat_anchor = _crop_pool_layer(base_feat, rois.view(-1, 5))
+            grid_xy = _affine_grid_gen(rois.view(-1, 5), base_feat.size()[2:], self.grid_size)
+            grid_yx = torch.stack([grid_xy.data[:,:,:,1], grid_xy.data[:,:,:,0]], 3).contiguous()
+            pre_pooled_feat = self.RCNN_roi_crop(base_feat, Variable(grid_yx).detach())
+            if cfg.CROP_RESIZE_WITH_MAX_POOL:
+                pre_pooled_feat = F.max_pool2d(pre_pooled_feat, 2, 2)
+        elif cfg.POOLING_MODE == 'align':
+            pre_pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+        elif cfg.POOLING_MODE == 'pool':
+            pre_pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
+
+        # feed pooled features to top model(fc7)
+        pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
+
+        sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
+
+        with torch.no_grad():
+            sbj_obj_pooled_feat, \
+            sbj_obj_embedding = self._hierRCNN.ext_feat(im_data, im_info,
+                                                        sbj_obj_boxes,num_boxes * 2,
+                                                        use_rpn=False)
+
+        num_boxes_padding = gt_boxes.size(1)
+        sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
+        obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
+        sbj_embedding = sbj_obj_embedding[:num_boxes_padding, :]
+        obj_embedding = sbj_obj_embedding[num_boxes_padding:, :]
+
+        # ===== class prediction part =====
+        # ===== order embedding here =====\
+        pooled_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
+        return pooled_feat_use
+
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
             """

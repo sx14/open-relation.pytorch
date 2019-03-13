@@ -11,8 +11,11 @@ import os
 import argparse
 import pprint
 import time
-
 import pickle
+
+import numpy as np
+import torch
+
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
@@ -30,6 +33,39 @@ try:
     xrange  # Python 2
 except NameError:
     xrange = range  # Python 3
+
+
+def extend_neg_samples(im_boxes):
+    pos_samples = im_boxes[0]
+    neg_samples = pos_samples.clone()
+
+    sbj_boxes = pos_samples[:, 5:10]
+    obj_boxes = pos_samples[:, 10:15]
+
+    rand_obj_inds = np.array(range(obj_boxes.size(0)))
+    np.random.shuffle(rand_obj_inds)
+    rand_obj_boxes = obj_boxes[rand_obj_inds, :]
+    neg_samples[:, 10:15] = rand_obj_boxes
+
+    neg_pre_xmins = torch.min(torch.cat(sbj_boxes[:, 0], rand_obj_boxes[:, 0], 1), dim=1)
+    neg_pre_ymins = torch.min(torch.cat(sbj_boxes[:, 1], rand_obj_boxes[:, 1], 1), dim=1)
+    neg_pre_xmaxs = torch.max(torch.cat(sbj_boxes[:, 2], rand_obj_boxes[:, 2], 1), dim=1)
+    neg_pre_ymaxs = torch.max(torch.cat(sbj_boxes[:, 3], rand_obj_boxes[:, 3], 1), dim=1)
+    neg_pre_labels = torch.zeros(neg_pre_xmaxs.shape)
+    neg_samples[:, 0] = neg_pre_xmins
+    neg_samples[:, 1] = neg_pre_ymins
+    neg_samples[:, 2] = neg_pre_xmaxs
+    neg_samples[:, 3] = neg_pre_ymaxs
+    neg_samples[:, 4] = neg_pre_labels
+
+    pos_neg_samples = torch.cat((pos_samples, neg_samples), dim=0)
+    pos_neg_samples.unsqueeze(0)
+    return pos_neg_samples
+
+
+
+
+
 
 
 def parse_args():
@@ -50,13 +86,12 @@ def parse_args():
                         help='whether use CUDA',
                         action='store_true',
                         default=True)
-    parser.add_argument('--mode', dest='mode',
+    parser.add_argument('--split', dest='split',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='rela',
-                        # default='rela',
+                        default='trainval',
+                        # default='test',
                         )
-
 
     args = parser.parse_args()
     return args
@@ -153,32 +188,14 @@ if __name__ == '__main__':
     if args.cuda:
         cfg.CUDA = True
 
-    if args.mode == 'pre':
-        # Load gt data
-        gt_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_%s.bin' % args.dataset)
-        with open(gt_roidb_path, 'rb') as f:
-            gt_roidb = pickle.load(f)
-            rela_roidb_use = gt_roidb
-    else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
-        with open(det_roidb_path, 'rb') as f:
-            det_roidb = pickle.load(f)
-        cond_roidb = gen_rela_conds(det_roidb)
-        rela_roidb_use = cond_roidb
+    # Load gt data
+    gt_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_%s_%s.bin' % (args.split, args.dataset))
+    with open(gt_roidb_path, 'rb') as f:
+        gt_roidb = pickle.load(f)
+        rela_roidb_use = gt_roidb
 
-    N_count = 1e-10
-    TP_count = 0.0
-    hier_score_sum = 0.0
-    raw_score_sum = 0.0
-
-    zero_N_count = 1e-10
-    zero_TP_count = 0.0
-    zero_hier_score_sum = 0.0
-    zero_raw_score_sum = 0.0
-
-
-
-    pred_roidb = {}
+    pos_feats = None
+    neg_feats = None
     start = time.time()
     N_img = len(rela_roidb_use.keys())
     for i, img_id in enumerate(rela_roidb_use.keys()):
@@ -194,99 +211,25 @@ if __name__ == '__main__':
         im_info.data.resize_(data[1].size()).copy_(data[1])
         relas_box.data.resize_(data[2].size()).copy_(data[2])
         relas_num.data.resize_(data[3].size()).copy_(data[3])
-        relas_zero = np.array(rois_use)[:, -1]
 
-        im_scale = data[4]
+        # extend negative samples
+        relas_box = extend_neg_samples(relas_box)
+        relas_num = relas_num * 2
 
-        det_tic = time.time()
         with torch.no_grad():
-            rois, cls_score, \
-            _, rois_label = hierRela(im_data, im_info, relas_box, relas_num)
+            fc7 = hierRela.ext_fc7(im_data, im_info, relas_box, relas_num)
 
-        scores = cls_score.data
+        pos_fc7 = fc7[:relas_num/2, :].cpu().data.numpy()
+        neg_fc7 = fc7[relas_num/2:, :].cpu().data.numpy()
 
-        pred_cates = torch.zeros(rois[0].shape[0])
-        pred_scores = torch.zeros(rois[0].shape[0])
+        if pos_feats is None:
+            pos_feats = pos_fc7
+            neg_feats = neg_fc7
+        else:
+            pos_feats = np.concatenate((pos_feats, pos_fc7))
+            neg_feats = np.concatenate((neg_feats, neg_fc7))
 
-        raw_label_inds = set(prenet.get_raw_indexes())
+    np.save('%s_%s_pos_feat' % (args.dataset, args.split), pos_feats)
+    np.save('%s_%s_neg_feat' % (args.dataset, args.split), neg_feats)
 
-        for ppp in range(scores.size()[1]):
-            N_count += 1
-
-            if relas_zero[ppp] == 1:
-                zero_N_count += 1
-
-            all_scores = scores[0][ppp].cpu().data.numpy()
-
-            # print('==== %s ====' % gt_node.name())
-            # ranked_inds = np.argsort(all_scores)[::-1][:20]
-            # sorted_scrs = np.sort(all_scores)[::-1][:20]
-            # for item in zip(ranked_inds, sorted_scrs):
-            #     print('%s (%.2f)' % (prenet.get_node_by_index(item[0]).name(), item[1]))
-
-            top2 = my_infer(prenet, all_scores)
-            pred_cate = top2[0][0]
-            pred_scr = top2[0][1]
-
-            pred_cates[ppp] = pred_cate
-            pred_scores[ppp] = pred_scr
-
-            if args.mode == 'pre':
-                gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-                gt_node = prenet.get_node_by_index(int(gt_cate))
-
-                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                raw_scr = gt_node.score(raw_cate)
-                raw_score_sum += raw_scr
-
-                if relas_zero[ppp] == 1:
-                    zero_raw_score_sum += raw_scr
-
-                hier_scr = gt_node.score(pred_cate)
-                pred_node = prenet.get_node_by_index(pred_cate)
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
-                if hier_scr > 0:
-                    TP_count += 1
-                    hier_score_sum += hier_scr
-
-                    if relas_zero == 1:
-                        zero_TP_count += 1
-                        zero_hier_score_sum += hier_scr
-
-                    info = 'T: ' + info
-                else:
-                    info = 'F: ' + info
-                    pass
-                print(info)
-
-        pred_rois = torch.FloatTensor(rois_use)
-        sbj_scores = pred_rois[:, -2]
-        obj_scores = pred_rois[:, -1]
-        rela_scores = pred_scores * sbj_scores * obj_scores
-        rela_scores = rela_scores.unsqueeze(1)
-
-        pred_rois[:, 4] = pred_cates
-        # remove [pconf, sconf, oconf], cat rela_conf
-        pred_rois = torch.cat((pred_rois[:, :15], rela_scores), dim=1)
-        pred_roidb[img_id] = pred_rois.numpy()
-        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf
-
-
-
-    end = time.time()
-    print("test time: %0.4fs" % (end - start))
-
-    print("==== overall test result ==== ")
-    print("Rec flat Acc: %.4f" % (TP_count / N_count))
-    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
-    print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
-
-    print("==== zero-shot test result ==== ")
-    print("Rec flat Acc: %.4f" % (zero_TP_count / zero_N_count))
-    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
-    print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
-
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
-    with open(pred_roidb_path, 'wb') as f:
-        pickle.dump(pred_roidb, f)
 

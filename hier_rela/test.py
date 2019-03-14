@@ -223,8 +223,8 @@ if __name__ == '__main__':
                 zero_N_count += 1
 
             all_scores = scores[0][ppp].cpu().data.numpy()
-            lan_scores = lan_scores[0][ppp].cpu().data.numpy()
-            vis_scores = vis_scores[0][ppp].cpu().data.numpy()
+            l_scores = lan_scores[0][ppp].cpu().data.numpy()
+            v_scores = vis_scores[0][ppp].cpu().data.numpy()
 
             # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
@@ -245,8 +245,8 @@ if __name__ == '__main__':
 
             if args.mode == 'pre':
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                vis_cate, _ = get_raw_pred(vis_scores, raw_label_inds)
-                lan_cate, _ = get_raw_pred(lan_scores, raw_label_inds)
+                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
+                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
 
                 if vis_cate == gt_cate or lan_cate == gt_cate:
                     raw_score_sum_u += 1

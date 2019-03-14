@@ -59,7 +59,6 @@ class HierRela(nn.Module):
 
         return rois, score, cls_score, rois_label
 
-
     def ext_fc7(self, im_data, im_info, gt_relas, num_relas):
         batch_size = im_data.size(0)
 
@@ -77,15 +76,15 @@ class HierRela(nn.Module):
         batch_size = im_data.size(0)
 
         # language feats
-        sbj_label = gt_relas[:, :, 9][0].long()
-        obj_label = gt_relas[:, :, 14][0].long()
+        sbj_label = gt_relas[0, :, 9].long()
+        obj_label = gt_relas[0, :, 14].long()
 
         sbj_lab_vecs = self._obj_lab_vecs[sbj_label]
         obj_lab_vecs = self._obj_lab_vecs[obj_label]
 
         # spacial feats
-        sbj_boxes = gt_relas[:, :, 5:9]
-        obj_boxes = gt_relas[:, :, 10:14]
+        sbj_boxes = gt_relas[0, :, 5:9]
+        obj_boxes = gt_relas[0, :, 10:14]
 
         sbj_boxes_w = sbj_boxes[:, 2] - sbj_boxes[:, 0]
         sbj_boxes_h = sbj_boxes[:, 3] - sbj_boxes[:, 1]
@@ -103,8 +102,12 @@ class HierRela(nn.Module):
         obj_tw = torch.log(obj_boxes_w / sbj_boxes_w)
         obj_th = torch.log(obj_boxes_h / sbj_boxes_h)
 
-        sbj_feat_vecs = torch.cat([sbj_lab_vecs, sbj_tx, sbj_ty, sbj_tw, sbj_th], dim=1)
-        obj_feat_vecs = torch.cat([obj_lab_vecs, obj_tx, obj_ty, obj_tw, obj_th], dim=1)
+        sbj_feat_vecs = torch.cat([sbj_lab_vecs,
+                                   sbj_tx.unsqueeze(1), sbj_ty.unsqueeze(1),
+                                   sbj_tw.unsqueeze(1), sbj_th.unsqueeze(1)], dim=1)
+        obj_feat_vecs = torch.cat([obj_lab_vecs,
+                                   obj_tx.unsqueeze(1), obj_ty.unsqueeze(1),
+                                   obj_tw.unsqueeze(1), obj_th.unsqueeze(1)], dim=1)
 
         # transe
         transe_vecs = sbj_feat_vecs - obj_feat_vecs

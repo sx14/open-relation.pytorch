@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='rela',
+                        default='pre',
                         # default='rela',
                         )
 
@@ -249,7 +249,7 @@ if __name__ == '__main__':
                     TP_count += 1
                     hier_score_sum += hier_scr
 
-                    if relas_zero == 1:
+                    if relas_zero[ppp] == 1:
                         zero_TP_count += 1
                         zero_hier_score_sum += hier_scr
 

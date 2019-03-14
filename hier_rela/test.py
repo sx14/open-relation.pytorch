@@ -232,28 +232,36 @@ if __name__ == '__main__':
 
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
+            pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':
                 gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
                 gt_node = prenet.get_node_by_index(int(gt_cate))
 
+                inf_scr = gt_node.score(pred_cate)
+                infer_score_sum += inf_scr
+
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                raw_scr = gt_node.score(raw_cate)
-                raw_score_sum += raw_scr
+                raw_node = prenet.get_node_by_index(raw_cate)
+                if raw_cate == gt_cate:
+                    raw_score_sum += 1
 
-                if relas_zero == 1:
-                    zero_raw_score_sum += raw_scr
+                    if relas_zero[ppp] == 1:
+                        zero_raw_score_sum += 1
 
-                hier_scr = gt_node.score(pred_cate)
-                pred_node = prenet.get_node_by_index(pred_cate)
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
+                hier_scr = gt_node.score(raw_cate)
+                hier_score_sum += hier_scr
+
+                if relas_zero[ppp] == 1:
+                    zero_hier_score_sum += hier_scr
+                    zero_infer_score_sum += inf_scr
+
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), raw_node.name(), hier_scr))
+
                 if hier_scr > 0:
                     flat_count += 1
-                    hier_score_sum += hier_scr
-
                     if relas_zero == 1:
                         zero_flat_count += 1
-                        zero_hier_score_sum += hier_scr
 
                     info = 'T: ' + info
                 else:

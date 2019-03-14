@@ -64,13 +64,13 @@ class _HierRelaVis(nn.Module):
             nn.Dropout(),
             nn.Linear(4096, self.embedding_len))
 
-        self.order_ex_embedding = nn.Sequential(
-            nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
-                      self.embedding_len + self._hierRCNN.embedding_len * 2),
-            nn.ReLU(),
-            nn.Dropout(),
-            nn.Linear(self.embedding_len + 2 * self._hierRCNN.embedding_len,
-                      self.embedding_len))
+        # self.order_ex_embedding = nn.Sequential(
+        #     nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
+        #               self.embedding_len + self._hierRCNN.embedding_len * 2),
+        #     nn.ReLU(),
+        #     nn.Dropout(),
+        #     nn.Linear(self.embedding_len + 2 * self._hierRCNN.embedding_len,
+        #               self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 
@@ -131,9 +131,12 @@ class _HierRelaVis(nn.Module):
         pooled_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
 
         # visual embedding
-        pre_embedding0 = self.order_in_embedding(pooled_feat_use)
-        pre_feat = torch.cat([sbj_embedding, pre_embedding0, obj_embedding], 1)
-        pre_embedding = self.order_ex_embedding(pre_feat)
+        #pre_embedding0 = self.order_in_embedding(pooled_feat_use)
+        # pre_feat = torch.cat([sbj_embedding, pre_embedding0, obj_embedding], 1)
+        # pre_embedding = self.order_ex_embedding(pre_feat)
+
+        pre_embedding = self.order_in_embedding(pooled_feat_use)
+
 
         # compute order similarity
         if pre_embedding.size(0) < 30:
@@ -168,7 +171,7 @@ class _HierRelaVis(nn.Module):
                 m.bias.data.zero_()
 
         normal_init(list(self.order_in_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
-        normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        # normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
 
     def create_architecture(self):
         self._init_modules()

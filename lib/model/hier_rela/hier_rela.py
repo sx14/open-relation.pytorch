@@ -52,12 +52,14 @@ class HierRela(nn.Module):
         rois = Variable(raw_pre_rois).cuda()
 
         score = score.view(batch_size, rois.size(1), -1)
+        vis_score = vis_score.view(batch_size, rois.size(1), -1)
+        lan_score = lan_score.view(batch_size, rois.size(1), -1)
         rois_label = torch.stack((pre_label, sbj_label, obj_label), dim=1)
         rois_label.unsqueeze(0)
 
         cls_score = 0
 
-        return rois, score, cls_score, rois_label
+        return rois, score, cls_score, rois_label, vis_score, lan_score
 
 
 

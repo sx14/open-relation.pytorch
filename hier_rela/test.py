@@ -172,6 +172,8 @@ if __name__ == '__main__':
     raw_score_sum = 0.0
     infer_score_sum = 0.0
 
+    raw_score_sum_u = 0.0
+
     zero_N_count = 1e-10
     zero_flat_count = 0.0
     zero_hier_score_sum = 0.0
@@ -203,9 +205,11 @@ if __name__ == '__main__':
         det_tic = time.time()
         with torch.no_grad():
             rois, cls_score, \
-            _, rois_label = hierRela(im_data, im_info, relas_box, relas_num)
+            _, rois_label, vis_score, lan_score = hierRela(im_data, im_info, relas_box, relas_num)
 
         scores = cls_score.data
+        vis_scores = vis_score.data
+        lan_scores = lan_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0])
         pred_scores = torch.zeros(rois[0].shape[0])
@@ -219,6 +223,8 @@ if __name__ == '__main__':
                 zero_N_count += 1
 
             all_scores = scores[0][ppp].cpu().data.numpy()
+            lan_scores = lan_scores[0][ppp].cpu().data.numpy()
+            vis_scores = vis_scores[0][ppp].cpu().data.numpy()
 
             # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
@@ -239,7 +245,16 @@ if __name__ == '__main__':
 
             if args.mode == 'pre':
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+                vis_cate, _ = get_raw_pred(vis_scores, raw_label_inds)
+                lan_cate, _ = get_raw_pred(lan_scores, raw_label_inds)
+
+                if vis_cate == gt_cate or lan_cate == gt_cate:
+                    raw_score_sum_u += 1
+
                 raw_node = prenet.get_node_by_index(raw_cate)
+                vis_node = prenet.get_node_by_index(vis_cate)
+                lan_node = prenet.get_node_by_index(lan_cate)
+
                 if raw_cate == gt_cate:
                     raw_score_sum += 1
 
@@ -255,7 +270,9 @@ if __name__ == '__main__':
                     zero_hier_score_sum += hier_scr
                     zero_infer_score_sum += inf_scr
 
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), raw_node.name(), hier_scr))
+                # info = ('%s -> %s(%.2f)' % (gt_node.name(), raw_node.name(), hier_scr))
+                info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
+
 
                 if hier_scr > 0:
                     flat_count += 1
@@ -283,6 +300,9 @@ if __name__ == '__main__':
 
     print("==== overall test result ==== ")
     print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
+    print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
+
+
     print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (flat_count / N_count))
 

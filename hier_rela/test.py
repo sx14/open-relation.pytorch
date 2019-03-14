@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='rela',
+                        default='pre',
                         # default='rela',
                         )
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Load Detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path)
+    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
     hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')
@@ -234,25 +234,24 @@ if __name__ == '__main__':
             pred_scores[ppp] = pred_scr
             pred_node = prenet.get_node_by_index(pred_cate)
 
+            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
+            gt_node = prenet.get_node_by_index(int(gt_cate))
+
             if args.mode == 'pre':
-                gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-                gt_node = prenet.get_node_by_index(int(gt_cate))
-
-                inf_scr = gt_node.score(pred_cate)
-                infer_score_sum += inf_scr
-
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
                 raw_node = prenet.get_node_by_index(raw_cate)
                 if raw_cate == gt_cate:
                     raw_score_sum += 1
 
-                    if relas_zero[ppp] == 1:
-                        zero_raw_score_sum += 1
+                inf_scr = gt_node.score(pred_cate)
+                infer_score_sum += inf_scr
 
                 hier_scr = gt_node.score(raw_cate)
                 hier_score_sum += hier_scr
 
                 if relas_zero[ppp] == 1:
+                    if raw_cate == gt_cate:
+                        zero_raw_score_sum += 1
                     zero_hier_score_sum += hier_scr
                     zero_infer_score_sum += inf_scr
 
@@ -260,9 +259,8 @@ if __name__ == '__main__':
 
                 if hier_scr > 0:
                     flat_count += 1
-                    if relas_zero == 1:
+                    if relas_zero[ppp] == 1:
                         zero_flat_count += 1
-
                     info = 'T: ' + info
                 else:
                     info = 'F: ' + info

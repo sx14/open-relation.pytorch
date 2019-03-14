@@ -238,7 +238,7 @@ if __name__ == '__main__':
   with torch.no_grad():
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path)
+    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
     hierRCNN.create_architecture()
 
     # load HierRCNN model

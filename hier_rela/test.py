@@ -167,14 +167,16 @@ if __name__ == '__main__':
         rela_roidb_use = cond_roidb
 
     N_count = 1e-10
-    TP_count = 0.0
+    flat_count = 0.0
     hier_score_sum = 0.0
     raw_score_sum = 0.0
+    infer_score_sum = 0.0
 
     zero_N_count = 1e-10
-    zero_TP_count = 0.0
+    zero_flat_count = 0.0
     zero_hier_score_sum = 0.0
     zero_raw_score_sum = 0.0
+    zero_infer_score_sum = 0.0
 
 
 
@@ -246,11 +248,11 @@ if __name__ == '__main__':
                 pred_node = prenet.get_node_by_index(pred_cate)
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
                 if hier_scr > 0:
-                    TP_count += 1
+                    flat_count += 1
                     hier_score_sum += hier_scr
 
                     if relas_zero == 1:
-                        zero_TP_count += 1
+                        zero_flat_count += 1
                         zero_hier_score_sum += hier_scr
 
                     info = 'T: ' + info
@@ -273,18 +275,15 @@ if __name__ == '__main__':
 
 
 
-    end = time.time()
-    print("test time: %0.4fs" % (end - start))
-
     print("==== overall test result ==== ")
-    print("Rec flat Acc: %.4f" % (TP_count / N_count))
-    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
     print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
+    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
+    print("Rec flat Acc: %.4f" % (flat_count / N_count))
 
     print("==== zero-shot test result ==== ")
-    print("Rec flat Acc: %.4f" % (zero_TP_count / zero_N_count))
-    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
     print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
+    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
+    print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:

@@ -219,8 +219,10 @@ if __name__ == '__main__':
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
     use_rpn = False
-    TP_count = 0.0
-    N_count = 0.1
+    N_count = 0
+    flat_count = 0.0
+    hier_score_sum = 0.0
+    raw_score_sum = 0.0
 
     for i in range(num_images):
 
@@ -253,87 +255,28 @@ if __name__ == '__main__':
                 raw_scores = all_scores[raw_label_inds]
                 pred_raw_ind = np.argmax(raw_scores[1:]) + 1
                 pred_cate = raw_label_inds[pred_raw_ind]
-                gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
                 pred_node = prenet.get_node_by_index(pred_cate)
+
+                gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
                 gt_node = prenet.get_node_by_index(int(gt_cate))
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), raw_scores[pred_raw_ind]))
+                hier_scr = gt_node.score(pred_cate)
+
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
+
                 if pred_cate == gt_cate:
+                    raw_score_sum += 1
+
+                if hier_scr > 0:
                     # flat recall
-                    TP_count += 1
+                    hier_score_sum += hier_scr
+                    flat_count += 1
                     info = 'T: ' + info
                 else:
-                    # TOOD: hier recalla
                     info = 'F: ' + info
                     pass
                 print(info)
 
-
-        pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-
-        pred_boxes /= data[1][0][2].item()
-
-        scores = scores[0]
-        pred_boxes = pred_boxes[0]
-
-        det_toc = time.time()
-        detect_time = det_toc - det_tic
-        misc_tic = time.time()
-        if vis:
-            im = cv2.imread(imdb.image_path_at(i))
-            im2show = np.copy(im)
-
-        for j in xrange(1, imdb.num_classes):
-            inds = torch.nonzero(scores[:, j] > thresh).view(-1)
-            # if there is det
-            if inds.numel() > 0:
-                cls_scores = scores[:, j][inds]
-                _, order = torch.sort(cls_scores, 0, True)
-                if args.class_agnostic:
-                    cls_boxes = pred_boxes[inds, :]
-                else:
-                    cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
-
-                cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
-                # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
-                cls_dets = cls_dets[order]
-                keep = nms(cls_dets, cfg.TEST.NMS)
-                cls_dets = cls_dets[keep.view(-1).long()]
-                if vis:
-                    im2show = vis_detections(im2show, imdb.classes[j], cls_dets.cpu().numpy(), 0.3)
-                all_boxes[j][i] = cls_dets.cpu().numpy()
-
-            else:
-                all_boxes[j][i] = empty_array
-
-        # Limit to max_per_image detections *over all classes*
-        if max_per_image > 0:
-            image_scores = np.hstack([all_boxes[j][i][:, -1] for j in xrange(1, imdb.num_classes)])
-            if len(image_scores) > max_per_image:
-                image_thresh = np.sort(image_scores)[-max_per_image]
-                for j in xrange(1, imdb.num_classes):
-                    keep = np.where(all_boxes[j][i][:, -1] >= image_thresh)[0]
-                    all_boxes[j][i] = all_boxes[j][i][keep, :]
-
-        misc_toc = time.time()
-        nms_time = misc_toc - misc_tic
-
-        sys.stdout.write('im_detect: {:d}/{:d} {:.3f}s {:.3f}s   \r' \
-                         .format(i + 1, num_images, detect_time, nms_time))
-        sys.stdout.flush()
-
-        if vis:
-            cv2.imwrite('result.png', im2show)
-            pdb.set_trace()
-            # cv2.imshow('test', im2show)
-            # cv2.waitKey(0)
-
-    with open(det_file, 'wb') as f:
-        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
-
-    print('Evaluating detections')
-    imdb.evaluate_detections(all_boxes, output_dir)
-
-    end = time.time()
-    print("test time: %0.4fs" % (end - start))
-
-    print("Rec flat Acc: %.4f" % (TP_count / N_count))
+    print("==== overall test result ==== ")
+    print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
+    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
+    print("Rec flat Acc: %.4f" % (flat_count / N_count))

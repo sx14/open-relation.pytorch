@@ -84,8 +84,8 @@ for batch in test_dl:
                     print('F: %s >>> %s' % (gt_label, pre_node.name()))
                 break
 
-    print("==== overall test result ==== ")
-    print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
-    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
-    print("Rec flat Acc: %.4f" % (flat_count / N_count))
+print("==== overall test result ==== ")
+print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
+print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
+print("Rec flat Acc: %.4f" % (flat_count / N_count))
 

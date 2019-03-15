@@ -18,7 +18,7 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer import my_infer
+from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -270,11 +270,11 @@ if __name__ == '__main__':
                     zero_hier_score_sum += hier_scr
                     zero_infer_score_sum += inf_scr
 
-                # info = ('%s -> %s(%.2f)' % (gt_node.name(), raw_node.name(), hier_scr))
-                info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), pred_scr))
+                # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
 
 
-                if hier_scr > 0:
+                if pred_scr > 0:
                     flat_count += 1
                     if relas_zero[ppp] == 1:
                         zero_flat_count += 1
@@ -300,15 +300,15 @@ if __name__ == '__main__':
 
     print("==== overall test result ==== ")
     print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
-    print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
-
-
+    # print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
     print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
+    print("Rec infer Acc: %.4f" % (infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (flat_count / N_count))
 
     print("==== zero-shot test result ==== ")
     print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
     print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
+    print("Rec infer Acc: %.4f" % (infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)

@@ -122,7 +122,7 @@ def good_thresh(max_depth, depth):
     return thresh
 
 
-def top_down_search(root, max_depth, threshold=0):
+def top_down_search(root):
     root.set_cond_prob(1.0)
     node = root
     path_scores = [0.0]
@@ -139,7 +139,6 @@ def top_down_search(root, max_depth, threshold=0):
             c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
         pred_c_ind = torch.argmax(c_scores_s)
-        pred_c_scr = c_scores_s[pred_c_ind]
         pred_c_node = node.children()[pred_c_ind]
         hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
         path_scores.append(hedge_c_scr)
@@ -174,7 +173,7 @@ def cal_pos_cond_prob(node):
 
 def my_infer(labelnet, scores):
     tnodes = construct_tree(labelnet, scores)
-    choice = top_down_search(tnodes[labelnet.root().index()], 0.4)
+    choice = top_down_search(tnodes[labelnet.root().index()])
     return [[choice.index(), choice.score()], [choice.index(), choice.score()]]
 
 

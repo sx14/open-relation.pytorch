@@ -59,10 +59,10 @@ class _HierRelaVis(nn.Module):
         # Our model
         # fc7(4096) -> emb(600)
         self.order_in_embedding = nn.Sequential(
-            nn.Linear(4096*3, 4096),
+            nn.Linear(4096 + 4 * 2, 4096 + 4 * 2),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(4096, self.embedding_len))
+            nn.Linear(4096 + 4 * 2, self.embedding_len))
 
         # self.order_ex_embedding = nn.Sequential(
         #     nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
@@ -114,18 +114,20 @@ class _HierRelaVis(nn.Module):
 
         sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
 
-        with torch.no_grad():
-            sbj_obj_pooled_feat = self._hierRCNN.ext_feat(im_data, im_info,
-                                                        sbj_obj_boxes,num_boxes * 2,
-                                                        use_rpn=False)
+        # with torch.no_grad():
+        #     sbj_obj_pooled_feat = self._hierRCNN.ext_feat(im_data, im_info,
+        #                                                 sbj_obj_boxes,num_boxes * 2,
+        #                                                 use_rpn=False)
 
         num_boxes_padding = gt_boxes.size(1)
-        sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
-        obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
+        # sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
+        # obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
+
+        spacial_feat_use = self._ext_box_feat(gt_boxes)
 
         # ===== class prediction part =====
         # ===== order embedding here =====\
-        pooled_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
+        pooled_feat_use = torch.cat([pre_pooled_feat, spacial_feat_use], 1)
 
         # visual embedding
         #pre_embedding0 = self.order_in_embedding(pooled_feat_use)
@@ -200,7 +202,7 @@ class _HierRelaVis(nn.Module):
 
         # transe
         # spatial_vecs = sbj_feat_vecs - obj_feat_vecs
-        spatial_vecs = torch.cat([sbj_feat_vecs, obj_feat_vecs])
+        spatial_vecs = torch.cat([sbj_feat_vecs, obj_feat_vecs], dim=1)
         return spatial_vecs
 
 

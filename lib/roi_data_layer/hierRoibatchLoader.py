@@ -27,7 +27,7 @@ class roibatchLoader(data.Dataset):
     # we make the height of image consistent to trim_height, trim_width
     self.trim_height = cfg.TRAIN.TRIM_HEIGHT
     self.trim_width = cfg.TRAIN.TRIM_WIDTH
-    self.max_num_box = cfg.MAX_NUM_GT_BOXES
+    # self.max_num_box = cfg.MAX_NUM_GT_BOXES
     self.training = training
     self.normalize = normalize
     self.ratio_list = ratio_list
@@ -221,7 +221,7 @@ class roibatchLoader(data.Dataset):
         not_keep = not_keep_pre | not_keep_sbj | not_keep_obj
         keep = torch.nonzero(not_keep == 0).view(-1)
 
-        gt_boxes_padding = torch.FloatTensor(self.max_num_box, gt_boxes.size(1) * 3).zero_()
+        gt_boxes_padding = torch.FloatTensor(gt_boxes.size(1), gt_boxes.size(1) * 3).zero_()
         if keep.numel() != 0:
             pre_boxes = pre_boxes[keep]
             sbj_boxes = sbj_boxes[keep]
@@ -229,7 +229,7 @@ class roibatchLoader(data.Dataset):
 
             gt_boxes = torch.cat([pre_boxes, sbj_boxes, obj_boxes], 1)
 
-            num_boxes = min(gt_boxes.size(0), self.max_num_box)
+            num_boxes = min(gt_boxes.size(0), gt_boxes.size(1))
             gt_boxes_padding[:num_boxes,:] = gt_boxes[:num_boxes]
         else:
             num_boxes = 0

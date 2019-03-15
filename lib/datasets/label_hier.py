@@ -12,9 +12,36 @@ class LabelNode(object):
         self._children = set()
         self._is_raw = is_raw
         self._info_ratio = -1
+        self._depth_ratio = -1
 
     def __str__(self):
         return self._name
+
+    def depth_ratio(self):
+
+        def top2curr(node):
+            if len(node.hypers()) == 0:
+                return 0
+            else:
+                return 1 + top2curr(node.hypers()[0])
+
+        def curr2bottom(node):
+            if len(node.children()) == 0:
+                return 0
+
+            max_d = 0
+            for child in node.children():
+                max_d = max((max_d, curr2bottom(child)))
+            return max_d + 1
+
+        if self._depth_ratio != -1:
+            return self._depth_ratio
+        else:
+            t2c = top2curr(self)
+            c2d = curr2bottom(self)
+            return 1.0 * t2c / max(t2c + c2d, 0.01)
+
+
 
     def info_ratio(self, leaf_sum):
 
@@ -307,7 +334,10 @@ class LabelHier:
 
         for node in self._index2node:
             node.info_ratio(self.pos_leaf_sum())
+            node.depth_ratio()
 
         self.max_depth = 0
         for n in self._index2node:
             self.max_depth = max(self.max_depth, n.depth())
+
+

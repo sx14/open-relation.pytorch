@@ -78,19 +78,13 @@ class TreeNode:
         return self._name
 
 
-
 def construct_tree(labelnet, scores):
     ind2node = []
     # node meta info
     for ind in range(labelnet.label_sum()):
         hnode = labelnet.get_node_by_index(ind)
-        tnode = TreeNode(hnode.name(), ind, hnode.info_ratio(labelnet.pos_leaf_sum()))
+        tnode = TreeNode(hnode.name(), ind, hnode.depth_ratio())
         ind2node.append(tnode)
-
-    # for label in labelnet.get_all_labels():
-    #     hnode = labelnet.get_node_by_name(label)
-    #     tnode = TreeNode(label, hnode.index(), hnode.info_ratio(labelnet.pos_leaf_sum()))
-    #     ind2node[hnode.index()] = tnode
 
     # node hierarchy
     for label in labelnet.get_all_labels():
@@ -131,6 +125,8 @@ def good_thresh(max_depth, depth):
 def top_down_search(root, max_depth, threshold=0):
     root.set_cond_prob(1.0)
     node = root
+    path_scores = [0.0]
+    path_nodes = [root]
     # print('P0\t\tP1\t\tE\t\tI')
     while len(node.children()) > 0:
         c_scores = []
@@ -144,16 +140,18 @@ def top_down_search(root, max_depth, threshold=0):
 
         pred_c_ind = torch.argmax(c_scores_s)
         pred_c_scr = c_scores_s[pred_c_ind]
+        pred_c_node = node.children()[pred_c_ind]
+        hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
+        path_scores.append(hedge_c_scr)
+        path_nodes.append(pred_c_node)
+        node = pred_c_node
 
         # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
-        if pred_c_scr > (1.0/len(node.children())) and node.entropy() < 0.95:
-            node = node.children()[pred_c_ind]
-        else:
-            break
 
+    max_scr_ind = np.argmax(np.array(path_scores))
+    max_scr_node = path_nodes[max_scr_ind]
 
-    # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
-    return node
+    return max_scr_node
 
 
 def cal_pos_cond_prob(node):

@@ -89,9 +89,9 @@ class _HierRelaVis(nn.Module):
         sbj_label = gt_boxes[:, :, 9][0]
         obj_label = gt_boxes[:, :, 14][0]
 
-        pre_boxes = gt_boxes[:, :, :5][mask]
-        sbj_boxes = gt_boxes[:, :, 5:10][mask]
-        obj_boxes = gt_boxes[:, :, 10:15][mask]
+        pre_boxes = gt_boxes[:, :, :5]
+        sbj_boxes = gt_boxes[:, :, 5:10]
+        obj_boxes = gt_boxes[:, :, 10:15]
 
         raw_pre_rois = torch.zeros(pre_boxes.size())
         raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]

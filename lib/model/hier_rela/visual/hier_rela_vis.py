@@ -76,10 +76,11 @@ class _HierRelaVis(nn.Module):
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
-
-        im_info = im_info.data
         gt_boxes = gt_boxes.data
-        num_boxes = num_boxes.data
+
+        pre_label = gt_boxes[:, :, 4][0]
+        mask = pre_label > 0
+        gt_boxes = gt_boxes[:, mask, :]
 
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
@@ -88,9 +89,9 @@ class _HierRelaVis(nn.Module):
         sbj_label = gt_boxes[:, :, 9][0]
         obj_label = gt_boxes[:, :, 14][0]
 
-        pre_boxes = gt_boxes[:, :, :5]
-        sbj_boxes = gt_boxes[:, :, 5:10]
-        obj_boxes = gt_boxes[:, :, 10:15]
+        pre_boxes = gt_boxes[:, :, :5][mask]
+        sbj_boxes = gt_boxes[:, :, 5:10][mask]
+        obj_boxes = gt_boxes[:, :, 10:15][mask]
 
         raw_pre_rois = torch.zeros(pre_boxes.size())
         raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]

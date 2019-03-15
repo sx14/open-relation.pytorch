@@ -147,6 +147,9 @@ def top_down_search(root):
 
         # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
 
+    for i in range(len(path_nodes)):
+        print('%s: %.2f' % (path_nodes[i].name(), path_scores[i]))
+
     max_scr_ind = np.argmax(np.array(path_scores))
     max_scr_node = path_nodes[max_scr_ind]
 

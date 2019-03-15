@@ -243,6 +243,8 @@ if __name__ == '__main__':
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
 
+            print('=== %s ===' % gt_node.name())
+
             if args.mode == 'pre':
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
                 vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
@@ -270,11 +272,11 @@ if __name__ == '__main__':
                     zero_hier_score_sum += hier_scr
                     zero_infer_score_sum += inf_scr
 
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), pred_scr))
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
                 # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
 
 
-                if pred_scr > 0:
+                if inf_scr > 0:
                     flat_count += 1
                     if relas_zero[ppp] == 1:
                         zero_flat_count += 1
@@ -308,7 +310,7 @@ if __name__ == '__main__':
     print("==== zero-shot test result ==== ")
     print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
     print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
-    print("Rec infer Acc: %.4f" % (infer_score_sum / N_count))
+    print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)

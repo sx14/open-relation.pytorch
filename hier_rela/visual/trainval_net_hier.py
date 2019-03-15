@@ -24,7 +24,7 @@ from lib.roi_data_layer.hierRoibatchLoader import roibatchLoader
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.faster_rcnn.vgg16 import vgg16 as vgg16_det
 
 from global_config import HierLabelConfig
 
@@ -238,11 +238,11 @@ if __name__ == '__main__':
   with torch.no_grad():
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
+    hierRCNN = vgg16_det(objnet.get_raw_labels())
     hierRCNN.create_architecture()
 
     # load HierRCNN model
-    load_name = '../../data/pretrained_model/hier_rcnn_%s.pth' % args.dataset
+    load_name = '../../data/pretrained_model/faster_rcnn_%s.pth' % args.dataset
     # load_name = '../../data/pretrained_model/pretrained_%s.pth' % args.dataset
     print("HierRCNN: load pretrained model: %s" % (load_name))
     checkpoint = torch.load(load_name)

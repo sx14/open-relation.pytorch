@@ -173,6 +173,40 @@ class _HierRelaVis(nn.Module):
         normal_init(list(self.order_in_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
         # normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
 
+
+    def _ext_box_feat(self, gt_relas):
+
+        # spacial feats
+        sbj_boxes = gt_relas[0, :, 5:9]
+        obj_boxes = gt_relas[0, :, 10:14]
+
+        sbj_boxes_w = sbj_boxes[:, 2] - sbj_boxes[:, 0]
+        sbj_boxes_h = sbj_boxes[:, 3] - sbj_boxes[:, 1]
+
+        obj_boxes_w = obj_boxes[:, 2] - obj_boxes[:, 0]
+        obj_boxes_h = obj_boxes[:, 3] - obj_boxes[:, 1]
+
+        sbj_tx = (sbj_boxes[:, 0] - obj_boxes[:, 0]) / sbj_boxes_w
+        sbj_ty = (sbj_boxes[:, 1] - obj_boxes[:, 1]) / sbj_boxes_h
+        sbj_tw = torch.log(sbj_boxes_w / obj_boxes_w)
+        sbj_th = torch.log(sbj_boxes_h / obj_boxes_h)
+
+        obj_tx = (obj_boxes[:, 0] - sbj_boxes[:, 0]) / obj_boxes_w
+        obj_ty = (obj_boxes[:, 1] - sbj_boxes[:, 1]) / obj_boxes_h
+        obj_tw = torch.log(obj_boxes_w / sbj_boxes_w)
+        obj_th = torch.log(obj_boxes_h / sbj_boxes_h)
+
+        sbj_feat_vecs = torch.cat([sbj_tx.unsqueeze(1), sbj_ty.unsqueeze(1),
+                                   sbj_tw.unsqueeze(1), sbj_th.unsqueeze(1)], dim=1)
+        obj_feat_vecs = torch.cat([obj_tx.unsqueeze(1), obj_ty.unsqueeze(1),
+                                   obj_tw.unsqueeze(1), obj_th.unsqueeze(1)], dim=1)
+
+        # transe
+        # spatial_vecs = sbj_feat_vecs - obj_feat_vecs
+        spatial_vecs = torch.cat([sbj_feat_vecs, obj_feat_vecs])
+        return spatial_vecs
+
+
     def create_architecture(self):
         self._init_modules()
         self._init_weights()

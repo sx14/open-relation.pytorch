@@ -232,6 +232,12 @@ if __name__ == '__main__':
             # for item in zip(ranked_inds, sorted_scrs):
             #     print('%s (%.2f)' % (prenet.get_node_by_index(item[0]).name(), item[1]))
 
+            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
+            gt_node = prenet.get_node_by_index(int(gt_cate))
+
+            print('=== %s ===' % gt_node.name())
+
+
             top2 = my_infer(prenet, all_scores)
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
@@ -240,10 +246,7 @@ if __name__ == '__main__':
             pred_scores[ppp] = pred_scr
             pred_node = prenet.get_node_by_index(pred_cate)
 
-            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-            gt_node = prenet.get_node_by_index(int(gt_cate))
 
-            print('=== %s ===' % gt_node.name())
 
             if args.mode == 'pre':
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)

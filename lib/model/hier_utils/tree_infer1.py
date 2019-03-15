@@ -127,7 +127,7 @@ def top_down_search(root):
     node = root
     path_scores = [0.0]
     path_nodes = [root]
-    # print('P0\t\tP1\t\tE\t\tI')
+    print('P0\t\tP1\t\tE\t\tI')
     while len(node.children()) > 0:
         c_scores = []
         for c in node.children():
@@ -138,14 +138,16 @@ def top_down_search(root):
         for i, c in enumerate(node.children()):
             c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
+        if node.entropy() > 0.7 and node.depth() >= 2:
+            break
+
         pred_c_ind = torch.argmax(c_scores_s)
         pred_c_node = node.children()[pred_c_ind]
         hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
         path_scores.append(hedge_c_scr)
         path_nodes.append(pred_c_node)
+        print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
         node = pred_c_node
-
-        # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
 
     for i in range(len(path_nodes)):
         print('%s: %.2f' % (path_nodes[i].name(), path_scores[i]))

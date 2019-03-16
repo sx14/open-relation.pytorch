@@ -15,7 +15,7 @@ import time
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.faster_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
 from lib.model.hier_utils.tree_infer1 import my_infer
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Load Detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
+    hierRCNN = vgg16_det(objnet.get_raw_labels())
     hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
     # Load HierLan
-    hierLan = HierLang(hierRCNN.embedding_len * 2, preconf.label_vec_path())
+    hierLan = HierLang(600 * 2, preconf.label_vec_path())
     load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
@@ -305,7 +305,7 @@ if __name__ == '__main__':
 
     print("==== overall test result ==== ")
     print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
-    # print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
+    print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
     print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
     print("Rec infer Acc: %.4f" % (infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (flat_count / N_count))

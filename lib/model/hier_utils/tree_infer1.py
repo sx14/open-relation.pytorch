@@ -143,7 +143,7 @@ def top_down_search(root):
 
         pred_c_ind = torch.argmax(c_scores_s)
         pred_c_node = node.children()[pred_c_ind]
-        hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
+        hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy()) ** 0.5
         path_scores.append(hedge_c_scr)
         path_nodes.append(pred_c_node)
         print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))

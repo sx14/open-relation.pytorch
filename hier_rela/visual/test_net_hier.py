@@ -25,7 +25,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.faster_rcnn.vgg16 import vgg16 as vgg16_det
 from global_config import HierLabelConfig
 
 import pdb
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     # initilize the network here.
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
+    hierRCNN = vgg16_det(objnet.get_raw_labels())
     hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')

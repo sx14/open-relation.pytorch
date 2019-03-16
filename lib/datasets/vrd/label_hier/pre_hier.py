@@ -36,6 +36,7 @@ class PreNet(LabelHier):
 
         if not os.path.exists(pre_freq_path):
             print('PreNet: pre_freq.txt not exists. Run vrd/run.py first.')
+            exit(-1)
 
         with open(pre_freq_path) as f:
             # raw_pre 0.25

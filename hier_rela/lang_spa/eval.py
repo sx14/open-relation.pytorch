@@ -11,6 +11,34 @@ from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
 from lib.datasets.vrd.label_hier.pre_hier import prenet
 from global_config import HierLabelConfig
 
+def ext_box_feat(gt_relas):
+    # spacial feats
+    sbj_boxes = gt_relas[:, 5:9]
+    obj_boxes = gt_relas[:, 10:14]
+
+    sbj_boxes_w = sbj_boxes[:, 2] - sbj_boxes[:, 0]
+    sbj_boxes_h = sbj_boxes[:, 3] - sbj_boxes[:, 1]
+
+    obj_boxes_w = obj_boxes[:, 2] - obj_boxes[:, 0]
+    obj_boxes_h = obj_boxes[:, 3] - obj_boxes[:, 1]
+
+    sbj_tx = (sbj_boxes[:, 0] - obj_boxes[:, 0]) / sbj_boxes_w
+    sbj_ty = (sbj_boxes[:, 1] - obj_boxes[:, 1]) / sbj_boxes_h
+    sbj_tw = torch.log(sbj_boxes_w / obj_boxes_w)
+    sbj_th = torch.log(sbj_boxes_h / obj_boxes_h)
+
+    obj_tx = (obj_boxes[:, 0] - sbj_boxes[:, 0]) / obj_boxes_w
+    obj_ty = (obj_boxes[:, 1] - sbj_boxes[:, 1]) / obj_boxes_h
+    obj_tw = torch.log(obj_boxes_w / sbj_boxes_w)
+    obj_th = torch.log(obj_boxes_h / sbj_boxes_h)
+
+    sbj_feat_vecs = torch.cat([sbj_tx.unsqueeze(1), sbj_ty.unsqueeze(1),
+                               sbj_tw.unsqueeze(1), sbj_th.unsqueeze(1)], dim=1)
+    obj_feat_vecs = torch.cat([obj_tx.unsqueeze(1), obj_ty.unsqueeze(1),
+                               obj_tw.unsqueeze(1), obj_th.unsqueeze(1)], dim=1)
+
+    return sbj_feat_vecs, obj_feat_vecs
+
 
 dataset = 'vrd'
 # hyper params
@@ -48,10 +76,14 @@ neg_acc = 0.0
 
 for batch in test_dl:
 
-    sbj1, pre1, obj1, pos_neg_inds = batch
+    sbj1, pre1, obj1, pos_neg_inds, rlt = batch
     v_sbj1 = Variable(sbj1).float().cuda()
-    v_pre1 = Variable(pre1).float().cuda()
     v_obj1 = Variable(obj1).float().cuda()
+    v_rlt = Variable(rlt).float().cuda()
+    v_sbj_box, v_obj_box = ext_box_feat(v_rlt)
+    v_sbj1 = torch.cat([v_sbj1, v_sbj_box], dim=1)
+    v_obj1 = torch.cat([v_obj1, v_obj_box], dim=1)
+    
     with torch.no_grad():
         pre_scores1 = model(v_sbj1, v_obj1)
 

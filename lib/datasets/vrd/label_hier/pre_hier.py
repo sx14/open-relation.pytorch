@@ -35,7 +35,7 @@ class PreNet(LabelHier):
             return freq_sum
 
         if not os.path.exists(pre_freq_path):
-            print('PreNet: pre_freq.txt not exists. Run vrd/run.py first.')
+            print('[WARNING] PreNet: pre_freq.txt not exists. Run vrd/run.py first.')
             return 1.0
 
         with open(pre_freq_path) as f:

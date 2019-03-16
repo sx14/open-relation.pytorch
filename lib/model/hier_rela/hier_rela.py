@@ -44,10 +44,9 @@ class HierRela(nn.Module):
             score = lan_score
 
         if self._hierVis is not None and self._hierLang is not None:
-            vis_score[vis_score < -2] = -2
-            score = torch.abs(vis_score) * torch.abs(lan_score)
-            score[score < 0.0001] = 0.0001
-            score = (-1) * score
+            score = 0.7 * lan_score + 0.3 * vis_score
+            score[score < -3] = -3
+            return score
 
 
         pre_boxes = gt_relas[:, :, :5]

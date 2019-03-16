@@ -36,7 +36,7 @@ class LangDataset(Dataset):
 
         all_neg_inds = list(set(range(self._label_sum)) - set(pos_inds))
         neg_inds = random.sample(all_neg_inds, self._neg_sample_num)
-        pos_neg_inds = np.array([rlt[1]] + neg_inds)
+        pos_neg_inds = np.array([rlt[4]] + neg_inds)
         rlt = np.array(rlt)
 
         return [sbj_vec, pre_vec, obj_vec, pos_neg_inds, rlt]

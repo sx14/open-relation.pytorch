@@ -10,12 +10,25 @@ from lib.datasets.vrd.label_hier.pre_hier import prenet
 from lib.datasets.tools.to_pascal_format import output_pascal_format
 from lib.datasets.vrd.process.reformat_anno import reformat_anno
 from lib.datasets.vrd.process.split_anno_pkg import split_anno_pkg
-from global_config import PROJECT_ROOT
+from global_config import PROJECT_ROOT, VRD_ROOT
+
+
+def output_pre_freq(pre_count, save_path):
+    lines = []
+    N_rlt = sum(pre_count.values())
+    for pre in pre_count:
+        N_pre = pre_count[pre]
+        line = '%s %.4f\n' % (pre, N_pre / float(N_rlt))
+        lines.append(line)
+
+    with open(save_path, 'w') as f:
+        f.writelines(lines)
 
 
 def all_relationships(anno_root, anno_list_path):
     # sbj -> obj -> pre
     rlts = dict()
+    pre_count = dict()
 
     # load img id list
     with open(anno_list_path, 'r') as anno_list_file:
@@ -26,7 +39,7 @@ def all_relationships(anno_root, anno_list_path):
 
         # load anno file
         anno_file_id = anno_list[i]
-        print('ext reltionships [%d/%d] %s' % (len(anno_list), (i + 1), anno_file_id))
+        print('look reltionships [%d/%d] %s' % (len(anno_list), (i + 1), anno_file_id))
         anno_path = os.path.join(anno_root, anno_list[i]+'.json')
         anno = json.load(open(anno_path, 'r'))
         image_id = anno_list[i]
@@ -51,7 +64,13 @@ def all_relationships(anno_root, anno_list_path):
 
             pres = obj2pre[obj['name']]
             pres.add(pre['name'])
-    return rlts
+
+            if pre['name'] not in pre_count:
+                pre_count[pre['name']] = 0
+
+            pre_count[pre['name']] = pre_count[pre['name']] + 1
+
+    return rlts, pre_count
 
 
 
@@ -250,15 +269,15 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
 
 
 if __name__ == '__main__':
-    vrd_root = label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007')
     vrd_config = {
-        'raw_anno_root': os.path.join(vrd_root, 'json_dataset'),
-        'dirty_anno_root': os.path.join(vrd_root, 'dirty_anno'),
-        'clean_anno_root': os.path.join(vrd_root, 'anno'),
-        'obj_raw_label_path': os.path.join(vrd_root, 'object_labels.txt'),
-        'pre_raw_label_path': os.path.join(vrd_root, 'predicate_labels.txt'),
-        'Annotations': os.path.join(vrd_root, 'Annotations'),
-        'ImageSets': os.path.join(vrd_root, 'ImageSets'),
+        'pre_freq_path': os.path.join(VRD_ROOT, 'pre_freq.txt'),
+        'raw_anno_root': os.path.join(VRD_ROOT, 'json_dataset'),
+        'dirty_anno_root': os.path.join(VRD_ROOT, 'dirty_anno'),
+        'clean_anno_root': os.path.join(VRD_ROOT, 'anno'),
+        'obj_raw_label_path': os.path.join(VRD_ROOT, 'object_labels.txt'),
+        'pre_raw_label_path': os.path.join(VRD_ROOT, 'predicate_labels.txt'),
+        'Annotations': os.path.join(VRD_ROOT, 'Annotations'),
+        'ImageSets': os.path.join(VRD_ROOT, 'ImageSets'),
     }
 
     # # to pascal format for object detection training
@@ -275,7 +294,9 @@ if __name__ == '__main__':
     anno_root = vrd_config['clean_anno_root']
 
     train_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'trainval.txt')
-    train_rlts = all_relationships(anno_root, train_anno_list_path)
+    train_rlts, train_pre_counts = all_relationships(anno_root, train_anno_list_path)
+
+    output_pre_freq(train_pre_counts, vrd_config['pre_freq_path'])
 
     test_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
     prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, roidb_save_path, train_rlts)

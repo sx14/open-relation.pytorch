@@ -2,14 +2,13 @@ import os
 from lib.datasets.label_hier import LabelHier
 from lib.datasets.label_hier import LabelNode
 
-from global_config import PROJECT_ROOT
+from global_config import PROJECT_ROOT, VRD_ROOT
 
 
 class PreNet(LabelHier):
 
     def pos_leaf_sum(self):
-        # overwrite
-
+        # override
         def dfs_count(node):
             if len(node.children()) == 0:
                 return 1
@@ -21,6 +20,40 @@ class PreNet(LabelHier):
 
         root = self.root()
         return dfs_count(root)
+
+    def fill_freq(self, pre_freq_path):
+        def dfs_fill_freq(node):
+            if node.is_raw():
+                freq_sum = node.freq()
+            else:
+                freq_sum = 0.0
+
+            for c in node.children():
+                freq_sum += dfs_fill_freq(c)
+
+            node.set_freq(freq_sum)
+            return freq_sum
+
+        if not os.path.exists(pre_freq_path):
+            print('PreNet: pre_freq.txt not exists. Run vrd/run.py first.')
+
+        with open(pre_freq_path) as f:
+            # raw_pre 0.25
+            pre_freqs = [l.strip() for l in f.readlines()]
+
+        # fill freq for raw nodes
+        for pre_freq in pre_freqs:
+            pre = pre_freq.split()[0]
+            freq = float(pre_freq.split()[1])
+            node = self.get_node_by_name(pre)
+            node.set_freq(freq)
+
+        freq_sum = dfs_fill_freq(self.root())
+        assert 1.001 > freq_sum > 0.999
+
+
+
+
 
     def _construct_hier(self):
         # root node
@@ -171,12 +204,14 @@ class PreNet(LabelHier):
                 parent_node.add_child(node)
                 next_label_ind += 1
 
-    def __init__(self, raw_label_path):
+    def __init__(self, raw_label_path, pre_freq_path):
         LabelHier.__init__(self, raw_label_path)
+        self.fill_freq(pre_freq_path)
 
 
-label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'predicate_labels.txt')
-prenet = PreNet(label_path)
+label_path = os.path.join(VRD_ROOT, 'predicate_labels.txt')
+pre_freq_path = os.path.join(VRD_ROOT, 'pre_count.txt')
+prenet = PreNet(label_path, pre_freq_path)
 
 # for i in prenet.get_raw_indexes():
 #     n = prenet.get_node_by_index(i)

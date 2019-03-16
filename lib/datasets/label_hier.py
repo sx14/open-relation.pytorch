@@ -13,6 +13,7 @@ class LabelNode(object):
         self._is_raw = is_raw
         self._info_ratio = -1
         self._depth_ratio = -1
+        self._freq = -1
 
     def __str__(self):
         return self._name
@@ -157,6 +158,12 @@ class LabelNode(object):
 
     def set_weight(self, w):
         self._weight = w
+
+    def set_freq(self, freq):
+        self._freq = freq
+
+    def freq(self):
+        return self._freq
 
 
 class LabelHier:

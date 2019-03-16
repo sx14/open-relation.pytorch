@@ -47,6 +47,7 @@ class HierRela(nn.Module):
             score = 0.7 * lan_score + 0.3 * vis_score
             score[score < -3] = -3
 
+
         pre_boxes = gt_relas[:, :, :5]
         raw_pre_rois = torch.zeros(pre_boxes.size())
         raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]

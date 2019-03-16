@@ -69,7 +69,7 @@ class TreeNode:
         e = 0.0
         for c in self._children:
             e -= c.cond_prob() * log(c.cond_prob(), len(self._children))
-        return e
+        return min(e, 1.0)
 
     def index(self):
         return self._index
@@ -138,12 +138,12 @@ def top_down_search(root):
         for i, c in enumerate(node.children()):
             c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
-        if node.entropy() > 0.7 and node.depth() >= 2:
+        if node.entropy() > 0.7 and node.depth() > 2:
             break
 
         pred_c_ind = torch.argmax(c_scores_s)
         pred_c_node = node.children()[pred_c_ind]
-        hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy()) ** 0.5
+        hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
         path_scores.append(hedge_c_scr)
         path_nodes.append(pred_c_node)
         print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))

@@ -36,7 +36,7 @@ class PreNet(LabelHier):
 
         if not os.path.exists(pre_freq_path):
             print('PreNet: pre_freq.txt not exists. Run vrd/run.py first.')
-            exit(-1)
+            return 1.0
 
         with open(pre_freq_path) as f:
             # raw_pre 0.25
@@ -44,8 +44,8 @@ class PreNet(LabelHier):
 
         # fill freq for raw nodes
         for pre_freq in pre_freqs:
-            pre = pre_freq.split()[0]
-            freq = float(pre_freq.split()[1])
+            pre = pre_freq.split('|')[0]
+            freq = float(pre_freq.split('|')[1])
             node = self.get_node_by_name(pre)
             node.set_freq(freq)
 
@@ -211,7 +211,7 @@ class PreNet(LabelHier):
 
 
 label_path = os.path.join(VRD_ROOT, 'predicate_labels.txt')
-pre_freq_path = os.path.join(VRD_ROOT, 'pre_count.txt')
+pre_freq_path = os.path.join(VRD_ROOT, 'pre_freq.txt')
 prenet = PreNet(label_path, pre_freq_path)
 
 # for i in prenet.get_raw_indexes():

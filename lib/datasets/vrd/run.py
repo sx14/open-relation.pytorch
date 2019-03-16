@@ -5,8 +5,7 @@ import pickle
 import numpy as np
 import cv2
 
-from lib.datasets.vrd.label_hier.obj_hier import objnet
-from lib.datasets.vrd.label_hier.pre_hier import prenet
+
 from lib.datasets.tools.to_pascal_format import output_pascal_format
 from lib.datasets.vrd.process.reformat_anno import reformat_anno
 from lib.datasets.vrd.process.split_anno_pkg import split_anno_pkg
@@ -18,7 +17,7 @@ def output_pre_freq(pre_count, save_path):
     N_rlt = sum(pre_count.values())
     for pre in pre_count:
         N_pre = pre_count[pre]
-        line = '%s %.4f\n' % (pre, N_pre / float(N_rlt))
+        line = '%s|%.4f\n' % (pre, N_pre / float(N_rlt))
         lines.append(line)
 
     with open(save_path, 'w') as f:
@@ -299,6 +298,8 @@ if __name__ == '__main__':
     output_pre_freq(train_pre_counts, vrd_config['pre_freq_path'])
 
     test_anno_list_path = os.path.join(vrd_config['ImageSets'], 'Main', 'test.txt')
+    from lib.datasets.vrd.label_hier.obj_hier import objnet
+    from lib.datasets.vrd.label_hier.pre_hier import prenet
     prepare_relationship_roidb(objnet, prenet, anno_root, test_anno_list_path, roidb_save_path, train_rlts)
 
 

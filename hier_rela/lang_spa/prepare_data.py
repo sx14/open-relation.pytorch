@@ -46,7 +46,7 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             sbj_box.append(sbj_ind)
             obj_box.append(obj_ind)
 
-            raw_rlts.append([pre_box, sbj_box, obj_box])
+            raw_rlts.append(pre_box + sbj_box + obj_box)
 
     raw_rlts = np.array(raw_rlts)
     np.save(rlt_save_path, raw_rlts)

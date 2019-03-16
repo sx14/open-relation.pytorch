@@ -16,8 +16,8 @@ from global_config import HierLabelConfig
 
 def ext_box_feat(gt_relas):
     # spacial feats
-    sbj_boxes = gt_relas[0, :, 5:9]
-    obj_boxes = gt_relas[0, :, 10:14]
+    sbj_boxes = gt_relas[:, 5:9]
+    obj_boxes = gt_relas[:, 10:14]
 
     sbj_boxes_w = sbj_boxes[:, 2] - sbj_boxes[:, 0]
     sbj_boxes_h = sbj_boxes[:, 3] - sbj_boxes[:, 1]

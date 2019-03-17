@@ -36,8 +36,8 @@ def ext_box_feat(rlts):
 
 
 def loss_test(scores, ys):
-    N_pos = 0.0
-    N_neg = 0.0
+    N_pos = 1e-5
+    N_neg = 1e-5
     N_pos_right = 0.0
     N_neg_right = 0.0
 

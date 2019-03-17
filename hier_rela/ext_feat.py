@@ -59,18 +59,18 @@ def extend_neg_samples(im_boxes):
         rand_objs = all_boxes[rand_obj_inds]
         rand_sbjs = all_boxes[rand_sbj_inds]
 
-        neg_samples[:, 5:10] = rand_sbjs
-        neg_samples[:, 10:15] = rand_objs
+        neg_samples[:, 5:10] = torch.from_numpy(rand_sbjs).float().cuda()
+        neg_samples[:, 10:15] = torch.from_numpy(rand_objs).float().cuda()
 
         neg_pre_xmins = np.min(np.stack((rand_sbjs[:, 0], rand_objs[:, 0]), 1), axis=1)
         neg_pre_ymins = np.min(np.stack((rand_sbjs[:, 1], rand_objs[:, 1]), 1), axis=1)
         neg_pre_xmaxs = np.max(np.stack((rand_sbjs[:, 2], rand_objs[:, 2]), 1), axis=1)
         neg_pre_ymaxs = np.max(np.stack((rand_sbjs[:, 3], rand_objs[:, 3]), 1), axis=1)
 
-        neg_samples[:, 0] = neg_pre_xmins[:]
-        neg_samples[:, 1] = neg_pre_ymins[:]
-        neg_samples[:, 2] = neg_pre_xmaxs[:]
-        neg_samples[:, 3] = neg_pre_ymaxs[:]
+        neg_samples[:, 0] = torch.from_numpy(neg_pre_xmins).float().cuda()
+        neg_samples[:, 1] = torch.from_numpy(neg_pre_ymins).float().cuda()
+        neg_samples[:, 2] = torch.from_numpy(neg_pre_xmaxs).float().cuda()
+        neg_samples[:, 3] = torch.from_numpy(neg_pre_ymaxs).float().cuda()
 
     neg_pre_labels = torch.zeros(neg_pre_xmaxs.shape[0])
     neg_samples[:, 4] = neg_pre_labels
@@ -109,7 +109,7 @@ def parse_args():
                         # default='test',
                         )
     parser.add_argument('--feat', dest='feat',
-                        default='vis',
+                        default='wordbox',
                         # default='wordbox',
                         )
 
@@ -234,7 +234,7 @@ if __name__ == '__main__':
 
         # extend negative samples
         relas_box = extend_neg_samples(relas_box)
-        relas_num = relas_box.size(1)
+        pos_neg_rela_num = relas_box.size(1)
 
         with torch.no_grad():
             if args.feat == 'vis':
@@ -242,8 +242,9 @@ if __name__ == '__main__':
             else:
                 feat = hierRela.ext_wordbox(im_data, im_info, relas_box, relas_num)
 
-        pos_feat = feat[:relas_num / 2, :].cpu().data.numpy()
-        neg_feat = feat[relas_num / 2:, :].cpu().data.numpy()
+        pos_rela_num = int(pos_neg_rela_num / 2)
+        pos_feat = feat[:pos_rela_num, :].cpu().data.numpy()
+        neg_feat = feat[pos_rela_num:, :].cpu().data.numpy()
 
         if pos_feats is None:
             pos_feats = pos_feat

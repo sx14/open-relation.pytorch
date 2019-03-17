@@ -69,10 +69,10 @@ class RelaPro(nn.Module):
         self._lan_vec_len = lan_vec_len
 
         self.spa_stream = nn.Sequential(
-            nn.Linear(8, 8),
+            nn.Linear(8, 200),
             nn.ReLU(),
             nn.Dropout(p=0.5),
-            nn.Linear(8, 1)
+            nn.Linear(200, 200)
         )
 
         self.lan_stream = nn.Sequential(
@@ -81,7 +81,17 @@ class RelaPro(nn.Module):
             nn.Linear(lan_vec_len * 2, lan_vec_len),
             nn.ReLU(),
             nn.Dropout(p=0.5),
-            nn.Linear(lan_vec_len, 1)
+            nn.Linear(lan_vec_len, 200)
+        )
+
+        self.cmb_stream = nn.Sequential(
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(200 * 2, 200),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(200, 1),
+            nn.Sigmoid()
         )
 
     def forward(self, sbj_vec, obj_vec, rlts):
@@ -90,9 +100,10 @@ class RelaPro(nn.Module):
         lan_feat = torch.cat([sbj_vec, obj_vec], dim=1)
         box_feat = torch.cat([sbj_box, obj_box], dim=1)
 
-        lan_scores = self.lan_stream(lan_feat)
-        box_scores = self.spa_stream(box_feat)
-        scores = sigmoid(lan_scores + box_scores)
+        lan_hidden = self.lan_stream(lan_feat)
+        box_hidden = self.spa_stream(box_feat)
+        cmb_hidden = torch.cat([lan_hidden, box_hidden], dim=1)
+        scores = self.cmb_stream(cmb_hidden)
 
         ys = rlts[:, 4]  # predicate cls
         ys[ys > 0] = 1    # fg > 0, bg = 0

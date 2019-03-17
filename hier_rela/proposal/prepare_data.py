@@ -24,6 +24,7 @@ def extend_neg_samples(pos_samples):
 
         if all_boxes.shape[0] < neg_samples.shape[0]:
             neg_samples = neg_samples[:all_boxes.shape[0]]
+            pos_samples = pos_samples[:all_boxes.shape[0]]
 
         rand_obj_inds = random.sample(range(all_boxes.shape[0]), neg_samples.shape[0])
         rand_sbj_inds = random.sample(range(all_boxes.shape[0]), neg_samples.shape[0])

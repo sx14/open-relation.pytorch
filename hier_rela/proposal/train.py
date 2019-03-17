@@ -27,7 +27,7 @@ def eval(model, test_dl):
         with torch.no_grad():
             scores, loss, recall_pos, recall_neg, recall_all = model(v_sbj1, v_obj1, v_rlt)
         acc_sum += recall_all
-        loss_sum += loss.cpu().data[0]
+        loss_sum += loss.cpu().data.tolist()
     avg_acc = acc_sum / batch_num
     avg_loss = loss_sum / batch_num
     model.train()

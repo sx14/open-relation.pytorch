@@ -12,7 +12,7 @@ import argparse
 import pprint
 import time
 import pickle
-
+import random
 import numpy as np
 import torch
 
@@ -42,20 +42,37 @@ def extend_neg_samples(im_boxes):
     sbj_boxes = pos_samples[:, 5:10]
     obj_boxes = pos_samples[:, 10:15]
 
-    rand_obj_inds = np.array(range(obj_boxes.size(0)))
-    np.random.shuffle(rand_obj_inds)
-    rand_obj_boxes = obj_boxes[rand_obj_inds, :]
-    neg_samples[:, 10:15] = rand_obj_boxes
+    if pos_samples.shape[0] < 3:
+        neg_samples[:, 5:10] = pos_samples[:, 10:15]
+        neg_samples[:, 10:15] = pos_samples[:, 5:10]
+    else:
 
-    neg_pre_xmins = torch.min(torch.stack([sbj_boxes[:, 0], rand_obj_boxes[:, 0]], 1), dim=1)[0]
-    neg_pre_ymins = torch.min(torch.stack([sbj_boxes[:, 1], rand_obj_boxes[:, 1]], 1), dim=1)[0]
-    neg_pre_xmaxs = torch.max(torch.stack([sbj_boxes[:, 2], rand_obj_boxes[:, 2]], 1), dim=1)[0]
-    neg_pre_ymaxs = torch.max(torch.stack([sbj_boxes[:, 3], rand_obj_boxes[:, 3]], 1), dim=1)[0]
+        all_boxes = torch.cat((sbj_boxes, obj_boxes), 0)
+        all_boxes = np.unique(all_boxes.cpu().data.numpy(), axis=0)
+
+        if all_boxes.shape[0] < neg_samples.shape[0]:
+            neg_samples = neg_samples[:all_boxes.shape[0]]
+            pos_samples = pos_samples[:all_boxes.shape[0]]
+
+        rand_obj_inds = random.sample(range(all_boxes.shape[0]), neg_samples.shape[0])
+        rand_sbj_inds = random.sample(range(all_boxes.shape[0]), neg_samples.shape[0])
+        rand_objs = all_boxes[rand_obj_inds]
+        rand_sbjs = all_boxes[rand_sbj_inds]
+
+        neg_samples[:, 5:10] = rand_sbjs
+        neg_samples[:, 10:15] = rand_objs
+
+        neg_pre_xmins = np.min(np.stack((rand_sbjs[:, 0], rand_objs[:, 0]), 1), axis=1)
+        neg_pre_ymins = np.min(np.stack((rand_sbjs[:, 1], rand_objs[:, 1]), 1), axis=1)
+        neg_pre_xmaxs = np.max(np.stack((rand_sbjs[:, 2], rand_objs[:, 2]), 1), axis=1)
+        neg_pre_ymaxs = np.max(np.stack((rand_sbjs[:, 3], rand_objs[:, 3]), 1), axis=1)
+
+        neg_samples[:, 0] = neg_pre_xmins[:]
+        neg_samples[:, 1] = neg_pre_ymins[:]
+        neg_samples[:, 2] = neg_pre_xmaxs[:]
+        neg_samples[:, 3] = neg_pre_ymaxs[:]
+
     neg_pre_labels = torch.zeros(neg_pre_xmaxs.shape[0])
-    neg_samples[:, 0] = neg_pre_xmins
-    neg_samples[:, 1] = neg_pre_ymins
-    neg_samples[:, 2] = neg_pre_xmaxs
-    neg_samples[:, 3] = neg_pre_ymaxs
     neg_samples[:, 4] = neg_pre_labels
 
     pos_neg_samples = torch.cat((pos_samples, neg_samples), dim=0)
@@ -217,7 +234,7 @@ if __name__ == '__main__':
 
         # extend negative samples
         relas_box = extend_neg_samples(relas_box)
-        relas_num = relas_num * 2
+        relas_num = relas_box.size(1)
 
         with torch.no_grad():
             if args.feat == 'vis':

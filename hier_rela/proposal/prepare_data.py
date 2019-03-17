@@ -10,24 +10,34 @@ from global_config import VRD_ROOT, VG_ROOT
 
 def extend_neg_samples(pos_samples):
     neg_samples = pos_samples.copy()
-
     sbj_boxes = pos_samples[:, 5:10]
     obj_boxes = pos_samples[:, 10:15]
 
-    rand_obj_inds = np.array(range(obj_boxes.shape[0]))
-    np.random.shuffle(rand_obj_inds)
-    rand_obj_boxes = obj_boxes[rand_obj_inds, :]
-    neg_samples[:, 10:15] = rand_obj_boxes
+    if pos_samples.shape[0] < 3:
+        neg_samples[:, 5:10] = pos_samples[:, 10:15]
+        neg_samples[:, 10:15] = pos_samples[:, 5:10]
 
-    neg_pre_xmins = np.min(np.concatenate((sbj_boxes[:, 0], rand_obj_boxes[:, 0]), 1), axis=1)
-    neg_pre_ymins = np.min(np.concatenate((sbj_boxes[:, 1], rand_obj_boxes[:, 1]), 1), axis=1)
-    neg_pre_xmaxs = np.max(np.concatenate((sbj_boxes[:, 2], rand_obj_boxes[:, 2]), 1), axis=1)
-    neg_pre_ymaxs = np.max(np.concatenate((sbj_boxes[:, 3], rand_obj_boxes[:, 3]), 1), axis=1)
+    else:
+        all_boxes = np.concatenate((sbj_boxes, obj_boxes))
+        all_boxes = np.unique(all_boxes, axis=1)
+        rand_obj_inds = random.sample(range(all_boxes.shape[0]), obj_boxes.shape[0])
+        rand_sbj_inds = random.sample(range(all_boxes.shape[0]), sbj_boxes.shape[0])
+        rand_objs = all_boxes[rand_obj_inds]
+        rand_sbjs = all_boxes[rand_sbj_inds]
+
+        neg_samples[:, 5:10] = rand_sbjs
+        neg_samples[:, 10:15] = rand_objs
+
+        neg_pre_xmins = np.min(np.stack((rand_sbjs[:, 0], rand_objs[:, 0]), 1), axis=1)
+        neg_pre_ymins = np.min(np.stack((rand_sbjs[:, 1], rand_objs[:, 1]), 1), axis=1)
+        neg_pre_xmaxs = np.max(np.stack((rand_sbjs[:, 2], rand_objs[:, 2]), 1), axis=1)
+        neg_pre_ymaxs = np.max(np.stack((rand_sbjs[:, 3], rand_objs[:, 3]), 1), axis=1)
+
+        neg_samples[:, 0] = neg_pre_xmins[:]
+        neg_samples[:, 1] = neg_pre_ymins[:]
+        neg_samples[:, 2] = neg_pre_xmaxs[:]
+        neg_samples[:, 3] = neg_pre_ymaxs[:]
     neg_pre_labels = np.zeros(neg_pre_xmaxs.shape[0])
-    neg_samples[:, 0] = neg_pre_xmins
-    neg_samples[:, 1] = neg_pre_ymins
-    neg_samples[:, 2] = neg_pre_xmaxs
-    neg_samples[:, 3] = neg_pre_ymaxs
     neg_samples[:, 4] = neg_pre_labels
 
     pos_neg_samples = np.concatenate((pos_samples, neg_samples), axis=0)

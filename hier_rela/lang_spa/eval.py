@@ -54,7 +54,7 @@ test_dl = DataLoader(test_set, batch_size=1, shuffle=True)
 embedding_dim = test_set.obj_vec_length()
 
 model_save_root = 'output/%s/' % dataset
-model = HierLang(embedding_dim * 2, pre_label_vec_path)
+model = HierLang(embedding_dim * 2 + 8, pre_label_vec_path)
 weight_path = model_save_root + train_params['best_model_path']+dataset+'.pth'
 if os.path.isfile(weight_path):
     model.load_state_dict(torch.load(weight_path))

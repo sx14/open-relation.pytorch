@@ -110,7 +110,8 @@ class HierRela(nn.Module):
                                    obj_tw.unsqueeze(1), obj_th.unsqueeze(1)], dim=1)
 
         # transe
-        transe_vecs = sbj_feat_vecs - obj_feat_vecs
+        # transe_vecs = sbj_feat_vecs - obj_feat_vecs
+        transe_vecs = torch.cat([sbj_feat_vecs, obj_feat_vecs], dim=1)
         return transe_vecs
 
 

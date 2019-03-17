@@ -20,9 +20,13 @@ def extend_neg_samples(pos_samples):
 
     else:
         all_boxes = np.concatenate((sbj_boxes, obj_boxes))
-        all_boxes = np.unique(all_boxes, axis=1)
-        rand_obj_inds = random.sample(range(all_boxes.shape[0]), obj_boxes.shape[0])
-        rand_sbj_inds = random.sample(range(all_boxes.shape[0]), sbj_boxes.shape[0])
+        all_boxes = np.unique(all_boxes, axis=0)
+
+        if all_boxes.shape[0] < neg_samples.shape[0]:
+            neg_samples = neg_samples[:all_boxes.shape[0]]
+
+        rand_obj_inds = random.sample(range(all_boxes.shape[0]), neg_samples.shape[0])
+        rand_sbj_inds = random.sample(range(all_boxes.shape[0]), neg_samples.shape[0])
         rand_objs = all_boxes[rand_obj_inds]
         rand_sbjs = all_boxes[rand_sbj_inds]
 
@@ -38,6 +42,7 @@ def extend_neg_samples(pos_samples):
         neg_samples[:, 1] = neg_pre_ymins[:]
         neg_samples[:, 2] = neg_pre_xmaxs[:]
         neg_samples[:, 3] = neg_pre_ymaxs[:]
+
     neg_pre_labels = np.zeros(neg_samples.shape[0])
     neg_samples[:, 4] = neg_pre_labels
 
@@ -85,8 +90,9 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             obj_box.append(obj_ind)
 
             pos_rlts.append(pre_box + sbj_box + obj_box)
-            pos_neg_rlts = extend_neg_samples(np.array(pos_rlts))
-            raw_rlts.append(pos_neg_rlts.tolist())
+
+        pos_neg_rlts = extend_neg_samples(np.array(pos_rlts))
+        raw_rlts += pos_neg_rlts.tolist()
 
     raw_rlts = np.array(raw_rlts)
     np.save(rlt_save_path, raw_rlts)

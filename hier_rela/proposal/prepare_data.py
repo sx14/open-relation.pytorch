@@ -9,6 +9,7 @@ from global_config import VRD_ROOT, VG_ROOT
 
 
 def extend_neg_samples(pos_samples):
+
     neg_samples = pos_samples.copy()
     sbj_boxes = pos_samples[:, 5:10]
     obj_boxes = pos_samples[:, 10:15]
@@ -37,7 +38,7 @@ def extend_neg_samples(pos_samples):
         neg_samples[:, 1] = neg_pre_ymins[:]
         neg_samples[:, 2] = neg_pre_xmaxs[:]
         neg_samples[:, 3] = neg_pre_ymaxs[:]
-    neg_pre_labels = np.zeros(neg_pre_xmaxs.shape[0])
+    neg_pre_labels = np.zeros(neg_samples.shape[0])
     neg_samples[:, 4] = neg_pre_labels
 
     pos_neg_samples = np.concatenate((pos_samples, neg_samples), axis=0)
@@ -60,6 +61,7 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
         anno_path = os.path.join(anno_root, anno_list[i]+'.json')
         anno = json.load(open(anno_path, 'r'))
         anno_rlts = anno['relationships']
+        pos_rlts = []
         for rlt in anno_rlts:
             anno_obj = rlt['object']
             anno_sbj = rlt['subject']
@@ -82,10 +84,12 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             sbj_box.append(sbj_ind)
             obj_box.append(obj_ind)
 
-            raw_rlts.append(pre_box + sbj_box + obj_box)
-            raw_rlts = np.array(raw_rlts)
-            ext_raw_rlts = extend_neg_samples(raw_rlts)
-    np.save(rlt_save_path, ext_raw_rlts)
+            pos_rlts.append(pre_box + sbj_box + obj_box)
+            pos_neg_rlts = extend_neg_samples(np.array(pos_rlts))
+            raw_rlts.append(pos_neg_rlts.tolist())
+
+    raw_rlts = np.array(raw_rlts)
+    np.save(rlt_save_path, raw_rlts)
     return raw_rlts
 
 

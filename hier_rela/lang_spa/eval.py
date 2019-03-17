@@ -54,7 +54,7 @@ test_dl = DataLoader(test_set, batch_size=1, shuffle=True)
 embedding_dim = test_set.obj_vec_length()
 
 model_save_root = 'output/%s/' % dataset
-model = HierLang(embedding_dim * 2, pre_label_vec_path)
+model = HierLang(embedding_dim * 2 + 8, pre_label_vec_path)
 weight_path = model_save_root + train_params['best_model_path']+dataset+'.pth'
 if os.path.isfile(weight_path):
     model.load_state_dict(torch.load(weight_path))
@@ -71,6 +71,7 @@ all_raw_inds = set(prenet.get_raw_indexes())
 pos_raw_inds = set(prenet.get_raw_indexes()[1:])
 
 acc = 0.0
+acc_score = 0.0
 pos_acc = 0.0
 neg_acc = 0.0
 
@@ -112,6 +113,7 @@ for batch in test_dl:
             for pre_ind in ranks:
                 if pre_ind in all_raw_inds:
                     pre_node = prenet.get_node_by_index(pre_ind)
+
                     if pre_ind == gt_node.index():
                         neg_acc += 1
                         t = 1
@@ -123,6 +125,7 @@ for batch in test_dl:
             for pre_ind in ranks:
                 if pre_ind in pos_raw_inds:
                     pre_node = prenet.get_node_by_index(pre_ind)
+                    acc_score += gt_node.score(pre_ind)
                     if pre_ind == gt_node.index():
                         pos_acc += 1
                         t = 1
@@ -133,6 +136,7 @@ for batch in test_dl:
         acc += t
 
 print('\nraw acc >>> %.4f' % (acc / batch_num))
+print('\nhier acc >>> %.4f' % (acc_score / batch_num))
 print('\npos acc >>> %.4f' % (pos_acc / pos_num))
 print('\nneg acc >>> %.4f' % (neg_acc / neg_num))
 

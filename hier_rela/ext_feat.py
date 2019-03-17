@@ -72,7 +72,7 @@ def extend_neg_samples(im_boxes):
         neg_samples[:, 2] = torch.from_numpy(neg_pre_xmaxs).float().cuda()
         neg_samples[:, 3] = torch.from_numpy(neg_pre_ymaxs).float().cuda()
 
-    neg_pre_labels = torch.zeros(neg_pre_xmaxs.shape[0])
+    neg_pre_labels = torch.zeros(neg_samples.shape[0])
     neg_samples[:, 4] = neg_pre_labels
 
     pos_neg_samples = torch.cat((pos_samples, neg_samples), dim=0)
@@ -234,6 +234,7 @@ if __name__ == '__main__':
 
         # extend negative samples
         relas_box = extend_neg_samples(relas_box)
+        relas_num[0] = relas_box.size(1)
         pos_neg_rela_num = relas_box.size(1)
 
         with torch.no_grad():

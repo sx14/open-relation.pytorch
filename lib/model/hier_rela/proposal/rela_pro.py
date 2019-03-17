@@ -69,7 +69,10 @@ class RelaPro(nn.Module):
         self._lan_vec_len = lan_vec_len
 
         self.spa_stream = nn.Sequential(
-            nn.Linear(8, 1),
+            nn.Linear(8, 8),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(8, 1)
         )
 
         self.lan_stream = nn.Sequential(

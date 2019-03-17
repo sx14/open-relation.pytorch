@@ -106,8 +106,8 @@ for epoch in range(epoch_num):
         sw.add_scalars('acc', {'train': recall_all}, batch_num)
         sw.add_scalars('loss', {'train': loss}, batch_num)
 
-        print('Epoch %d\t| Batch %d\t| Loss %.2f' % (epoch + 1, batch_num, loss.cpu().data))
-        print('Acc_A: %.2f\t| Acc_p: %.2f\t| Acc_n: %.2f' % (recall_all, recall_pos, recall_neg))
+        print('[E%d:B%d] Loss %.2f Acc_A: %.2f | Acc_p: %.2f | Acc_n: %.2f' %
+              (epoch + 1, batch_num, loss.cpu().data, recall_all, recall_pos, recall_neg))
 
         optim.zero_grad()
         loss.backward()

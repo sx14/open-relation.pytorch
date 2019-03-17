@@ -91,6 +91,8 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
 
             pos_rlts.append(pre_box + sbj_box + obj_box)
 
+        if len(pos_rlts) == 0:
+            continue
         pos_neg_rlts = extend_neg_samples(np.array(pos_rlts))
         raw_rlts += pos_neg_rlts.tolist()
 

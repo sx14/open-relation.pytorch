@@ -73,6 +73,7 @@ class RelaPro(nn.Module):
             nn.ReLU(),
             nn.Dropout(p=0.5),
             nn.Linear(200, 200)
+            # nn.Linear(8, 1)
         )
 
         self.lan_stream = nn.Sequential(
@@ -103,7 +104,8 @@ class RelaPro(nn.Module):
         lan_hidden = self.lan_stream(lan_feat)
         box_hidden = self.spa_stream(box_feat)
         cmb_hidden = torch.cat([lan_hidden, box_hidden], dim=1)
-        scores = self.cmb_stream(cmb_hidden)
+        scores = self.cmb_stream(cmb_hidden)[:, 0]
+        # scores = self.spa_stream(box_feat)[:, 0]
 
         ys = rlts[:, 4]  # predicate cls
         ys[ys > 0] = 1    # fg > 0, bg = 0

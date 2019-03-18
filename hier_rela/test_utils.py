@@ -119,7 +119,10 @@ def gen_rela_conds(det_roidb):
                 py2 = max(sbj[3], obj[3])
                 rela_temp = [px1, py1, px2, py2, -1] + sbj.tolist()[:5] + obj.tolist()[:5]
                 rela_cands_temp.append(rela_temp + [0.0, sbj[-1], obj[-1], 0.0])
-        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, pconf, sconf, oconf, zero
+        # px1, py1, px2, py2, pcls,
+        # sx1, sy1, sx2, sy2, scls,
+        # ox1, oy1, ox2, oy2, ocls,
+        # pconf, sconf, oconf, zero
         if len(rela_cands_temp) == 0:
             continue
         rela_cands[img_id] = rela_cands_temp

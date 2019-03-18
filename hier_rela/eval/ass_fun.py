@@ -147,6 +147,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                             pre_gt_node = prenet.get_node_by_index(rela_gt[k])
                             pre_score = pre_gt_node.score(rela_pred[j])
                             if pre_score > 0:
+                            # if pre_score == 1:
                                 if rela_scores[k] == 0:
                                     num_right[image_id] = num_right[image_id] + 1
 

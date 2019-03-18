@@ -118,7 +118,8 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
             labelnets = [prenet, objnet, objnet]
             # [ p_xmin, p_ymin, p_xmax, p_ymax, p_name,
             #   s_xmin, s_ymin, s_xmax, s_ymax, s_name,
-            #   o_xmin, o_ymin, o_xmax, o_ymax, o_name, p_conf, s_conf, o_conf]
+            #   o_xmin, o_ymin, o_xmax, o_ymax, o_name,
+            #   p_conf, s_conf, o_conf, is_zero]
             rlt_info = []
 
             # concatenate three box_label

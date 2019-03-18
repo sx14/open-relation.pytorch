@@ -292,8 +292,8 @@ if __name__ == '__main__':
                 print(info)
 
         pred_rois = torch.FloatTensor(rois_use)
-        sbj_scores = pred_rois[:, -2]
-        obj_scores = pred_rois[:, -1]
+        sbj_scores = pred_rois[:, -3]
+        obj_scores = pred_rois[:, -2]
         rela_scores = pred_scores * sbj_scores * obj_scores
         rela_scores = rela_scores.unsqueeze(1)
 

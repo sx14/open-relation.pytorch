@@ -79,7 +79,7 @@ class _HierRelaVis(nn.Module):
         gt_boxes = gt_boxes.data
 
         pre_label = gt_boxes[:, :, 4][0]
-        mask = pre_label == 0
+        mask = pre_label != 0
         gt_boxes = gt_boxes[:, mask, :]
 
         num_boxes = num_boxes.data

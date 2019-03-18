@@ -104,10 +104,9 @@ def get_input_data(im, rois):
 
 def gen_rela_conds(det_roidb):
     # det: x1, y1, x2, y2, cls, conf
-    N_img = len(det_roidb.keys())
+    print('gen rela with det ...')
     rela_cands = dict()
     for i, img_id in enumerate(det_roidb.keys()):
-        print('gen rela [%d/%d]' % (N_img, i+1))
         rela_cands_temp = []
         rois = det_roidb[img_id]
         for i, sbj in enumerate(rois):
@@ -121,5 +120,7 @@ def gen_rela_conds(det_roidb):
                 rela_temp = [px1, py1, px2, py2, -1] + sbj.tolist()[:5] + obj.tolist()[:5]
                 rela_cands_temp.append(rela_temp + [0.0, sbj[-1], obj[-1], 0.0])
         # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, pconf, sconf, oconf, zero
+        if len(rela_cands_temp) == 0:
+            continue
         rela_cands[img_id] = rela_cands_temp
     return rela_cands

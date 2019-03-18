@@ -63,7 +63,7 @@ class TreeNode:
         return self._info_ratio
 
     def score(self):
-        return -1.0 / min(self._raw_score, 0.0001)
+        return -1.0 / min(self._raw_score, -0.0001)
 
     def entropy(self):
         e = 0.0

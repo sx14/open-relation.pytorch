@@ -7,16 +7,15 @@ from global_config import VG_ROOT, VRD_ROOT
 
 def show_rlts(im, rlt_boxes, rlt_cls):
     """Draw relationship"""
-    for i in range(len(rlt_boxes)):
+    for i in range(len(rlt_boxes[0])):
+        # for each relationship
         fig, ax = plt.subplots(figsize=(12, 12))
         ax.imshow(im, aspect='equal')
-        
-        boxes = rlt_boxes[i]
-        clses = rlt_cls[i]
-        
-        for b in range(len(boxes)):
-            bbox = boxes[b]
-            cls = clses[b]
+
+        for p in range(len(rlt_boxes)):
+            # for each component
+            bbox = rlt_boxes[p][i]
+            cls = rlt_cls[p][i]
             ax.add_patch(
                 plt.Rectangle((bbox[0], bbox[1]),
                               bbox[2],

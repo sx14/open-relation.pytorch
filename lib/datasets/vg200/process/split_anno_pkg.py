@@ -66,11 +66,6 @@ def nms(boxes, labels):
     return nms_boxes, nms_labels
 
 
-
-
-
-
-
 def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_root):
     if not os.path.exists(vts_anno_path):
         print(vts_anno_path+' not exists.')
@@ -132,7 +127,6 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
             vts_all_obj_boxes, inds = np.unique(vts_all_obj_boxes, return_index=True, axis=0)
             vts_all_obj_labels = vts_all_obj_labels[inds]
             vts_all_obj_boxes, vts_all_obj_labels = nms(vts_all_obj_boxes, vts_all_obj_labels)
-
 
             # part2: objects
             objs = []

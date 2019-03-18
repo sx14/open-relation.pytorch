@@ -64,9 +64,9 @@ class TreeNode:
 
     def score(self):
         if self._raw_score <= -1:
-            scr = self._raw_score + 2
+            scr = self._raw_score + 1
         else:
-            scr = -1.0 / min(self._raw_score, -0.0001)
+            scr = -1.0 / min(self._raw_score ** 2, -0.0001) - 1
         scr = 1.0 / (1.0 + exp(-scr))
         return scr
         # return -1.0 / min(self._raw_score, -0.0001)
@@ -133,7 +133,7 @@ def top_down_search(root):
     node = root
     path_scores = [0.0]
     path_nodes = [root]
-    print('P0\t\tP1\t\tE\t\tI')
+    # print('P0\t\tP1\t\tE\t\tI')
     while len(node.children()) > 0:
         c_scores = []
         for c in node.children():
@@ -152,11 +152,11 @@ def top_down_search(root):
         hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
         path_scores.append(hedge_c_scr)
         path_nodes.append(pred_c_node)
-        print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
+        # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
         node = pred_c_node
 
-    for i in range(len(path_nodes)):
-        print('%s: %.2f' % (path_nodes[i].name(), path_scores[i]))
+    # for i in range(len(path_nodes)):
+        # print('%s: %.2f' % (path_nodes[i].name(), path_scores[i]))
 
     max_scr_ind = np.argmax(np.array(path_scores))
     max_scr_node = path_nodes[max_scr_ind]

@@ -238,7 +238,7 @@ if __name__ == '__main__':
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
 
-            print('=== %s ===' % gt_node.name())
+
 
 
             top2 = my_infer(prenet, all_scores)
@@ -250,6 +250,7 @@ if __name__ == '__main__':
             pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':
+                print('=== %s ===' % gt_node.name())
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
                 vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
                 lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)

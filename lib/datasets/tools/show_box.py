@@ -41,6 +41,7 @@ def get_pres(img_root, anno_root, img_name):
         boxes.append([pre['xmin'], pre['ymin'], pre['xmax']-pre['xmin'], pre['ymax']-pre['ymin']])
     return im, cls, boxes
 
+
 def get_objs(img_root, anno_root, img_name):
     img_path = os.path.join(img_root, img_name)
     im = cv2.imread(img_path)

@@ -1,13 +1,36 @@
 import os
 import pickle
+
+import cv2
 import scipy.io
 from lib.datasets.vrd.label_hier.obj_hier import objnet
-from global_config import PROJECT_ROOT
+from lib.datasets.tools.show_box import show_boxes
+from global_config import PROJECT_ROOT, VRD_ROOT
 
 
 """
 We use VRD object detection result for now.
 """
+
+
+def confirm(img_path, dets):
+    im = cv2.imread(img_path)
+    cls = []
+    boxes = []
+    for i in range(len(dets)):
+        label = dets[i][-1]
+        n = objnet.get_node_by_index(label)
+        cls.append(n.name())
+
+        box = dets[i][:4]
+        w = box[2] - box[0]
+        h = box[3] - box[1]
+        box[2] = w
+        box[3] = h
+        boxes.append(box)
+
+
+    show_boxes(im, boxes, cls)
 
 
 det_mat = scipy.io.loadmat('objectDetRCNN.mat')
@@ -46,3 +69,8 @@ for i in range(1000):
 save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
 with open(save_path, 'wb') as f:
     pickle.dump(det_roidb, f)
+
+# img_id = det_roidb.keys()[1]
+# img_path = os.path.join(VRD_ROOT, 'JPEGImages', img_id+'.jpg')
+# dets = det_roidb[img_id]
+# confirm(img_path, dets)

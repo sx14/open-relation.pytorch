@@ -53,8 +53,8 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre',
-                        # default='rela',
+                        # default='pre',
+                        default='rela',
                         )
 
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     relas_box = torch.FloatTensor(1)
     relas_num = torch.LongTensor(1)
 
-    # ship to cuda
+    # shift to cuda
     if args.cuda:
         im_data = im_data.cuda()
         im_info = im_info.cuda()
@@ -245,8 +245,6 @@ if __name__ == '__main__':
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
             pred_node = prenet.get_node_by_index(pred_cate)
-
-
 
             if args.mode == 'pre':
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)

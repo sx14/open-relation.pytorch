@@ -2,6 +2,7 @@ import os
 import pickle
 
 import cv2
+import numpy as np
 import scipy.io
 from lib.datasets.vrd.label_hier.obj_hier import objnet
 from lib.datasets.tools.show_box import show_boxes
@@ -52,20 +53,21 @@ for i in range(1000):
     img_dets = []
     for j in range(img_det_boxes.shape[0]):
         box = img_det_boxes[j]
-        conf = img_det_confs[j, 0]
         det = box.tolist()
-        det.append(conf)
 
         label = img_det_labels[j, 0]
         raw_label = raw_labels[label]
         raw_node = objnet.get_node_by_name(raw_label)
         label_ind = raw_node.index()
         det.append(label_ind)
+
+        conf = img_det_confs[j, 0]
+        det.append(conf)
+
         img_dets.append(det)
 
     img_id = img_path.split('.')[0]
-    det_roidb[img_id] = img_dets
-
+    det_roidb[img_id] = np.array(img_dets)
 save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
 with open(save_path, 'wb') as f:
     pickle.dump(det_roidb, f)

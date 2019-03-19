@@ -15,6 +15,7 @@ from lib.datasets.pascal_voc import pascal_voc
 from lib.datasets.coco import coco
 from lib.datasets.imagenet import imagenet
 from lib.datasets.vg200.vg import vg
+from lib.datasets.vg200.vg_rela import vg_rela
 from lib.datasets.vrd.vrd import vrd
 from lib.datasets.vrd.vrd_rela import vrd_rela
 
@@ -30,10 +31,13 @@ for year in ['2007', '2016']:
         __sets[name] = (lambda split=split, year='2007': vrd_rela(split, year))
 
 # Set up vg_<year>_<split>
-for year in ['2007']:
+for year in ['2007', '2016']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'vg_{}_{}'.format(year, split)
-    __sets[name] = (lambda split=split, year=year: vg(split, year))
+    if year == '2007':
+        __sets[name] = (lambda split=split, year=year: vg(split, year))
+    else:
+        __sets[name] = (lambda split=split, year='2007': vg_rela(split, year))
 
 
 # Set up voc_<year>_<split>

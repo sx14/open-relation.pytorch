@@ -1,4 +1,4 @@
 config = {}
 config.dataset_name = 'vg'
-config.target = 'predicate'
+config.target = 'object'
 return config

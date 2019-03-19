@@ -4,7 +4,7 @@ import numpy as np
 from global_config import HierLabelConfig
 
 dataset_name = 'vg'
-target = 'predicate'
+target = 'object'
 
 if dataset_name == 'vrd' and target == 'object':
     from lib.datasets.vrd.label_hier.obj_hier import objnet as classnet

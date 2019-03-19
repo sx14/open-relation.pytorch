@@ -39,11 +39,11 @@ def eval(model, test_dl):
 
 """ ======= train ======= """
 
-dataset = 'vrd'
+dataset = 'vg'
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
-    from lib.datasets.vg1000.label_hier.pre_hier import prenet
+    from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 # training hyper params
 lr = train_params['lr']

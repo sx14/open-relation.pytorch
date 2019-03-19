@@ -8,11 +8,16 @@ from lang_dataset import LangDataset
 from lang_config import train_params, data_config
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
-from lib.datasets.vrd.label_hier.pre_hier import prenet
+
 from global_config import HierLabelConfig
 
 
-dataset = 'vrd'
+dataset = 'vg'
+if dataset == 'vrd':
+    from lib.datasets.vrd.label_hier.pre_hier import prenet
+else:
+    from lib.datasets.vg200.label_hier.pre_hier import prenet
+
 # hyper params
 obj_config = HierLabelConfig(dataset, 'object')
 pre_config = HierLabelConfig(dataset, 'predicate')

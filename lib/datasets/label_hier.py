@@ -322,8 +322,9 @@ class LabelHier:
             if len(n.children()) == 0 and not n.is_raw():
                 print('%d: <%s> is dead. (no children)' % (c, n.name()))
                 c += 1
-            if len(n.children()) == 1:
+            if len(n.children()) == 1 and not n.is_raw():
                 print('%d: <%s> is dead. (one children)' % (c, n.name()))
+                c += 1
 
     def _construct_hier(self):
         raise NotImplementedError

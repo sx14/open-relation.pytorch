@@ -189,7 +189,7 @@ class PreNet(LabelHier):
                 parent_label = level[label]
                 parent_node = self._label2node[parent_label]
                 assert parent_node is not None
-                if label in concrete_level.keys() or label in supply1_level.keys():
+                if label in concrete_level.keys() or label in supply1_level.keys() or label in supply_level.keys():
                     node = LabelNode(label, next_label_ind, True)
                 else:
                     node = LabelNode(label, next_label_ind, False)

@@ -5,7 +5,7 @@ parser = argparse('Train a label completion model')
 parser:option '--seed' :description 'random seed' : default '1234' :convert(tonumber)
 parser:option '-d' :description 'dimensionality of embedding space' :default "600" :convert(tonumber)
 parser:option '--epochs' :description 'number of epochs to train for ' :default "400" :convert(tonumber)
-parser:option '--batchsize' :description 'size of minibatch to use' :default "300" :convert(tonumber)
+parser:option '--batchsize' :description 'size of minibatch to use' :default "100" :convert(tonumber)
 parser:option '--eval_freq' :description 'evaluation frequency' :default "100" :convert(tonumber)
 parser:option '--lr' :description 'learning rate' :default "0.01" :convert(tonumber)
 parser:option '--train' :description 'dataset to use for training' :default 'contrastive_trans'
@@ -54,9 +54,9 @@ if dataset_name == 'vrd' then
   end
 else
   if target == 'object' then
-    embedding_d = 1000
-  else
     embedding_d = 600
+  else
+    embedding_d = 300
   end
 end
 

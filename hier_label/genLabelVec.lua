@@ -16,9 +16,9 @@ if dataset_name == 'vrd' then
   end
 else
   if target == 'object' then
-    embedding_d = 1000
-  else
     embedding_d = 600
+  else
+    embedding_d = 300
   end
 end
 

@@ -26,6 +26,7 @@ function graph.transitiveClosure(edges)
         -- print(s .. ' -> ' .. e)
         if adj[e] then
             for _, e in ipairs(adj[e]) do
+                -- print(s .. '->' .. e)
                 dfs(s, e)
             end
         end

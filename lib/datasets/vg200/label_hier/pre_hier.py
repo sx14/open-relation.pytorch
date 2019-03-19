@@ -210,7 +210,7 @@ prenet = PreNet(label_path)
 # for ind in raw_inds:
 #     n = prenet.get_node_by_index(ind)
 #     n.show_hyper_paths()
-
+#
 # for ind in range(prenet.label_sum()):
 #     node = prenet.get_node_by_index(ind)
 #     cs = node.name() + ' : '

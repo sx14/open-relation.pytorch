@@ -3,8 +3,6 @@ import numpy as np
 import json
 import random
 from lang_config import data_config
-from lib.datasets.vrd.label_hier.obj_hier import objnet
-from lib.datasets.vrd.label_hier.pre_hier import prenet
 from global_config import VRD_ROOT, VG_ROOT
 
 
@@ -81,8 +79,12 @@ if __name__ == '__main__':
 
     if dataset == 'vrd':
         dataset_root = VRD_ROOT
+        from lib.datasets.vrd.label_hier.obj_hier import objnet
+        from lib.datasets.vrd.label_hier.pre_hier import prenet
     else:
         dataset_root = VG_ROOT
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.pre_hier import prenet
 
     anno_root = os.path.join(dataset_root, 'anno')
     split = ['train', 'test']

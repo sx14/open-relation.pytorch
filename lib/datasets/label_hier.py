@@ -12,9 +12,37 @@ class LabelNode(object):
         self._children = set()
         self._is_raw = is_raw
         self._info_ratio = -1
+        self._depth_ratio = -1
+        self._freq = -1
 
     def __str__(self):
         return self._name
+
+    def depth_ratio(self):
+
+        def top2curr(node):
+            if len(node.hypers()) == 0:
+                return 0
+            else:
+                return 1 + top2curr(node.hypers()[0])
+
+        def curr2bottom(node):
+            if len(node.children()) == 0:
+                return 0
+
+            max_d = 0
+            for child in node.children():
+                max_d = max((max_d, curr2bottom(child)))
+            return max_d + 1
+
+        if self._depth_ratio != -1:
+            return self._depth_ratio
+        else:
+            t2c = top2curr(self)
+            c2d = curr2bottom(self)
+            return 1.0 * t2c / max(t2c + c2d, 0.01)
+
+
 
     def info_ratio(self, leaf_sum):
 
@@ -131,6 +159,13 @@ class LabelNode(object):
     def set_weight(self, w):
         self._weight = w
 
+    def set_freq(self, freq):
+        self._freq = freq
+
+    def freq(self):
+        return self._freq
+
+
 class LabelHier:
 
     def background(self):
@@ -213,7 +248,6 @@ class LabelHier:
             all_neg_inds = list(all_inds - all_pos_inds)
             raw2pns[raw_ind] = [raw_ind] + all_neg_inds[:self.neg_num()]
 
-
     def _load_raw_label(self, raw_label_path):
         labels = []
         if os.path.exists(raw_label_path):
@@ -254,25 +288,24 @@ class LabelHier:
     def _dfs_compress(self, curr):
         # dfs based compression
         if len(curr.children()) > 1:
-            assert not curr.is_raw()
             # keep curr
             for child in curr.children():
                 self._dfs_compress(child)
         elif len(curr.children()) == 1:
-            assert not curr.is_raw()
+            if not curr.is_raw():
+                # remove curr
+                hypers = curr.hypers()
+                for h in hypers:
+                    # curr.hyper -> curr.children
+                    h.del_child(curr)
+                    h.add_child(curr.children()[0])
+                    # curr.children -> curr.hyper
+                    curr.children()[0].add_hyper(h)
 
-            # remove curr
-            hypers = curr.hypers()
-            for h in hypers:
-                # curr.hyper -> curr.children
-                h.del_child(curr)
-                h.add_child(curr.children()[0])
-                # curr.children -> curr.hyper
-                curr.children()[0].add_hyper(h)
+                curr.children()[0].del_hyper(curr)
+                self._index2node[curr.index()] = None
+                self._label2node[curr.name()] = None
 
-            curr.children()[0].del_hyper(curr)
-            self._index2node[curr.index()] = None
-            self._label2node[curr.name()] = None
             self._dfs_compress(curr.children()[0])
         else:
             return
@@ -289,8 +322,9 @@ class LabelHier:
             if len(n.children()) == 0 and not n.is_raw():
                 print('%d: <%s> is dead. (no children)' % (c, n.name()))
                 c += 1
-            if len(n.children()) == 1:
+            if len(n.children()) == 1 and not n.is_raw():
                 print('%d: <%s> is dead. (one children)' % (c, n.name()))
+                c += 1
 
     def _construct_hier(self):
         raise NotImplementedError
@@ -308,7 +342,10 @@ class LabelHier:
 
         for node in self._index2node:
             node.info_ratio(self.pos_leaf_sum())
+            node.depth_ratio()
 
         self.max_depth = 0
         for n in self._index2node:
             self.max_depth = max(self.max_depth, n.depth())
+
+

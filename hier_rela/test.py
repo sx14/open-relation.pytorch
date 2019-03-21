@@ -63,7 +63,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre',
+                        default='rela',
                         # default='rela',
                         )
 

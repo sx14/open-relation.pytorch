@@ -26,6 +26,7 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.faster_rcnn.vgg16 import vgg16
 from lib.model.faster_rcnn.resnet import resnet
+from global_config import PROJECT_ROOT
 
 
 import pdb
@@ -190,7 +191,7 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 100
+    max_per_image = 20
 
     vis = args.vis
 
@@ -219,7 +220,7 @@ if __name__ == '__main__':
     fasterRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
-    use_rpn = False
+    use_rpn = True
     TP_count = 0.0
     N_count = 0.0
 
@@ -232,6 +233,7 @@ if __name__ == '__main__':
         im_info.data.resize_(data[1].size()).copy_(data[1])
         gt_boxes.data.resize_(data[2].size()).copy_(data[2])
         num_boxes.data.resize_(data[3].size()).copy_(data[3])
+        im_id = data[4]
 
         det_tic = time.time()
         rois, cls_prob, bbox_pred, \
@@ -241,6 +243,8 @@ if __name__ == '__main__':
 
         scores = cls_prob.data
         boxes = rois.data[:, :, 1:5]
+
+        img_dets = []
 
         if not use_rpn:
             raw_inds = objnet.get_raw_indexes()
@@ -261,14 +265,77 @@ if __name__ == '__main__':
                     result = 'T: ' + result
                 else:
                     result = 'F: ' + result
-
                 print(result)
+        else:
+            if cfg.TEST.BBOX_REG:
+                # Apply bounding-box regression deltas
+                box_deltas = bbox_pred.data
+                if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
+                    # Optionally normalize targets by a precomputed mean and stdev
+                    if args.class_agnostic:
+                        if args.cuda > 0:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(
+                                cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                        else:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
 
-    end = time.time()
-    print("test time: %0.4fs" % (end - start))
+                        box_deltas = box_deltas.view(1, -1, 4)
+                    else:
+                        if args.cuda > 0:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(
+                                cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                        else:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
+                        box_deltas = box_deltas.view(1, -1, 4 * len(objnet.get_raw_labels()))
+
+                pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
+                pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
+            else:
+                # Simply repeat the boxes, once for each class
+                pred_boxes = np.tile(boxes, (1, scores.shape[1]))
+
+            pred_boxes /= im_info[0][2]
+            scores = scores.squeeze()
+            pred_boxes = pred_boxes.squeeze()
+
+            det_toc = time.time()
+            detect_time = det_toc - det_tic
+            misc_tic = time.time()
+            for j in xrange(1, len(objnet.get_raw_labels())):
+                inds = torch.nonzero(scores[:, j] > thresh).view(-1)
+                # if there is det
+                if inds.numel() > 0:
+                    cls_scores = scores[:, j][inds]
+                    _, order = torch.sort(cls_scores, 0, True)
+                    if args.class_agnostic:
+                        cls_boxes = pred_boxes[inds, :]
+                    else:
+                        cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
+
+                    cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
+                    cls_dets = cls_dets[order]
+                    keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
+                    cls_dets = cls_dets[keep.view(-1).long()]
+                    cls_dets = torch.cat((cls_dets, cls_scores), 1)
+                    cls_dets[:, 4] = j
+                    img_dets += cls_dets.cpu().data.numpy().tolist()
+
+        img_dets = np.array(img_dets)
+        if img_dets.shape[0] > max_per_image:
+            img_det_scrs = img_dets[:, -1]
+            order = np.argsort(img_det_scrs)[::-1]
+            img_dets = img_dets[order[:max_per_image], :]
+
+        obj_det_roidbs[im_id[0]] = img_dets
+
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
-    # det_save_path = 'vrd_test_box.bin'
-    # with open(det_save_path, 'wb') as f:
-    #     pickle.dump(obj_det_roidbs, f)
+
+    save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
+    with open(save_path, 'wb') as f:
+        pickle.dump(obj_det_roidbs, f)

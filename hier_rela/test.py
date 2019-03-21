@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
         if not os.path.exists(img_path):
             continue
-            
+
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
 

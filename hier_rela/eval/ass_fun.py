@@ -86,6 +86,9 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         N_obj_total = N_obj_total + N_obj
 
         # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, rlt_score
+        if image_id not in pred_roidb:
+            continue
+
         curr_pred_roidb = np.array(pred_roidb[image_id])
         if len(curr_pred_roidb) == 0:
             continue
@@ -144,6 +147,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                             pre_gt_node = prenet.get_node_by_index(rela_gt[k])
                             pre_score = pre_gt_node.score(rela_pred[j])
                             if pre_score > 0:
+                            # if pre_score == 1:
                                 if rela_scores[k] == 0:
                                     num_right[image_id] = num_right[image_id] + 1
 

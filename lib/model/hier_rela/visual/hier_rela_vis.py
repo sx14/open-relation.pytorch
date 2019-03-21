@@ -79,12 +79,14 @@ class _HierRelaVis(nn.Module):
 
         im_info = im_info.data
         gt_boxes = gt_boxes.data
-
-        pre_label = gt_boxes[:, :, 4][0]
-        mask = pre_label > 0
-        gt_boxes = gt_boxes[:, mask, :]
-
         num_boxes = num_boxes.data
+
+        gt_boxes = gt_boxes[:, :num_boxes.item(), :]
+
+        # pre_label = gt_boxes[:, :, 4][0]
+        # mask = pre_label != 0
+        # gt_boxes = gt_boxes[:, mask, :]
+
 
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)

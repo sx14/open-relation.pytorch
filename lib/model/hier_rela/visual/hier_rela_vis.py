@@ -81,6 +81,8 @@ class _HierRelaVis(nn.Module):
 
         if num_boxes.item() > 0:
             gt_boxes = gt_boxes[:, :num_boxes.item(), :]
+        else:
+            print('[sunx] Attention: No rela box in current batch.')
 
         # pre_label = gt_boxes[:, :, 4][0]
         # mask = pre_label != 0

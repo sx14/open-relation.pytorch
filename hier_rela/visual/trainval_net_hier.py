@@ -343,6 +343,7 @@ if __name__ == '__main__':
       num_relas.data.resize_(data[3].size()).copy_(data[3])
 
       if num_relas.item() == 0:
+          print('Num rela is 0.')
           continue
 
       hierVis.zero_grad()

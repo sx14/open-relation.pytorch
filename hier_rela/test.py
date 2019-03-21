@@ -15,10 +15,10 @@ import time
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.faster_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer import my_infer
+from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -53,8 +53,8 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre',
-                        # default='rela',
+                        # default='pre',
+                        default='rela',
                         )
 
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Load Detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
+    hierRCNN = vgg16_det(objnet.get_raw_labels())
     hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
     # Load HierLan
-    hierLan = HierLang(hierRCNN.embedding_len * 2, preconf.label_vec_path())
+    hierLan = HierLang(600 * 2, preconf.label_vec_path())
     load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     relas_box = torch.FloatTensor(1)
     relas_num = torch.LongTensor(1)
 
-    # ship to cuda
+    # shift to cuda
     if args.cuda:
         im_data = im_data.cuda()
         im_info = im_info.cuda()
@@ -167,14 +167,18 @@ if __name__ == '__main__':
         rela_roidb_use = cond_roidb
 
     N_count = 1e-10
-    TP_count = 0.0
+    flat_count = 0.0
     hier_score_sum = 0.0
     raw_score_sum = 0.0
+    infer_score_sum = 0.0
+
+    raw_score_sum_u = 0.0
 
     zero_N_count = 1e-10
-    zero_TP_count = 0.0
+    zero_flat_count = 0.0
     zero_hier_score_sum = 0.0
     zero_raw_score_sum = 0.0
+    zero_infer_score_sum = 0.0
 
 
 
@@ -184,7 +188,6 @@ if __name__ == '__main__':
     for i, img_id in enumerate(rela_roidb_use.keys()):
         print('pred [%d/%d]' % (N_img, i+1))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
-
         if not os.path.exists(img_path):
             continue
 
@@ -205,9 +208,11 @@ if __name__ == '__main__':
         det_tic = time.time()
         with torch.no_grad():
             rois, cls_score, \
-            _, rois_label = hierRela(im_data, im_info, relas_box, relas_num)
+            _, rois_label, vis_score, lan_score = hierRela(im_data, im_info, relas_box, relas_num)
 
         scores = cls_score.data
+        vis_scores = vis_score.data
+        lan_scores = lan_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0])
         pred_scores = torch.zeros(rois[0].shape[0])
@@ -221,6 +226,8 @@ if __name__ == '__main__':
                 zero_N_count += 1
 
             all_scores = scores[0][ppp].cpu().data.numpy()
+            l_scores = lan_scores[0][ppp].cpu().data.numpy()
+            v_scores = vis_scores[0][ppp].cpu().data.numpy()
 
             # print('==== %s ====' % gt_node.name())
             # ranked_inds = np.argsort(all_scores)[::-1][:20]
@@ -228,35 +235,56 @@ if __name__ == '__main__':
             # for item in zip(ranked_inds, sorted_scrs):
             #     print('%s (%.2f)' % (prenet.get_node_by_index(item[0]).name(), item[1]))
 
+            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
+            gt_node = prenet.get_node_by_index(int(gt_cate))
+
+
+
+
             top2 = my_infer(prenet, all_scores)
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
 
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
+            pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':
-                gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-                gt_node = prenet.get_node_by_index(int(gt_cate))
-
+                print('=== %s ===' % gt_node.name())
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                raw_scr = gt_node.score(raw_cate)
-                raw_score_sum += raw_scr
+                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
+                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
+
+                if vis_cate == gt_cate or lan_cate == gt_cate:
+                    raw_score_sum_u += 1
+
+                raw_node = prenet.get_node_by_index(raw_cate)
+                vis_node = prenet.get_node_by_index(vis_cate)
+                lan_node = prenet.get_node_by_index(lan_cate)
+
+                if raw_cate == gt_cate:
+                    raw_score_sum += 1
+
+                inf_scr = gt_node.score(pred_cate)
+                infer_score_sum += inf_scr
+
+                hier_scr = gt_node.score(raw_cate)
+                hier_score_sum += hier_scr
 
                 if relas_zero[ppp] == 1:
-                    zero_raw_score_sum += raw_scr
+                    if raw_cate == gt_cate:
+                        zero_raw_score_sum += 1
+                    zero_hier_score_sum += hier_scr
+                    zero_infer_score_sum += inf_scr
 
-                hier_scr = gt_node.score(pred_cate)
-                pred_node = prenet.get_node_by_index(pred_cate)
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
-                if hier_scr > 0:
-                    TP_count += 1
-                    hier_score_sum += hier_scr
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
+                # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
 
+
+                if inf_scr > 0:
+                    flat_count += 1
                     if relas_zero[ppp] == 1:
-                        zero_TP_count += 1
-                        zero_hier_score_sum += hier_scr
-
+                        zero_flat_count += 1
                     info = 'T: ' + info
                 else:
                     info = 'F: ' + info
@@ -264,8 +292,8 @@ if __name__ == '__main__':
                 print(info)
 
         pred_rois = torch.FloatTensor(rois_use)
-        sbj_scores = pred_rois[:, -2]
-        obj_scores = pred_rois[:, -1]
+        sbj_scores = pred_rois[:, -3]
+        obj_scores = pred_rois[:, -2]
         rela_scores = pred_scores * sbj_scores * obj_scores
         rela_scores = rela_scores.unsqueeze(1)
 
@@ -277,18 +305,18 @@ if __name__ == '__main__':
 
 
 
-    end = time.time()
-    print("test time: %0.4fs" % (end - start))
-
     print("==== overall test result ==== ")
-    print("Rec flat Acc: %.4f" % (TP_count / N_count))
-    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
     print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
+    print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
+    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
+    print("Rec infer Acc: %.4f" % (infer_score_sum / N_count))
+    print("Rec flat Acc: %.4f" % (flat_count / N_count))
 
     print("==== zero-shot test result ==== ")
-    print("Rec flat Acc: %.4f" % (zero_TP_count / zero_N_count))
-    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
     print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
+    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
+    print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
+    print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:

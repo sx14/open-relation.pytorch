@@ -11,6 +11,7 @@ import os
 import argparse
 import pprint
 import time
+from math import exp
 
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
@@ -18,7 +19,7 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer import my_infer
+from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -30,6 +31,15 @@ try:
     xrange  # Python 2
 except NameError:
     xrange = range  # Python 3
+
+
+def score(raw_score):
+    if raw_score <= -1:
+        scr = raw_score + 1
+    else:
+        scr = -1.0 / min(raw_score, -0.0001) - 1
+    scr = 1.0 / (1.0 + exp(-scr))
+    return scr
 
 
 def parse_args():
@@ -231,9 +241,14 @@ if __name__ == '__main__':
             top2 = my_infer(prenet, all_scores)
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
+            #
+            # pred_cates[ppp] = pred_cate
+            # pred_scores[ppp] = pred_scr
 
-            pred_cates[ppp] = pred_cate
-            pred_scores[ppp] = pred_scr
+            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+            pred_cates[ppp] = raw_cate
+            pred_cates[ppp] = score(raw_score)
+
 
             if args.mode == 'pre':
                 gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()

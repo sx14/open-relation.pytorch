@@ -342,6 +342,9 @@ if __name__ == '__main__':
       gt_relas.data.resize_(data[2].size()).copy_(data[2])
       num_relas.data.resize_(data[3].size()).copy_(data[3])
 
+      if num_relas.item() == 0:
+          continue
+
       hierVis.zero_grad()
       rois, cls_score, \
       RCNN_loss_cls, rois_label = hierVis(im_data, im_info, gt_relas, num_relas)

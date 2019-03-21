@@ -184,6 +184,10 @@ if __name__ == '__main__':
     for i, img_id in enumerate(rela_roidb_use.keys()):
         print('pred [%d/%d]' % (N_img, i+1))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
+
+        if not os.path.exists(img_path):
+            continue
+            
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
 

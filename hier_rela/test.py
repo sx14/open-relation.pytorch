@@ -247,7 +247,7 @@ if __name__ == '__main__':
 
             raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
             pred_cates[ppp] = raw_cate
-            pred_cates[ppp] = score(raw_score)
+            pred_scores[ppp] = score(raw_score)
 
 
             if args.mode == 'pre':

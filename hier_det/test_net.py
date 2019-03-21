@@ -105,8 +105,8 @@ if __name__ == '__main__':
 
     np.random.seed(cfg.RNG_SEED)
     if args.dataset == "vrd_voc":
-        args.imdb_name = "voc_2007_trainval"
-        args.imdbval_name = "voc_2007_test"
+        args.imdb_name = "vrd_2007_trainval"
+        args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
     elif args.dataset == "vg":
         args.imdb_name = "vg_2007_trainval"

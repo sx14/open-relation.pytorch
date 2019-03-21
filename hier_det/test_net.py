@@ -105,14 +105,15 @@ if __name__ == '__main__':
 
     np.random.seed(cfg.RNG_SEED)
     if args.dataset == "vrd_voc":
-        args.imdb_name = "vrd_2007_trainval"
-        args.imdbval_name = "vrd_2007_test"
+        args.imdb_name = "voc_2007_trainval"
+        args.imdbval_name = "voc_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+        from lib.datasets.vrd.label_hier.obj_hier import objnet
     elif args.dataset == "vg":
         args.imdb_name = "vg_2007_trainval"
         args.imdbval_name = "vg_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg1000.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
@@ -143,7 +144,6 @@ if __name__ == '__main__':
 
     # initilize the network here.
     if args.net == 'vgg16':
-        print(args.class_agnostic)
         fasterRCNN = vgg16(imdb.classes, pretrained=False, class_agnostic=args.class_agnostic)
     elif args.net == 'res101':
         fasterRCNN = resnet(imdb.classes, 101, pretrained=False, class_agnostic=args.class_agnostic)
@@ -255,7 +255,7 @@ if __name__ == '__main__':
                 pred_node = objnet.get_node_by_index(pred_ind)
 
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                gt_ind = raw_inds[gt_cate]
+                gt_ind = raw_inds[int(gt_cate)]
                 gt_node = objnet.get_node_by_index(gt_ind)
 
                 result = '%s -> %s' % (gt_node.name(), pred_node.name())
@@ -320,7 +320,7 @@ if __name__ == '__main__':
                     cls_dets = cls_dets[order]
                     keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
                     cls_dets = cls_dets[keep.view(-1).long()]
-                    cls_dets = torch.cat((cls_dets, cls_scores), 1)
+                    cls_dets = torch.cat((cls_dets, cls_dets[:, -1].unsqueeze(1)), 1)
                     cls_dets[:, 4] = j
                     img_dets += cls_dets.cpu().data.numpy().tolist()
 

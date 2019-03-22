@@ -72,7 +72,7 @@ save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
 with open(save_path, 'wb') as f:
     pickle.dump(det_roidb, f)
 
-# img_id = det_roidb.keys()[1]
-# img_path = os.path.join(VRD_ROOT, 'JPEGImages', img_id+'.jpg')
-# dets = det_roidb[img_id]
-# confirm(img_path, dets)
+img_id = det_roidb.keys()[1]
+img_path = os.path.join(VRD_ROOT, 'JPEGImages', img_id+'.jpg')
+dets = det_roidb[img_id]
+confirm(img_path, dets)

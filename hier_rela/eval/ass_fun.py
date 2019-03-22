@@ -165,6 +165,10 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                                 rela_scores[k] = 1
                                 pre_scores[k] = 1
 
+        results[image_id]['N_rlt_right'] = sum(img_rlt_rights)
+        results[image_id]['N_rlt_box_right'] = sum(img_rlt_box_rights)
+        results[image_id]['N_rlt_pair_right'] = sum(img_rlt_pair_rights)
+
         N_rela_right += np.sum(rela_scores)
         N_pre_right += np.sum(pre_scores)
 

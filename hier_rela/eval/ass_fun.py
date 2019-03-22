@@ -86,7 +86,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
 
         if N_recall < N_pred:
             # get Top N predictions
-            top_inds = np.argsort(curr_pred_roidb[:, -1])[::-1]
+            top_inds = np.argsort(curr_pred_roidb[:, -1])[::-1][:N_recall]
             curr_pred_roidb = curr_pred_roidb[top_inds, :]
             N_pred = len(curr_pred_roidb)
 
@@ -173,4 +173,4 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
 
     det_acc = N_rela_right / N_rela_total
     rec_acc = N_pre_right / N_rela_total
-    return det_acc, rec_acc
+    return det_acc, rec_acc, results

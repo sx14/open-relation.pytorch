@@ -43,6 +43,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
             'N_rlt_box_right': 0,
             'N_rlt_pair_right': 0,
 
+            'N_obj': 0,
             'N_obj_box_right': 0,
             'N_obj_det_right': 0,
 
@@ -99,6 +100,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         obj_dete = curr_pred_roidb[:, 14].astype(np.int).tolist()
         box_det = np.concatenate((sub_box_dete, obj_box_dete))
         box_det = np.unique(box_det, axis=0)
+
+        results[image_id]['N_obj'] = len(box_gt)
 
         # cal object proposal/detection recall
         img_obj_box_good = 0

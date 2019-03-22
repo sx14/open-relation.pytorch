@@ -26,8 +26,9 @@ rela_R100, pre_R100, results_R100 = rela_recall('hier', gt_roidb, pred_roidb, 10
 
 
 # analysis
+recall_Ns = [50, 100]
 all_results = [results_R50, results_R100]
-for results in all_results:
+for i, results in enumerate(all_results):
     N_obj_gt_all = 0.0
     N_rlt_gt_all = 0.0
 
@@ -55,17 +56,19 @@ for results in all_results:
         N_rlt_pair_right_all += results[img]['N_rlt_pair_right']
         N_rlt_right_all += results[img]['N_rlt_right']
 
-    print('==== object ====')
+    print('==== object(%d) ====' % recall_Ns[i])
     print('proposal recall: \t%.4f' % (N_obj_box_right_all / N_obj_gt_all))
     print('proposal precision: \t%.4f' % (N_obj_box_right_all / N_obj_pred_all))
     print('detection recall: \t%.4f' % (N_obj_det_right_all / N_obj_gt_all))
-    print('detection precision: \t%.4f' % (N_obj_det_right_all / N_obj_pred_all))
+    print('detection precision: \t%.4f\n' % (N_obj_det_right_all / N_obj_pred_all))
 
-    print('==== relationship ====')
+    print('==== relationship(%d) ====' % recall_Ns[i])
     print('proposal recall: \t%.4f' % (N_rlt_box_right_all / N_rlt_gt_all))
     print('proposal precision: \t%.4f' % (N_rlt_box_right_all / N_rlt_pred_all))
     print('detection recall: \t%.4f' % (N_rlt_pair_right_all / N_rlt_gt_all))
     print('detection precision: \t%.4f' % (N_rlt_pair_right_all / N_rlt_pred_all))
+    print('relationship recall: \t%.4f' % (N_rlt_right_all / N_rlt_gt_all))
+    print('relationship precision: \t%.4f\n' % (N_rlt_right_all / N_rlt_pred_all))
 
 
 

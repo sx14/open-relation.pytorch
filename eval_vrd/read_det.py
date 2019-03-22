@@ -19,8 +19,8 @@ def confirm(img_path, dets):
     cls = []
     boxes = []
     for i in range(len(dets)):
-        label = dets[i][-1]
-        n = objnet.get_node_by_index(label)
+        label = dets[i][4]
+        n = objnet.get_node_by_index(int(label.tolist()))
         cls.append(n.name())
 
         box = dets[i][:4]
@@ -44,6 +44,7 @@ img_paths = img_paths_mat['imagePath'][0]
 
 det_roidb = {}
 raw_labels = objnet.get_raw_labels()
+N_det = 0.0
 for i in range(1000):
     img_path = img_paths[i][0]
     img_det_boxes = det_boxes[i]
@@ -52,6 +53,7 @@ for i in range(1000):
 
     img_dets = []
     for j in range(img_det_boxes.shape[0]):
+        N_det += 1
         box = img_det_boxes[j]
         det = box.tolist()
 
@@ -68,11 +70,14 @@ for i in range(1000):
 
     img_id = img_path.split('.')[0]
     det_roidb[img_id] = np.array(img_dets)
+
+print('Avg det per img: %.4f' % (N_det / len(det_roidb.keys())))
+
 save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
 with open(save_path, 'wb') as f:
     pickle.dump(det_roidb, f)
 
-# img_id = det_roidb.keys()[1]
+# img_id = det_roidb.keys()[5]
 # img_path = os.path.join(VRD_ROOT, 'JPEGImages', img_id+'.jpg')
 # dets = det_roidb[img_id]
 # confirm(img_path, dets)

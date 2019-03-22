@@ -43,9 +43,16 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
             'N_rlt_box_right': 0,
             'N_rlt_pair_right': 0,
 
+            'N_rlt_gt_right': 0,
+            'N_rlt_box_gt_right': 0,
+            'N_rlt_pair_gt_right': 0,
+
             'N_obj': 0,
             'N_obj_box_right': 0,
             'N_obj_det_right': 0,
+
+            'N_obj_box_gt_right': 0,
+            'N_obj_det_gt_right': 0,
 
             'N_rlt_gt': 0,
             'N_obj_gt': 0
@@ -53,8 +60,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
 
         # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname
         curr_gt_roidb = np.array(gt_roidb[image_id])
-        results[image_id]['N_rlt_gt'] = len(curr_gt_roidb)
-
         if len(curr_gt_roidb) == 0:
             continue
 
@@ -106,22 +111,35 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         # cal object proposal/detection recall
         img_obj_box_good = 0
         img_obj_det_good = 0
+
+        img_obj_box_rights = [0 for _ in range(len(box_det))]
+        img_obj_det_rights = [0 for _ in range(len(box_det))]
+        img_obj_box_gt_rights = [0 for _ in range(len(box_gt))]
+        img_obj_det_gt_rights = [0 for _ in range(len(box_gt))]
+
         for b in range(box_gt.shape[0]):
             gt = box_gt[b]
             box_hit = 0
             det_hit = 0
             for o in range(box_det.shape[0]):
                 det = box_det[o]
-                if compute_iou_each(gt, det) > 0.5:
+                if compute_iou_each(gt, det) >= 0.5:
+                    img_obj_box_rights[o] = 1
+                    img_obj_box_gt_rights[b] = 1
                     box_hit = 1
                     if gt[4] == det[4]:
+                        img_obj_det_rights[o] = 1
+                        img_obj_det_gt_rights[b] = 1
                         det_hit = 1
 
             img_obj_box_good += box_hit
             img_obj_det_good += det_hit
 
-        results[image_id]['N_obj_box_right'] = img_obj_box_good
-        results[image_id]['N_obj_det_right'] = img_obj_det_good
+        results[image_id]['N_obj_box_right'] = sum(img_obj_box_rights)
+        results[image_id]['N_obj_det_right'] = sum(img_obj_det_rights)
+
+        results[image_id]['N_obj_box_gt_right'] = sum(img_obj_box_gt_rights)
+        results[image_id]['N_obj_det_gt_right'] = sum(img_obj_det_gt_rights)
 
         N_obj_box_good += img_obj_box_good
         N_obj_det_good += img_obj_det_good
@@ -133,6 +151,10 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         img_rlt_box_rights = [0 for _ in range(N_pred)]
         img_rlt_pair_rights = [0 for _ in range(N_pred)]
 
+        img_rlt_gt_rights = [0 for _ in range(N_rela)]
+        img_rlt_box_gt_rights = [0 for _ in range(N_rela)]
+        img_rlt_pair_gt_rights = [0 for _ in range(N_rela)]
+
         for j in range(N_pred):
             # for each relationship prediction
             for k in range(N_rela):
@@ -142,16 +164,19 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
                     if (s_iou >= 0.5) and (o_iou >= 0.5):
                         img_rlt_box_rights[j] = 1
+                        img_rlt_box_gt_rights[k] = 1
                         sub_gt_node = objnet.get_node_by_index(sub_gt[k])
                         obj_gt_node = objnet.get_node_by_index(obj_gt[k])
                         sub_score = sub_gt_node.score(sub_dete[j])
                         obj_score = obj_gt_node.score(obj_dete[j])
                         if sub_score > 0 and obj_score > 0:
                             img_rlt_pair_rights[j] = 1
+                            img_rlt_pair_gt_rights[k] = 1
                             pre_gt_node = prenet.get_node_by_index(rela_gt[k])
                             pre_score = pre_gt_node.score(rela_pred[j])
                             if pre_score > 0:
                                 img_rlt_rights[j] = 1
+                                img_rlt_gt_rights[k] = 1
                                 # rela_score = (sub_score + obj_score + pre_score)/3.0
                                 rela_score = min([sub_score, obj_score, pre_score])
                                 rela_scores[k] = max(rela_scores[k], rela_score)
@@ -161,16 +186,23 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
                     if (s_iou >= 0.5) and (o_iou >= 0.5):
                         img_rlt_box_rights[j] = 1
+                        img_rlt_box_gt_rights[k] = 1
                         if (sub_gt[k] == sub_dete[j]) and (obj_gt[k] == obj_dete[j]):
                             img_rlt_pair_rights[j] = 1
+                            img_rlt_pair_gt_rights[k] = 1
                             if rela_gt[k] == rela_pred[j]:
                                 img_rlt_rights[j] = 1
+                                img_rlt_gt_rights[k] = 1
                                 rela_scores[k] = 1
                                 pre_scores[k] = 1
 
         results[image_id]['N_rlt_right'] = sum(img_rlt_rights)
         results[image_id]['N_rlt_box_right'] = sum(img_rlt_box_rights)
         results[image_id]['N_rlt_pair_right'] = sum(img_rlt_pair_rights)
+
+        results[image_id]['N_rlt_gt_right'] = sum(img_rlt_gt_rights)
+        results[image_id]['N_rlt_box_gt_right'] = sum(img_rlt_box_gt_rights)
+        results[image_id]['N_rlt_pair_gt_right'] = sum(img_rlt_pair_gt_rights)
 
         N_rela_right += np.sum(rela_scores)
         N_pre_right += np.sum(pre_scores)

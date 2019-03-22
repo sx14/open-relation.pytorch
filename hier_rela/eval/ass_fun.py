@@ -207,8 +207,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         N_rela_right += np.sum(rela_scores)
         N_pre_right += np.sum(pre_scores)
 
-    print('Proposal recall: %.4f' % (N_obj_box_good / N_obj_total))
-    print('Detection recall: %.4f' % (N_obj_det_good / N_obj_total))
+    # print('Proposal recall: %.4f' % (N_obj_box_good / N_obj_total))
+    # print('Detection recall: %.4f' % (N_obj_det_good / N_obj_total))
 
     det_acc = N_rela_right / N_rela_total
     rec_acc = N_pre_right / N_rela_total

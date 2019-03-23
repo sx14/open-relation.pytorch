@@ -245,9 +245,10 @@ if __name__ == '__main__':
         boxes = rois.data[:, :, 1:5]
 
         img_dets = []
+        raw_inds = objnet.get_raw_indexes()
 
         if not use_rpn:
-            raw_inds = objnet.get_raw_indexes()
+
             for ppp in range(scores.size()[1]):
                 N_count += 1
                 pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
@@ -302,9 +303,6 @@ if __name__ == '__main__':
             scores = scores.squeeze()
             pred_boxes = pred_boxes.squeeze()
 
-            det_toc = time.time()
-            detect_time = det_toc - det_tic
-            misc_tic = time.time()
             for j in xrange(1, len(objnet.get_raw_labels())):
                 inds = torch.nonzero(scores[:, j] > thresh).view(-1)
                 # if there is det
@@ -321,7 +319,10 @@ if __name__ == '__main__':
                     keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
                     cls_dets = cls_dets[keep.view(-1).long()]
                     cls_dets = torch.cat((cls_dets, cls_dets[:, -1].unsqueeze(1)), 1)
-                    cls_dets[:, 4] = j
+
+                    cls_ind = objnet.get_node_by_index(raw_inds[j])
+
+                    cls_dets[:, 4] = cls_ind
                     img_dets += cls_dets.cpu().data.numpy().tolist()
 
         img_dets = np.array(img_dets)

@@ -172,7 +172,10 @@ class _HierRelaVis(nn.Module):
                 m.weight.data.normal_(mean, stddev)
                 m.bias.data.zero_()
 
-        normal_init(list(self.order_in_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.pre_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.sbj_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.obj_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.order_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
         # normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
 
 

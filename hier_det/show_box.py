@@ -8,6 +8,9 @@ from matplotlib import pyplot as plt
 def show_boxes(im, dets, cls, confs):
     """Draw detected bounding boxes."""
     for i in range(0, len(dets)):
+        print dets[i]
+        print cls[i]
+        print '\n'
         fig, ax = plt.subplots(figsize=(12, 12))
         ax.imshow(im, aspect='equal')
         bbox = dets[i]

@@ -13,6 +13,7 @@ det_roidb = pickle.load(open(det_roidb_path))
 
 img_root = os.path.join(VRD_ROOT, 'JPEGImages')
 for img_id in det_roidb:
+    print img_id
     img_path = os.path.join(img_root, img_id+'.jpg')
     im = cv2.imread(img_path)
     dets = det_roidb[img_id]

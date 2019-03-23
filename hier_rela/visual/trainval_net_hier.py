@@ -249,7 +249,7 @@ if __name__ == '__main__':
     # hierRCNN.eval()
 
     load_name = '../../data/pretrained_model/pretrained_%s.pth' % args.dataset
-    print("load pretrained model: %s" % (load_name))
+    print("HierRCNN: load pretrained model: %s" % (load_name))
     checkpoint = torch.load(load_name)
     pre_state_dict = checkpoint['model']
 

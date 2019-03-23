@@ -328,10 +328,12 @@ if __name__ == '__main__':
         img_dets = np.array(img_dets)
         img_dets = torch.from_numpy(img_dets).cuda()
         keep = nms(img_dets, 0.7, force_cpu=not cfg.USE_GPU_NMS)
-        img_dets = img_dets[keep, :]
-        img_dets = torch.cat([img_dets[:, :4], img_dets[:, 5:6], img_dets[:, 4:5]]).cpu().numpy()
+        img_dets = img_dets[keep.view(-1).long(), :]
+        img_det_clss = img_dets[:, -1]
+        img_det_scrs = img_dets[:, -2]
+        img_dets[:, -1] = img_det_scrs
+        img_dets[:, -2] = img_det_clss
 
-        img_det_scrs = img_dets[:, -1]
         if img_dets.shape[0] > max_per_image:
             order = np.argsort(img_det_scrs)[::-1]
             img_dets = img_dets[order[:max_per_image], :]

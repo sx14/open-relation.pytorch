@@ -44,6 +44,7 @@ class _HierRelaVis(nn.Module):
 
         # visual embedding vector length
         self.embedding_len = self.label_vecs.size(1)
+        self.obj_embedding_len = self.obj_label_vecs.size(1)
 
         # loss
         self.RCNN_loss_cls = 0
@@ -75,15 +76,15 @@ class _HierRelaVis(nn.Module):
             nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.fc7_hidden_len * 3 + 4 * 2),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.embedding_len))
+            nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.obj_embedding_len))
 
         self.order_embedding = nn.Sequential(
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(self.embedding_len * 3, self.embedding_len * 3),
+            nn.Linear(self.obj_embedding_len * 3, self.obj_embedding_len * 3),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(self.embedding_len * 3, self.embedding_len))
+            nn.Linear(self.obj_embedding_len * 3, self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 
@@ -151,8 +152,8 @@ class _HierRelaVis(nn.Module):
 
         vis_embedding = self.vis_embedding(pooled_feat_use)
 
-        sbj_vecs = self.obj_label_vecs[sbj_label, :]
-        obj_vecs = self.obj_label_vecs[obj_label, :]
+        sbj_vecs = self.obj_label_vecs[sbj_label.view(-1).long(), :]
+        obj_vecs = self.obj_label_vecs[obj_label.view(-1).long(), :]
 
         feat_use = torch.cat([sbj_vecs, vis_embedding, obj_vecs], 1)
         pre_embedding = self.order_embedding(feat_use)
@@ -192,7 +193,9 @@ class _HierRelaVis(nn.Module):
         normal_init(list(self.pre_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(list(self.sbj_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(list(self.obj_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
-        normal_init(list(self.vis_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.vis_embedding._modules.values())[2], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.vis_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.order_embedding._modules.values())[2], 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(list(self.order_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
 
 

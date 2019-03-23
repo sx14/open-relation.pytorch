@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
     use_rpn = True
     TP_count = 0.0
-    N_count = 0.0
+    N_count = 0.1
 
     obj_det_roidbs = {}
 
@@ -234,6 +234,8 @@ if __name__ == '__main__':
         gt_boxes.data.resize_(data[2].size()).copy_(data[2])
         num_boxes.data.resize_(data[3].size()).copy_(data[3])
         im_id = data[4]
+
+        print('proc [%d/%d]' % (num_images, i + 1))
 
         det_tic = time.time()
         rois, cls_prob, bbox_pred, \
@@ -320,7 +322,7 @@ if __name__ == '__main__':
                     cls_dets = cls_dets[keep.view(-1).long()]
                     cls_dets = torch.cat((cls_dets, cls_dets[:, -1].unsqueeze(1)), 1)
 
-                    cls_ind = objnet.get_node_by_index(raw_inds[j])
+                    cls_ind = objnet.get_node_by_index(raw_inds[j]).index()
 
                     cls_dets[:, 4] = cls_ind
                     img_dets += cls_dets.cpu().data.numpy().tolist()

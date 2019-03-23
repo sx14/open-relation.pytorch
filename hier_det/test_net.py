@@ -191,14 +191,11 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 10
+    max_per_image = 20
 
     vis = args.vis
 
-    if vis:
-        thresh = 0.05
-    else:
-        thresh = 0.0
+    thresh = 0.1
 
     save_name = 'faster_rcnn_10'
     num_images = len(imdb.image_index)
@@ -324,16 +321,18 @@ if __name__ == '__main__':
 
                     cls_ind = objnet.get_node_by_index(raw_inds[j]).index()
 
-                    cls_dets[:, 4] = cls_ind
+                    cls_dets[:, 5] = cls_ind
                     img_dets += cls_dets.cpu().data.numpy().tolist()
 
+        # nms again
         img_dets = np.array(img_dets)
-        img_det_scrs = img_dets[:, -1]
+        img_dets = torch.from_numpy(img_dets).cuda()
+        keep = nms(img_dets, 0.7, force_cpu=not cfg.USE_GPU_NMS)
+        img_dets = img_dets[keep, :]
+        img_dets = torch.cat([img_dets[:, :4], img_dets[:, 5:6], img_dets[:, 4:5]]).cpu().numpy()
 
-        keep = img_det_scrs > 0.40
-        if np.sum(keep) > max_per_image:
-            img_dets = img_dets[keep, :]
-        else:
+        img_det_scrs = img_dets[:, -1]
+        if img_dets.shape[0] > max_per_image:
             order = np.argsort(img_det_scrs)[::-1]
             img_dets = img_dets[order[:max_per_image], :]
 

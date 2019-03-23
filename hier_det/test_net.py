@@ -191,7 +191,7 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 20
+    max_per_image = 10
 
     vis = args.vis
 
@@ -328,8 +328,12 @@ if __name__ == '__main__':
                     img_dets += cls_dets.cpu().data.numpy().tolist()
 
         img_dets = np.array(img_dets)
-        if img_dets.shape[0] > max_per_image:
-            img_det_scrs = img_dets[:, -1]
+        img_det_scrs = img_dets[:, -1]
+
+        keep = img_det_scrs > 0.40
+        if np.sum(keep) > max_per_image:
+            img_dets = img_dets[keep, :]
+        else:
             order = np.argsort(img_det_scrs)[::-1]
             img_dets = img_dets[order[:max_per_image], :]
 

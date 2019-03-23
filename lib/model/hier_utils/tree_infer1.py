@@ -180,8 +180,6 @@ def cal_pos_cond_prob(node):
     cal_pos_cond_prob(node.children()[pred_c_ind])
 
 
-
-
 def my_infer(labelnet, scores):
     tnodes = construct_tree(labelnet, scores)
     choice = top_down_search(tnodes[labelnet.root().index()])

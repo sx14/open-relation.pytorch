@@ -21,7 +21,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.heir_rcnn.vgg16 import vgg16
-from lib.model.hier_utils.tree_infer import my_infer
+from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import HierLabelConfig, PROJECT_ROOT
 from hier_det.test_utils import det_recall, load_vrd_det_boxes
 

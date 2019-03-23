@@ -144,7 +144,7 @@ if __name__ == '__main__':
         'pre_raw_label_path': os.path.join(VG_ROOT, 'predicate_labels.txt'),
         'pre_raw2wn_path': os.path.join(VG_ROOT, 'predicate_label2wn.txt'),
         'Annotations': os.path.join(VG_ROOT, 'Annotations'),
-        'ImageSets': os.path.join(VG_ROOT, 'ImageSets', 'Main'),
+        'ImageSets': os.path.join(VG_ROOT, 'ImageSets'),
         'JPEGImages': os.path.join(VG_ROOT, 'JPEGImages'),
         'pre_freq_path': os.path.join(VG_ROOT, 'pre_freq.txt'),
     }
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     vg2pascal(vg_config)
     raw2wn(vg_config['obj_raw_label_path'], vg_config['obj_raw2wn_path'])
 
-    roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')
+    roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vg.bin')
     anno_root = vg_config['clean_anno_root']
 
     train_anno_list_path = os.path.join(vg_config['ImageSets'], 'Main', 'trainval.txt')

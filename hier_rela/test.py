@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -53,9 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        # default='pre',
-                        default='rela',
-                        )
+                        default='pre')
 
 
     args = parser.parse_args()
@@ -70,11 +68,11 @@ if __name__ == '__main__':
     print(args)
 
     if args.dataset == "vg":
-        args.imdb_name = "vg_2007_trainval"
-        args.imdbval_name = "vg_2007_test"
+        args.imdb_name = "vg_2016_trainval"
+        args.imdbval_name = "vg_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg1000.label_hier.obj_hier import objnet
-        from lib.datasets.vg1000.label_hier.pre_hier import prenet
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.pre_hier import prenet
         img_root = os.path.join(VG_ROOT, 'JPEGImages')
 
     elif args.dataset == "vrd":
@@ -237,9 +235,6 @@ if __name__ == '__main__':
 
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
-
-
-
 
             top2 = my_infer(prenet, all_scores)
             pred_cate = top2[0][0]

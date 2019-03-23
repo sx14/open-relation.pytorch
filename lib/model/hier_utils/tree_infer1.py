@@ -72,11 +72,14 @@ class TreeNode:
         # return -1.0 / min(self._raw_score, -0.0001)
 
     def entropy(self):
-        e = 0.0
+
         if len(self._children) > 1:
+            e = 0.0
             for c in self._children:
                 e -= c.cond_prob() * log(c.cond_prob(), len(self._children))
-        return min(e, 1.0)
+            return min(e, 1.0)
+        else:
+            return 1.0
 
     def index(self):
         return self._index

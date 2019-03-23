@@ -40,6 +40,8 @@ class _HierRelaVis(nn.Module):
         with torch.no_grad():
             self.label_vecs = Variable(torch.from_numpy(label_vecs).float()).cuda()
 
+        self.obj_label_vecs = self._hierRCNN.label_vecs
+
         # visual embedding vector length
         self.embedding_len = self.label_vecs.size(1)
 
@@ -67,11 +69,21 @@ class _HierRelaVis(nn.Module):
         self.obj_hidden = nn.Sequential(
             nn.Linear(4096, self.fc7_hidden_len))
 
-        self.order_embedding = nn.Sequential(
+        self.vis_embedding = nn.Sequential(
+            nn.ReLU(),
+            nn.Dropout(),
             nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.fc7_hidden_len * 3 + 4 * 2),
             nn.ReLU(),
             nn.Dropout(),
             nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.embedding_len))
+
+        self.order_embedding = nn.Sequential(
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(self.embedding_len * 3, self.embedding_len * 3),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(self.embedding_len * 3, self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 
@@ -119,7 +131,7 @@ class _HierRelaVis(nn.Module):
         sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
 
         with torch.no_grad():
-            sbj_obj_pooled_feat = self._hierRCNN.ext_feat(im_data, im_info,
+            sbj_obj_pooled_feat, _ = self._hierRCNN.ext_feat(im_data, im_info,
                                                             sbj_obj_boxes, num_boxes * 2,
                                                             use_rpn=False)
 
@@ -137,8 +149,13 @@ class _HierRelaVis(nn.Module):
 
         pooled_feat_use = torch.cat([sbj_hidden, sbj_spacial_feat, obj_hidden, obj_spacial_feat, pre_hidden], 1)
 
-        pre_embedding = self.order_embedding(pooled_feat_use)
+        vis_embedding = self.vis_embedding(pooled_feat_use)
 
+        sbj_vecs = self.obj_label_vecs[sbj_label, :]
+        obj_vecs = self.obj_label_vecs[obj_label, :]
+
+        feat_use = torch.cat([sbj_vecs, vis_embedding, obj_vecs], 1)
+        pre_embedding = self.order_embedding(feat_use)
 
         # compute order similarity
         if pre_embedding.size(0) < 30:
@@ -175,8 +192,8 @@ class _HierRelaVis(nn.Module):
         normal_init(list(self.pre_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(list(self.sbj_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
         normal_init(list(self.obj_hidden._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
-        normal_init(list(self.order_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
-        # normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.vis_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
+        normal_init(list(self.order_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
 
 
     def _ext_box_feat(self, gt_relas):

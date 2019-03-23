@@ -19,13 +19,13 @@ from lib.model.heir_rcnn.hier_rcnn import _HierRCNN
 import pdb
 
 class vgg16(_HierRCNN):
-  def __init__(self, objnet, level_vec_path, pretrained=False, class_agnostic=False):
+  def __init__(self, objnet, label_vec_path, pretrained=False, class_agnostic=False):
     self.model_path = '../data/pretrained_model/vgg16_caffe.pth'
     self.dout_base_model = 512
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic
 
-    _HierRCNN.__init__(self, class_agnostic, objnet, level_vec_path)
+    _HierRCNN.__init__(self, class_agnostic, objnet, label_vec_path)
 
   def _init_modules(self):
 

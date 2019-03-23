@@ -11,7 +11,7 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from lib.model.hier_rela.visual.hier_rela_vis import _HierRelaVis
+from lib.model.hier_rela.visual.hier_rela_vis2 import _HierRelaVis
 
 
 class vgg16(_HierRelaVis):

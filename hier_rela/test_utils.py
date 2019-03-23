@@ -96,7 +96,7 @@ def get_input_data(im, rois):
     im_data_pt = im_data_pt.permute(0, 3, 1, 2)
     im_info_pt = torch.from_numpy(im_info_np)
     im_boxes_pt = torch.from_numpy(im_boxes)
-    im_nbox_pt = torch.Tensor(im_boxes_pt.shape[0])
+    im_nbox_pt = torch.Tensor([im_boxes_pt.shape[1]])
 
     data=[im_data_pt, im_info_pt, im_boxes_pt, im_nbox_pt, im_scales[0]]
     return data

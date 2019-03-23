@@ -249,15 +249,17 @@ if __name__ == '__main__':
     # hierRCNN.eval()
 
     load_name = '../../data/pretrained_model/pretrained_%s.pth' % args.dataset
-    print("HierVis: load pretrained model: %s" % (load_name))
+    print("load pretrained model: %s" % (load_name))
     checkpoint = torch.load(load_name)
     pre_state_dict = checkpoint['model']
-    hierVis_state_dict = hierRCNN.state_dict()
+
     pre_state_dict = {k: v for k, v in pre_state_dict.items()
-                      if k in hierVis_state_dict}
-    hierVis_state_dict.update(pre_state_dict)
-    hierRCNN.load_state_dict(hierVis_state_dict)
-    
+                      if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k}
+
+    hierRCNN_state_dict = hierRCNN.state_dict()
+    hierRCNN_state_dict.update(pre_state_dict)
+    hierRCNN.load_state_dict(hierRCNN_state_dict)
+
     for name, p in hierRCNN.named_parameters():
         p.requires_grad = False
 

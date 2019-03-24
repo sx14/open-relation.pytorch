@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # load detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, objconf.label_vec_path())
+    hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
     hierRCNN.create_architecture()
 
     # load weights
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
     if args.cuda:
         hierRCNN.cuda()
-
+    hierRCNN.eval()
     # load proposals
     det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
     with open(det_roidb_path, 'rb') as f:
@@ -170,7 +170,7 @@ if __name__ == '__main__':
             rois, cls_prob, bbox_pred, \
             rpn_loss_cls, rpn_loss_box, \
             RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = hierRCNN(im_data, im_info, im_boxes, num_boxes, use_rpn=False)
+            rois_label = hierRCNN(im_data, im_info, im_boxes[:,:,:5], num_boxes, use_rpn=False)
 
         scores = cls_prob.data
         for ppp in range(scores.size()[1]):

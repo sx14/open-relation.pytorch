@@ -11,8 +11,8 @@ data_config = {
 }
 
 train_params = {
-    'lr': 0.01,
-    'epoch_num': 150,
+    'lr': 0.001,
+    'epoch_num': 300,
     'batch_size': 32,
     'latest_model_path': 'hier_rela_lan_new_',
     'best_model_path': 'hier_rela_lan_best_',

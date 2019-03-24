@@ -156,6 +156,9 @@ if __name__ == '__main__':
         img = cv2.imread(img_path)
         rois_use = det_roidb[img_id]
 
+        if rois_use.shape[0] == 0:
+            continue
+
         # Attention: resized image data
         data = get_input_data(img, rois_use)
 
@@ -181,6 +184,7 @@ if __name__ == '__main__':
             im_boxes[0][ppp][4] = pred_cate
             im_boxes[0][ppp][5] = pred_scr
 
+        im_boxes[:,:,:4] = im_boxes[:,:,:4] / im_scale
         pred_roidb[img_id] = im_boxes[0].data.cpu().numpy()
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)

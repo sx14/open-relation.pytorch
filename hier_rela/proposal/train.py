@@ -58,18 +58,19 @@ def eval(model, test_dl):
     batch_num = 0
     for batch in test_dl:
         batch_num += 1
-        sbj1, pre1, obj1, pos_neg_inds, rlt = batch
+        sbj1, pre1, obj1, rlt, ys = batch
         v_sbj1 = Variable(sbj1).float().cuda()
         v_obj1 = Variable(obj1).float().cuda()
         v_rlt = Variable(rlt).float().cuda()
+        v_ys = Variable(ys).float().cuda()
         v_sbj_box, v_obj_box = ext_box_feat(v_rlt)
         v_sbj1 = torch.cat([v_sbj1, v_sbj_box], dim=1)
         v_obj1 = torch.cat([v_obj1, v_obj_box], dim=1)
         with torch.no_grad():
             scores = model(v_sbj1, v_obj1)
 
-        acc = cal_acc(scores, ys)
-        loss = loss_func(scores, ys)
+        acc = cal_acc(scores, v_ys)
+        loss = loss_func(scores, v_ys)
         acc_sum += acc
         loss_sum += loss
     avg_acc = acc_sum / batch_num
@@ -149,8 +150,8 @@ for epoch in range(epoch_num):
         v_obj1 = torch.cat([v_obj1, v_obj_box], dim=1)
 
         scores = model(v_sbj1, v_obj1)
-        acc = cal_acc(scores, ys)
-        loss = loss_func(scores, ys)
+        acc = cal_acc(scores, v_ys)
+        loss = loss_func(scores, v_ys)
         sw.add_scalars('acc', {'train': acc}, batch_num)
         sw.add_scalars('loss', {'train': loss}, batch_num)
 

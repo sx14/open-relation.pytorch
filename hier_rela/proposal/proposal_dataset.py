@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 
 
-class LangDataset(Dataset):
+class ProposalDataset(Dataset):
 
     def obj_vec_length(self):
         return self._obj_vecs.shape[1]
@@ -21,7 +21,7 @@ class LangDataset(Dataset):
         self._pre_vecs = torch.from_numpy(np.array(pre_vec_file['label_vec']))
 
         rlts = np.load(rlt_path+'.npy')
-        self._rlts = np.array(rlts)
+        self._rlts = torch.from_numpy(np.array(rlts))
 
     def __getitem__(self, item):
         rlt = self._rlts[item]
@@ -29,9 +29,10 @@ class LangDataset(Dataset):
         sbj_vec = self._obj_vecs[rlt[9]]
         obj_vec = self._obj_vecs[rlt[14]]
         rlt = np.array(rlt)
-        y = 1
+        y = [1]
         if rlt[4] == 0:
-            y = 0
+            y = [0]
+        y = torch.from_numpy(np.array(y))
 
         return [sbj_vec, pre_vec, obj_vec, rlt, y]
 

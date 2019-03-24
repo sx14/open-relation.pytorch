@@ -70,6 +70,7 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
         anno_path = os.path.join(anno_root, anno_list[i]+'.json')
         anno = json.load(open(anno_path, 'r'))
         anno_rlts = anno['relationships']
+        img_rlts = []
         for rlt in anno_rlts:
             anno_obj = rlt['object']
             anno_sbj = rlt['subject']
@@ -91,12 +92,16 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
             pre_box.append(pre_ind)
             sbj_box.append(sbj_ind)
             obj_box.append(obj_ind)
+            img_rlts.append(pre_box + sbj_box + obj_box)
 
-            raw_rlts.append(pre_box + sbj_box + obj_box)
+        if len(img_rlts) == 0:
+            continue
+        img_rlts = np.array(img_rlts)
+        img_rlts = extend_neg_samples(img_rlts)
+        raw_rlts += img_rlts.tolist()
 
     raw_rlts = np.array(raw_rlts)
-    ext_rlts = extend_neg_samples(raw_rlts)
-    np.save(rlt_save_path, ext_rlts)
+    np.save(rlt_save_path, raw_rlts)
     return raw_rlts
 
 

@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torch.nn.functional import binary_cross_entropy as loss_func
 from tensorboardX import SummaryWriter
 
-from lang_dataset import LangDataset
+from proposal_dataset import ProposalDataset
 from lang_config import train_params, data_config
 from lib.model.hier_rela.proposal.hier_proposal import HierProposal
 from global_config import HierLabelConfig
@@ -17,8 +17,8 @@ def cal_acc(scores, ys):
     N_all = ys.shape[0]
     scores[scores < 0.5] = 0
     scores[scores > 0] = 1
-    temp = scores - ys
-    N_right = torch.sum(temp == 0)
+    temp = scores - ys.float()
+    N_right = torch.sum(temp == 0).item()
     return N_right / N_all
 
 
@@ -93,11 +93,11 @@ pre_config = HierLabelConfig(dataset, 'predicate')
 obj_label_vec_path = obj_config.label_vec_path()
 pre_label_vec_path = pre_config.label_vec_path()
 rlt_path = data_config['train']['raw_rlt_path']+dataset
-train_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path)
+train_set = ProposalDataset(rlt_path, obj_label_vec_path, pre_label_vec_path)
 train_dl = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
 rlt_path = data_config['test']['raw_rlt_path']+dataset
-test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path)
+test_set = ProposalDataset(rlt_path, obj_label_vec_path, pre_label_vec_path)
 test_dl = DataLoader(test_set, batch_size=batch_size, shuffle=True)
 
 # model
@@ -143,6 +143,7 @@ for epoch in range(epoch_num):
         v_sbj1 = Variable(sbj1).float().cuda()
         v_obj1 = Variable(obj1).float().cuda()
         v_rlt = Variable(rlt).float().cuda()
+        v_ys = Variable(ys).float().cuda()
         v_sbj_box, v_obj_box = ext_box_feat(v_rlt)
         v_sbj1 = torch.cat([v_sbj1, v_sbj_box], dim=1)
         v_obj1 = torch.cat([v_obj1, v_obj_box], dim=1)

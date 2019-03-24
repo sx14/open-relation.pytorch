@@ -289,10 +289,11 @@ if __name__ == '__main__':
   for key, value in dict(hierVis.named_parameters()).items():
     if value.requires_grad:
       # larger lr for embedding layer
-      if 'order' in key:
-        lr_use = lr * 10
-      else:
-        lr_use = lr
+      # if 'order' in key:
+      #   lr_use = lr * 10
+      # else:
+      #   lr_use = lr
+      lr_use = lr
 
       if 'bias' in key:
         params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \

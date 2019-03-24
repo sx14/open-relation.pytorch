@@ -19,8 +19,8 @@ def confirm(img_path, dets):
     cls = []
     boxes = []
     for i in range(len(dets)):
-        label = dets[i][-1]
-        n = objnet.get_node_by_index(label)
+        label = dets[i][-2]
+        n = objnet.get_node_by_index(int(label))
         cls.append(n.name())
 
         box = dets[i][:4]

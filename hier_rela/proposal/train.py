@@ -15,11 +15,12 @@ from global_config import HierLabelConfig
 
 def cal_acc(scores, ys):
     N_all = ys.shape[0]
-    scores[scores < 0.5] = 0
-    scores[scores > 0] = 1
-    temp = scores - ys.float()
+    pre_ys = scores.clone()
+    pre_ys[pre_ys < 0.5] = 0
+    pre_ys[pre_ys > 0] = 1
+    temp = pre_ys - ys.float()
     N_right = torch.sum(temp == 0).item()
-    return N_right / N_all
+    return N_right * 1.0 / N_all
 
 
 def ext_box_feat(gt_relas):

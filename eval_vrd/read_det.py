@@ -51,6 +51,7 @@ for i in range(1000):
     img_det_labels = det_labels[i]
     img_det_confs = det_confs[i]
 
+    # x1, y1, x2 ,y2, cls, conf
     img_dets = []
     for j in range(img_det_boxes.shape[0]):
         N_det += 1

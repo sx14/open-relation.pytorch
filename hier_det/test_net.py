@@ -268,7 +268,3 @@ if __name__ == '__main__':
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
-
-    # det_save_path = 'vrd_test_box.bin'
-    # with open(det_save_path, 'wb') as f:
-    #     pickle.dump(obj_det_roidbs, f)

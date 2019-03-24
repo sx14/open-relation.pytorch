@@ -3,11 +3,12 @@ import pickle
 import cv2
 import numpy as np
 from hier_det.show_box import show_boxes
-from global_config import VRD_ROOT
+from global_config import VRD_ROOT, PROJECT_ROOT
 from lib.datasets.vrd.label_hier.obj_hier import objnet
 
+
 dataset = 'vrd'
-det_roidb_path = 'det_infer_roidb_vrd.bin'
+det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
 det_roidb = pickle.load(open(det_roidb_path))
 
 
@@ -27,3 +28,4 @@ for img_id in det_roidb:
 
     confs = dets[:, 5]
     show_boxes(im, dets_temp[:, :4], cls_labels, confs)
+

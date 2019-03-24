@@ -127,7 +127,9 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                     img_obj_box_rights[o] = 1
                     img_obj_box_gt_rights[b] = 1
                     box_hit = 1
-                    if gt[4] == det[4]:
+                    gt_node = objnet.get_node_by_index(int(gt[4]))
+                    scr = gt_node.score(det[4])
+                    if scr > 0:
                         img_obj_det_rights[o] = 1
                         img_obj_det_gt_rights[b] = 1
                         det_hit = 1

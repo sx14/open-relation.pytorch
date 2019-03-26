@@ -106,7 +106,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         box_det = np.concatenate((sub_box_dete, obj_box_dete))
         box_det = np.unique(box_det, axis=0)
 
-        results[image_id]['N_obj'] = len(box_gt)
+        results[image_id]['N_obj'] = len(box_det)
 
         # cal object proposal/detection recall
         img_obj_box_good = 0

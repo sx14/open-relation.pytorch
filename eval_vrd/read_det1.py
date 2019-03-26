@@ -1,5 +1,6 @@
 import os
 import pickle
+import cPickle
 
 import cv2
 import numpy as np
@@ -34,17 +35,19 @@ def confirm(img_path, dets):
     show_boxes(im, boxes, cls)
 
 
-det_mat = scipy.io.loadmat('objectDetRCNN.mat')
-det_boxes = det_mat['detection_bboxes'][0]
-det_labels = det_mat['detection_labels'][0]
-det_confs = det_mat['detection_confs'][0]
+with open('proposal.pkl', 'rb') as fid:
+    proposals = cPickle.load(fid)
+    det_boxes = proposals['boxes']
+    det_labels = proposals['cls']
+    det_confs = proposals['confs']
+
 
 img_paths_mat = scipy.io.loadmat('imagePath.mat')
 img_paths = img_paths_mat['imagePath'][0]
 
-N = 0.0
+N = 0
 det_roidb = {}
-raw_labels = objnet.get_raw_labels()
+raw_labels = objnet.get_raw_labels()[1:]
 for i in range(1000):
     img_path = img_paths[i][0]
     img_det_boxes = det_boxes[i]
@@ -54,7 +57,6 @@ for i in range(1000):
     img_dets = []
     for j in range(img_det_boxes.shape[0]):
         N += 1
-
         box = img_det_boxes[j]
         det = box.tolist()
 

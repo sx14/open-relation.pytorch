@@ -77,14 +77,15 @@ for i, results in enumerate(all_results):
     print('detection precision: \t%.4f\n' % (N_obj_det_right_all / N_obj_pred_all))
 
     print('==== relationship(%d) ====' % recall_Ns[i])
+    print('gt   num: %d' % N_rlt_gt_all)
+    print('pred num: %d' % N_rlt_pred_all)
+
     print('proposal recall: \t%.4f' % (N_rlt_box_gt_right_all / N_rlt_gt_all))
     print('proposal precision: \t%.4f' % (N_rlt_box_right_all / N_rlt_pred_all))
     print('detection recall: \t%.4f' % (N_rlt_pair_gt_right_all / N_rlt_gt_all))
     print('detection precision: \t%.4f' % (N_rlt_pair_right_all / N_rlt_pred_all))
     print('relationship recall: \t%.4f' % (N_rlt_gt_right_all / N_rlt_gt_all))
     print('relationship precision: \t%.4f\n' % (N_rlt_right_all / N_rlt_pred_all))
-
-
 
 print('rela R50: %.4f, rela R100: %.4f' % (rela_R50, rela_R100))
 print('pre R50: %.4f, pre R100: %.4f' % (pre_R50, pre_R100))

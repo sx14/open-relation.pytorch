@@ -5,16 +5,17 @@ import torch
 from torch.autograd import Variable
 from scipy.misc import imread
 
+
 def get_raw_pred(all_scores, raw_inds):
+    raw_ind_set = set(raw_inds)
     ranked_inds = np.argsort(all_scores)[::-1]
     pred_raw_ind = -1
     for ind in ranked_inds:
-        if ind in raw_inds:
+        if ind in raw_ind_set:
             pred_raw_ind = ind
             break
     assert pred_raw_ind > -1
     return pred_raw_ind, all_scores[pred_raw_ind]
-
 
 
 def im_list_to_blob(ims):

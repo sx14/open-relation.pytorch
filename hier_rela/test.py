@@ -191,7 +191,7 @@ if __name__ == '__main__':
     pred_roidb = {}
     start = time.time()
     N_img = len(rela_roidb_use.keys())
-    raw_label_inds = prenet.get_raw_indexes()
+    raw_labels = prenet.get_raw_indexes()
 
     for i, img_id in enumerate(rela_roidb_use.keys()):
         print('pred [%d/%d]' % (N_img, i+1))
@@ -223,20 +223,21 @@ if __name__ == '__main__':
 
 
         # --------------- k=70 ------------------
-        pred_cates = torch.zeros(100)
-        pred_scores = torch.zeros(100)
+        raw_scores = scores[0][:, raw_labels].cpu().data.numpy()
+        pred_cates = torch.zeros(min(100, raw_scores.shape[0]*raw_scores.shape[1]))
+        pred_scores = torch.zeros(min(100, raw_scores.shape[0]*raw_scores.shape[1]))
+        pred_scores = map_score(pred_scores)
 
-        raw_scores = scores[0][:, raw_label_inds].cpu().data.numpy()
         aaa = np.argsort(-raw_scores.ravel())
         bbb = np.unravel_index(aaa, raw_scores.shape)
         ccc = np.dstack(bbb)[0]
-        raw_score_inds = ccc[:100]
+        raw_label_inds = ccc[:100]
 
         roi_inds = []
-        for c in range(raw_score_inds.shape[0]):
-            roi_inds.append(raw_score_inds[c, 0])
-            pred_cates[c] = raw_label_inds[raw_score_inds[c, 1]]
-            pred_scores[c] = raw_scores[raw_score_inds[c, 0], raw_score_inds[c, 1]].item()
+        for c in range(raw_label_inds.shape[0]):
+            roi_inds.append(raw_label_inds[c, 0])
+            pred_cates[c] = raw_labels[raw_label_inds[c, 1]]
+            pred_scores[c] = raw_scores[raw_label_inds[c, 0], raw_label_inds[c, 1]].item()
         rois_use = np.array(rois_use)
         pred_rois = torch.FloatTensor(rois_use[roi_inds, :])
         # ----------------------------------------

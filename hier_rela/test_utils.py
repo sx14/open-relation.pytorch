@@ -2,9 +2,14 @@
 import numpy as np
 import cv2
 import torch
+from torch.nn.functional import sigmoid
 from torch.autograd import Variable
 from scipy.misc import imread
 
+
+def map_score(scores):
+    scores[scores > -0.0001] = -0.0001
+    return sigmoid(-torch.log(-scores))
 
 def get_raw_pred(all_scores, raw_inds):
     raw_ind_set = set(raw_inds)

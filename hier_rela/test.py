@@ -63,7 +63,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='rela',
+                        default='pre',
                         # default='rela',
                         )
 
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         scores = cls_score.data
 
 
-        # k=70
+        # --------------- k=70 ------------------
         pred_cates = torch.zeros(100)
         pred_scores = torch.zeros(100)
 
@@ -233,11 +233,13 @@ if __name__ == '__main__':
         raw_score_inds = ccc[:100]
 
         roi_inds = []
-        for c in range(ccc.shape[0]):
-            roi_inds.append(ccc[c, 0])
-            pred_cates[c] = raw_label_inds[ccc[c, 1]]
-            pred_scores[c] = raw_scores[ccc[c, 1]]
-
+        for c in range(raw_score_inds.shape[0]):
+            roi_inds.append(raw_score_inds[c, 0])
+            pred_cates[c] = raw_label_inds[raw_score_inds[c, 1]]
+            pred_scores[c] = raw_scores[raw_score_inds[c, 0], raw_score_inds[c, 1]].item()
+        rois_use = np.array(rois_use)
+        pred_rois = torch.FloatTensor(rois_use[roi_inds, :])
+        # ----------------------------------------
 
         # # k=1
         # pred_cates = torch.zeros(rois[0].shape[0])
@@ -287,8 +289,6 @@ if __name__ == '__main__':
         #         print(info)
         #
         # pred_rois = torch.FloatTensor(rois_use)
-
-        pred_rois = torch.FloatTensor(rois_use[0, roi_inds, :])
         sbj_scores = pred_rois[:, -3]
         obj_scores = pred_rois[:, -2]
         rela_scores = pred_scores * sbj_scores * obj_scores

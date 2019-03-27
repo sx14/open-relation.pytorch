@@ -146,12 +146,12 @@ if __name__ == '__main__':
     # initilize the network here.
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, objconf.label_vec_path())
-    hierRCNN.create_architecture()
+    # hierRCNN = vgg16_det(objnet, objconf.label_vec_path())
+    # hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')
     pre_vec_path = preconf.label_vec_path()
-    hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
+    hierVis = vgg16_rela(prenet, pre_vec_path, obj_vec_path)
     hierVis.create_architecture()
 
     print("load checkpoint %s" % (load_name))
@@ -186,17 +186,6 @@ if __name__ == '__main__':
     if args.cuda:
         hierVis.cuda()
 
-    start = time.time()
-
-    max_per_image = 100
-    # max_per_image = 20
-
-    vis = args.vis
-
-    if vis:
-        thresh = 0.05
-    else:
-        thresh = 0.0
 
     save_name = 'hier_rela_rcnn_10'
     num_images = len(imdb.image_index)

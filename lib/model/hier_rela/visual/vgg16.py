@@ -15,12 +15,12 @@ from lib.model.hier_rela.visual.hier_rela_vis2 import _HierRelaVis
 
 
 class vgg16(_HierRelaVis):
-  def __init__(self, objnet, level_vec_path, hierRCNN, pretrained=False):
+  def __init__(self, labelnet, pre_label_vec_path, obj_label_vec_path, pretrained=False):
     self.model_path = '../data/pretrained_model/vgg16_caffe.pth'
     self.dout_base_model = 512
     self.pretrained = pretrained
 
-    _HierRelaVis.__init__(self, objnet, level_vec_path, hierRCNN)
+    _HierRelaVis.__init__(self, labelnet, pre_label_vec_path, obj_label_vec_path)
 
   def _init_modules(self):
 
@@ -45,7 +45,6 @@ class vgg16(_HierRelaVis):
 
     # fc7 4096
     self.RCNN_top = vgg.classifier
-
 
   def _head_to_tail(self, pool5):
     pool5_flat = pool5.view(pool5.size(0), -1)

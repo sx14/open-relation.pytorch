@@ -69,7 +69,9 @@ class TreeNode:
         #     scr = -1.0 / min(self._raw_score, -0.0001) - 1
         # scr = 1.0 / (1.0 + exp(-scr))
         # return scr
-        return self._raw_score
+        log_score = -log(-self._raw_score)
+        scr = 1.0 / (1.0 + exp(-log_score))
+        return scr
 
     def entropy(self):
 

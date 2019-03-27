@@ -21,11 +21,10 @@ from lib.model.hier_utils.hier_utils import OrderSimilarity, OrderLoss
 
 class _HierRelaVis(nn.Module):
     """ Hier RCNN """
-    def __init__(self, prenet, label_vec_path, hierRCNN):
+    def __init__(self, prenet, pre_label_vec_path, obj_label_vec_path):
         super(_HierRelaVis, self).__init__()
 
         # object detector
-        self._hierRCNN = hierRCNN
         self._loss = OrderLoss(prenet)
         # config heir classes
         # all classes
@@ -34,16 +33,20 @@ class _HierRelaVis(nn.Module):
         # min negative label num
 
         # label vectors
-        with h5py.File(label_vec_path, 'r') as f:
-            label_vecs = np.array(f['label_vec'])
+        with h5py.File(pre_label_vec_path, 'r') as f:
+            pre_label_vecs = np.array(f['label_vec'])
 
         with torch.no_grad():
-            self.label_vecs = Variable(torch.from_numpy(label_vecs).float()).cuda()
+            self.pre_label_vecs = Variable(torch.from_numpy(pre_label_vecs).float()).cuda()
 
-        self.obj_label_vecs = self._hierRCNN.label_vecs
+        with h5py.File(obj_label_vec_path, 'r') as f:
+            obj_label_vecs = np.array(f['label_vec'])
+
+        with torch.no_grad():
+            self.obj_label_vecs = Variable(torch.from_numpy(obj_label_vecs).float()).cuda()
 
         # visual embedding vector length
-        self.embedding_len = self.label_vecs.size(1)
+        self.embedding_len = self.pre_label_vecs.size(1)
         self.obj_embedding_len = self.obj_label_vecs.size(1)
 
         # loss
@@ -60,28 +63,16 @@ class _HierRelaVis(nn.Module):
         self.RCNN_roi_crop = _RoICrop()
 
         # Our model
-        self.fc7_hidden_len = 300
-        self.pre_hidden = nn.Sequential(
-            nn.Linear(4096, self.fc7_hidden_len))
-
-        self.sbj_hidden = nn.Sequential(
-            nn.Linear(4096, self.fc7_hidden_len))
-
-        self.obj_hidden = nn.Sequential(
-            nn.Linear(4096, self.fc7_hidden_len))
-
         self.vis_embedding = nn.Sequential(
+            nn.Linear(4096 * 3, 4096 * 3),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.fc7_hidden_len * 3 + 4 * 2),
-            nn.ReLU(),
-            nn.Dropout(),
-            nn.Linear(self.fc7_hidden_len * 3 + 4 * 2, self.obj_embedding_len))
+            nn.Linear(4096 * 3, self.obj_embedding_len))
 
         self.order_embedding = nn.Sequential(
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(self.obj_embedding_len * 3, self.obj_embedding_len * 3),
+            nn.Linear(self.obj_embedding_len * 3 + 8, self.obj_embedding_len * 3 + 8),
             nn.ReLU(),
             nn.Dropout(),
             nn.Linear(self.obj_embedding_len * 3, self.embedding_len))
@@ -109,62 +100,52 @@ class _HierRelaVis(nn.Module):
         sbj_boxes = gt_boxes[:, :, 5:10]
         obj_boxes = gt_boxes[:, :, 10:15]
 
-        raw_pre_rois = torch.zeros(pre_boxes.size())
-        raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]
-        rois = Variable(raw_pre_rois).cuda()
+        raw_rois = torch.zeros(pre_boxes.shape[0], pre_boxes.shape[1]*3, pre_boxes.shape[2])
+        raw_rois[:, :pre_boxes.shape[1], 1:] = pre_boxes[:, :, :4]
+        raw_rois[:, pre_boxes.shape[1]:pre_boxes.shape[1]*2, 1:] = sbj_boxes[:, :, :4]
+        raw_rois[:, pre_boxes.shape[1]*2:pre_boxes.shape[1]*3, 1:] = obj_boxes[:, :, :4]
+        rois = Variable(raw_rois).cuda()
 
         if cfg.POOLING_MODE == 'crop':
             # pdb.set_trace()
             # pooled_feat_anchor = _crop_pool_layer(base_feat, rois.view(-1, 5))
             grid_xy = _affine_grid_gen(rois.view(-1, 5), base_feat.size()[2:], self.grid_size)
             grid_yx = torch.stack([grid_xy.data[:,:,:,1], grid_xy.data[:,:,:,0]], 3).contiguous()
-            pre_pooled_feat = self.RCNN_roi_crop(base_feat, Variable(grid_yx).detach())
+            pooled_feat = self.RCNN_roi_crop(base_feat, Variable(grid_yx).detach())
             if cfg.CROP_RESIZE_WITH_MAX_POOL:
-                pre_pooled_feat = F.max_pool2d(pre_pooled_feat, 2, 2)
+                pooled_feat = F.max_pool2d(pooled_feat, 2, 2)
         elif cfg.POOLING_MODE == 'align':
-            pre_pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+            pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
         elif cfg.POOLING_MODE == 'pool':
-            pre_pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
+            pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
         # feed pooled features to top model(fc7)
-        pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
+        pooled_feat = self._head_to_tail(pooled_feat)
 
-        sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
+        pre_pooled_feat = pooled_feat[:pre_boxes.shape[1], :]
+        sbj_pooled_feat = pooled_feat[pre_boxes.shape[1]:pre_boxes.shape[1]*2, :]
+        obj_pooled_feat = pooled_feat[pre_boxes.shape[1]*2:pre_boxes.shape[1]*3, :]
 
-        with torch.no_grad():
-            sbj_obj_pooled_feat, _ = self._hierRCNN.ext_feat(im_data, im_info,
-                                                            sbj_obj_boxes, num_boxes * 2,
-                                                            use_rpn=False)
-
-        num_boxes_padding = gt_boxes.size(1)
-        sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
-        obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
-
-        pre_hidden = self.pre_hidden(pre_pooled_feat)
-        sbj_hidden = self.sbj_hidden(sbj_pooled_feat)
-        obj_hidden = self.obj_hidden(obj_pooled_feat)
+        vis_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
+        vis_embedding = self.vis_embedding(vis_feat_use)
 
         spacial_feat = self._ext_box_feat(gt_boxes)
         sbj_spacial_feat = spacial_feat[:, :4]
         obj_spacial_feat = spacial_feat[:, 4:]
 
-        pooled_feat_use = torch.cat([sbj_hidden, sbj_spacial_feat, obj_hidden, obj_spacial_feat, pre_hidden], 1)
-
-        vis_embedding = self.vis_embedding(pooled_feat_use)
-
         sbj_vecs = self.obj_label_vecs[sbj_label.view(-1).long(), :]
         obj_vecs = self.obj_label_vecs[obj_label.view(-1).long(), :]
 
-        feat_use = torch.cat([sbj_vecs, vis_embedding, obj_vecs], 1)
+        feat_use = torch.cat([sbj_vecs, sbj_spacial_feat, obj_vecs, obj_spacial_feat, vis_embedding], 1)
         pre_embedding = self.order_embedding(feat_use)
 
         # compute order similarity
         if pre_embedding.size(0) < 30:
             # fast, memory consuming
-            cls_score_use = self.order_score.forward(self.label_vecs, pre_embedding)
+            cls_score_use = self.order_score.forward(self.pre_label_vecs, pre_embedding)
         else:
             # slow, memory saving
-            cls_score_use = self.order_score.forward1(self.label_vecs, pre_embedding)
+            cls_score_use = self.order_score.forward1(self.pre_label_vecs, pre_embedding)
         # ===== order embedding here =====/
 
         RCNN_loss_cls = 0

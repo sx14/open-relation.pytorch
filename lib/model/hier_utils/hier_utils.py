@@ -21,10 +21,11 @@ class OrderSimilarity(nn.Module):
             sub = self.act(sub)
             # norm 2
             order_dis = sub.norm(p=self._norm, dim=1)
-            # order_dis[order_dis < 0.0001] = 0.0001
-            # order_sim = -order_dis
-            # order_scores[i] = order_sim
-            order_scores[i] = -torch.log(order_dis)
+            # order_dis = order_dis + 0.00001
+            # order_scores[i] = -torch.log(order_dis)
+            order_sim = -order_dis
+            order_scores[i] = order_sim
+
         return order_scores
 
     def forward(self, lab_vecs, vis_vecs):

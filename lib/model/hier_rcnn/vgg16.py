@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import math
 import torchvision.models as models
-from lib.model.heir_rcnn.hier_rcnn import _HierRCNN
+from lib.model.hier_rcnn.hier_rcnn import _HierRCNN
 
 import pdb
 

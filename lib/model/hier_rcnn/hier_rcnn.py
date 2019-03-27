@@ -133,16 +133,12 @@ class _HierRCNN(nn.Module):
             bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
             bbox_pred = bbox_pred_select.squeeze(1)
 
-
-
-        # ===== class prediction part =====
         # ===== order embedding here =====\
         rois_label_use = rois_label
         pooled_feat_use = pooled_feat
         if self.training:
             rois_label_use = rois_label[rois_label>self.objnet.background().index()]
             pooled_feat_use = pooled_feat[rois_label>self.objnet.background().index(), :]
-
 
         # visual embedding
         vis_embedding_use = self.order_embedding(pooled_feat_use)
@@ -160,7 +156,6 @@ class _HierRCNN(nn.Module):
         RCNN_loss_bbox = 0
 
         if self.training:
-            start = time.time()
             pos_negs = self._loss_labels(rois_label_use)
             loss_score, y = self._prepare_loss_input(cls_score_use, pos_negs)
             # loss_score, y = self._process_scores(cls_score_use, rois_label_use)

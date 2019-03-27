@@ -24,7 +24,7 @@ from lib.roi_data_layer.roidb import combined_roidb
 from lib.roi_data_layer.roibatchLoader import roibatchLoader
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
-from lib.model.heir_rcnn.vgg16 import vgg16
+from lib.model.hier_rcnn.vgg16 import vgg16
 
 from global_config import HierLabelConfig
 

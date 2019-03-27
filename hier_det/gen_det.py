@@ -14,7 +14,7 @@ import time
 
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
-from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_det.det_utils import *

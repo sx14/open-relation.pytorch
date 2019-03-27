@@ -9,7 +9,7 @@ from torch.nn.functional import softmax
 
 
 class TreeNode:
-    def __init__(self, name, index, info_ratio):
+    def __init__(self, name, index, info_ratio, is_raw):
         self._cond_prob = 0.0
         self._raw_score = None
         self._prob = 0.0
@@ -18,9 +18,13 @@ class TreeNode:
         self._parents = []
         self._children = []
         self._info_ratio = info_ratio
+        self._is_raw = is_raw
 
     def __str__(self):
         return '%s[%.2f]' % (self._name, self.score())
+
+    def is_raw(self):
+        return self._is_raw
 
     def raw_score(self):
         return self._raw_score
@@ -95,7 +99,7 @@ def construct_tree(labelnet, scores):
     # node meta info
     for ind in range(labelnet.label_sum()):
         hnode = labelnet.get_node_by_index(ind)
-        tnode = TreeNode(hnode.name(), ind, hnode.depth_ratio())
+        tnode = TreeNode(hnode.name(), ind, hnode.depth_ratio(), hnode.is_raw())
         ind2node.append(tnode)
 
     # node hierarchy
@@ -134,7 +138,7 @@ def good_thresh(max_depth, depth):
     return thresh
 
 
-def top_down_search(root):
+def top_down_search(root, mode='hier'):
     root.set_cond_prob(1.0)
     node = root
     path_scores = [0.0]
@@ -156,6 +160,10 @@ def top_down_search(root):
         pred_c_ind = torch.argmax(c_scores_s)
         pred_c_node = node.children()[pred_c_ind]
         hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
+
+        if mode == 'raw' and not pred_c_node.is_raw():
+            continue
+
         path_scores.append(hedge_c_scr)
         path_nodes.append(pred_c_node)
         # print('(%.2f)\t(%.2f)\t(%.2f)\t(%.2f) %s' % (node.prob(), node.cond_prob(), node.entropy(), node.info_ratio(), node.name()))
@@ -186,9 +194,9 @@ def cal_pos_cond_prob(node):
     cal_pos_cond_prob(node.children()[pred_c_ind])
 
 
-def my_infer(labelnet, scores):
+def my_infer(labelnet, scores, mode='hier'):
     tnodes = construct_tree(labelnet, scores)
-    choice = top_down_search(tnodes[labelnet.root().index()])
+    choice = top_down_search(tnodes[labelnet.root().index()], mode)
     return [[choice.index(), choice.score()], [choice.index(), choice.score()]]
 
 

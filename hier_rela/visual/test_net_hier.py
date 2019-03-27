@@ -26,6 +26,7 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import HierLabelConfig
 
 import pdb
@@ -208,6 +209,7 @@ if __name__ == '__main__':
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
     use_rpn = False
+
     N_count = 0
     flat_count = 0.0
     hier_score_sum = 0.0
@@ -234,22 +236,16 @@ if __name__ == '__main__':
                 N_count += 1
                 gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
                 gt_node = prenet.get_node_by_index(int(gt_cate))
-                # print('==== %s ====' % gt_node.name())
                 all_scores = scores[0][ppp].cpu().data.numpy()
-                ranked_inds = np.argsort(all_scores)[::-1][:20]
-                sorted_scrs = np.sort(all_scores)[::-1][:20]
-                # for item in zip(ranked_inds, sorted_scrs):
-                #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
 
-                raw_scores = all_scores[raw_label_inds]
-                pred_raw_ind = np.argmax(raw_scores[1:]) + 1
-                pred_cate = raw_label_inds[pred_raw_ind]
+                # raw_scores = all_scores[raw_label_inds]
+                # pred_raw_ind = np.argmax(raw_scores[1:]) + 1
+                # pred_cate = raw_label_inds[pred_raw_ind]
+                top2 = my_infer(prenet, all_scores, 'raw')
+                pred_cate = top2[0][0]
                 pred_node = prenet.get_node_by_index(pred_cate)
 
-                gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
-                gt_node = prenet.get_node_by_index(int(gt_cate))
                 hier_scr = gt_node.score(pred_cate)
-
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
 
                 if pred_cate == gt_cate:

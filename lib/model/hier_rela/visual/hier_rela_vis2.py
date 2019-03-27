@@ -75,7 +75,7 @@ class _HierRelaVis(nn.Module):
             nn.Linear(self.obj_embedding_len * 3 + 8, self.obj_embedding_len * 3 + 8),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(self.obj_embedding_len * 3, self.embedding_len))
+            nn.Linear(self.obj_embedding_len * 3 + 8, self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 
@@ -153,6 +153,7 @@ class _HierRelaVis(nn.Module):
         if self.training:
             RCNN_loss_cls = self._loss.forward(cls_score_use, pre_label)
 
+        rois = rois[:, :pre_boxes.shape[1], :]
         cls_score = cls_score_use.view(batch_size, rois.size(1), -1)
         rois_label = torch.stack((pre_label, sbj_label, obj_label), dim=1)
         rois_label.unsqueeze(0)

@@ -311,7 +311,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
   if args.cuda:
-    hierRCNN.cuda()
+    # hierRCNN.cuda()
     hierVis.cuda()
 
   if args.resume:

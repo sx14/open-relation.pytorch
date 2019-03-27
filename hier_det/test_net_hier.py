@@ -21,7 +21,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rcnn.vgg16 import vgg16
-from lib.model.hier_utils.tree_infer import my_infer
+from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import HierLabelConfig, PROJECT_ROOT
 from hier_det.test_utils import det_recall, load_vrd_det_boxes
 
@@ -107,7 +107,6 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg1000.label_hier.obj_hier import objnet
         args.class_agnostic = True
-        # TODO: 之后要变成True, 目前训练的是False
 
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
@@ -142,7 +141,7 @@ if __name__ == '__main__':
     if args.net == 'vgg16':
         labelconf = HierLabelConfig(args.dataset, 'object')
         label_vec_path = labelconf.label_vec_path()
-        hierRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=args.class_agnostic)
+        hierRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=True)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -300,4 +299,4 @@ if __name__ == '__main__':
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
-    print("Rec heir Acc: %.4f" % (TP_score / N_count))
+    print("Rec hier Acc: %.4f" % (TP_score / N_count))

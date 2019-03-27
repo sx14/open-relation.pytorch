@@ -148,8 +148,8 @@ def top_down_search(root):
         for i, c in enumerate(node.children()):
             c.set_cond_prob(c_scores_s[i].data.numpy().tolist())
 
-        if node.entropy() > 0.7 and node.depth() > 2:
-            break
+        # if node.entropy() > 0.7 and node.depth() > 2:
+        #     break
 
         pred_c_ind = torch.argmax(c_scores_s)
         pred_c_node = node.children()[pred_c_ind]

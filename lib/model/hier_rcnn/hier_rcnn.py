@@ -148,8 +148,6 @@ class _HierRCNN(nn.Module):
             cls_score_use = self.order_score.forward1(self.label_vecs, vis_embedding_use)
         else:
             cls_score_use = self.order_score.forward(self.label_vecs, vis_embedding_use)
-        end = time.time()
-        # print('Order Scoring Time: %.2f s' % (end - start))
         # ===== order embedding here =====/
 
         RCNN_loss_cls = 0
@@ -158,9 +156,6 @@ class _HierRCNN(nn.Module):
         if self.training:
             pos_negs = self._loss_labels(rois_label_use)
             loss_score, y = self._prepare_loss_input(cls_score_use, pos_negs)
-            # loss_score, y = self._process_scores(cls_score_use, rois_label_use)
-            end = time.time()
-            # print('Pos_Neg_label Time: %.2f' % (end - start))
             # classification loss
             RCNN_loss_cls = F.cross_entropy(loss_score, y)
             # bounding box regression L1 loss

@@ -242,7 +242,6 @@ if __name__ == '__main__':
 
   # load pretrained model
   load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset
-
   print("load pretrained model: %s" % (load_name))
   checkpoint = torch.load(load_name)
   pre_state_dict = checkpoint['model']
@@ -264,7 +263,8 @@ if __name__ == '__main__':
     if value.requires_grad:
       # larger lr for embedding layer
       if 'order' in key:
-        lr_use = lr * 10
+        # lr_use = lr * 10
+        lr_use = lr
       else:
         lr_use = lr
 

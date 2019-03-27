@@ -76,7 +76,6 @@ class PreNet(LabelHier):
         # basic level
         basic_level = {
             'on.s': 'spatial.a',
-            'wear.i': 'interact.a',
             'has.p': 'possess.a',
             'behind.s': 'spatial.a',
             'in the front of.s': 'spatial.a',
@@ -124,7 +123,7 @@ class PreNet(LabelHier):
         }
 
         concrete_level = {
-            'wear': 'wear.i',
+            'wear': 'has.p',
             'has': 'has.p',
             'sleep next to': 'next to',
             'sit next to': 'next to',
@@ -142,12 +141,12 @@ class PreNet(LabelHier):
             'walk': 'walk.i',
             'walk past': 'walk.i',
             'in': 'in.s',
-            'below': 'under',
+            'below': 'under.s',
             'walk beside': 'beside',
             'over': 'on.s',
             'hold': 'carry.i',
             'by': 'beside',
-            'beneath': 'under',
+            'beneath': 'under.s',
             'with': 'with.p',
             'on the top of': 'on',
             'on the left of': 'beside',

@@ -3,8 +3,8 @@ import h5py
 import numpy as np
 from global_config import HierLabelConfig
 
-dataset_name = 'vg'
-target = 'object'
+dataset_name = 'vrd'
+target = 'predicate'
 
 if dataset_name == 'vrd' and target == 'object':
     from lib.datasets.vrd.label_hier.obj_hier import objnet as classnet

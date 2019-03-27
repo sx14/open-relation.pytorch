@@ -223,73 +223,75 @@ if __name__ == '__main__':
 
 
         # --------------- k=70 ------------------
-        raw_scores = scores[0][:, raw_labels].cpu().data.numpy()
-        pred_cates = torch.zeros(min(100, raw_scores.shape[0]*raw_scores.shape[1]))
-        pred_scores = torch.zeros(min(100, raw_scores.shape[0]*raw_scores.shape[1]))
-        pred_scores = map_score(pred_scores)
-
-        aaa = np.argsort(-raw_scores.ravel())
-        bbb = np.unravel_index(aaa, raw_scores.shape)
-        ccc = np.dstack(bbb)[0]
-        raw_label_inds = ccc[:100]
-
-        roi_inds = []
-        for c in range(raw_label_inds.shape[0]):
-            roi_inds.append(raw_label_inds[c, 0])
-            pred_cates[c] = raw_labels[raw_label_inds[c, 1]]
-            pred_scores[c] = raw_scores[raw_label_inds[c, 0], raw_label_inds[c, 1]].item()
-        rois_use = np.array(rois_use)
-        pred_rois = torch.FloatTensor(rois_use[roi_inds, :])
+        # raw_scores = scores[0][:, raw_labels].cpu().data
+        # raw_scores = map_score(raw_scores)
+        # raw_scores = raw_scores.numpy()
+        # pred_cates = torch.zeros(min(100, raw_scores.shape[0]*raw_scores.shape[1]))
+        # pred_scores = torch.zeros(min(100, raw_scores.shape[0]*raw_scores.shape[1]))
+        #
+        # aaa = np.argsort(-raw_scores.ravel())
+        # bbb = np.unravel_index(aaa, raw_scores.shape)
+        # ccc = np.dstack(bbb)[0]
+        # raw_label_inds = ccc[:100]
+        #
+        # roi_inds = []
+        # for c in range(raw_label_inds.shape[0]):
+        #     roi_inds.append(raw_label_inds[c, 0])
+        #     pred_cates[c] = raw_labels[raw_label_inds[c, 1]]
+        #     pred_scores[c] = raw_scores[raw_label_inds[c, 0], raw_label_inds[c, 1]].item()
+        # rois_use = np.array(rois_use)
+        # pred_rois = torch.FloatTensor(rois_use[roi_inds, :])
         # ----------------------------------------
 
         # # k=1
-        # pred_cates = torch.zeros(rois[0].shape[0])
-        # pred_scores = torch.zeros(rois[0].shape[0])
-        #
-        # for ppp in range(scores.size()[1]):
-        #     N_count += 1
-        #
-        #     if relas_zero[ppp] == 1:
-        #         zero_N_count += 1
-        #
-        #     all_scores = scores[0][ppp].cpu().data.numpy()
-        #     top2 = my_infer(prenet, all_scores)
-        #     pred_cate = top2[0][0]
-        #     pred_scr = top2[0][1]
-        #
-        #     raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-        #     pred_cates[ppp] = raw_cate
-        #     pred_scores[ppp] = score(raw_score)
-        #
-        #     if args.mode == 'pre':
-        #         gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-        #         gt_node = prenet.get_node_by_index(int(gt_cate))
-        #
-        #         raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-        #         raw_scr = gt_node.score(raw_cate)
-        #         raw_score_sum += raw_scr
-        #
-        #         if relas_zero[ppp] == 1:
-        #             zero_raw_score_sum += raw_scr
-        #
-        #         hier_scr = gt_node.score(pred_cate)
-        #         pred_node = prenet.get_node_by_index(pred_cate)
-        #         info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
-        #         if hier_scr > 0:
-        #             TP_count += 1
-        #             hier_score_sum += hier_scr
-        #
-        #             if relas_zero[ppp] == 1:
-        #                 zero_TP_count += 1
-        #                 zero_hier_score_sum += hier_scr
-        #
-        #             info = 'T: ' + info
-        #         else:
-        #             info = 'F: ' + info
-        #             pass
-        #         print(info)
-        #
-        # pred_rois = torch.FloatTensor(rois_use)
+        pred_cates = torch.zeros(rois[0].shape[0])
+        pred_scores = torch.zeros(rois[0].shape[0])
+
+        for ppp in range(scores.size()[1]):
+            N_count += 1
+
+            if relas_zero[ppp] == 1:
+                zero_N_count += 1
+
+            all_scores = scores[0][ppp].cpu().data.numpy()
+            top2 = my_infer(prenet, all_scores)
+            pred_cate = top2[0][0]
+            pred_scr = top2[0][1]
+
+            all_scores = map_score(torch.from_numpy(all_scores))
+            raw_cate, raw_score = get_raw_pred(all_scores.numpy(), raw_labels)
+            pred_cates[ppp] = raw_cate
+            pred_scores[ppp] = score(raw_score)
+
+            if args.mode == 'pre':
+                gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
+                gt_node = prenet.get_node_by_index(int(gt_cate))
+
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_labels)
+                raw_scr = gt_node.score(raw_cate)
+                raw_score_sum += raw_scr
+
+                if relas_zero[ppp] == 1:
+                    zero_raw_score_sum += raw_scr
+
+                hier_scr = gt_node.score(pred_cate)
+                pred_node = prenet.get_node_by_index(pred_cate)
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), hier_scr))
+                if hier_scr > 0:
+                    TP_count += 1
+                    hier_score_sum += hier_scr
+
+                    if relas_zero[ppp] == 1:
+                        zero_TP_count += 1
+                        zero_hier_score_sum += hier_scr
+
+                    info = 'T: ' + info
+                else:
+                    info = 'F: ' + info
+                    pass
+                print(info)
+
+        pred_rois = torch.FloatTensor(rois_use)
         sbj_scores = pred_rois[:, -3]
         obj_scores = pred_rois[:, -2]
         rela_scores = pred_scores * sbj_scores * obj_scores

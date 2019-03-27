@@ -63,13 +63,13 @@ class TreeNode:
         return self._info_ratio
 
     def score(self):
-        if self._raw_score <= -1:
-            scr = self._raw_score + 1
-        else:
-            scr = -1.0 / min(self._raw_score, -0.0001) - 1
-        scr = 1.0 / (1.0 + exp(-scr))
-        return scr
-        # return -1.0 / min(self._raw_score, -0.0001)
+        # if self._raw_score <= -1:
+        #     scr = self._raw_score + 1
+        # else:
+        #     scr = -1.0 / min(self._raw_score, -0.0001) - 1
+        # scr = 1.0 / (1.0 + exp(-scr))
+        # return scr
+        return self._raw_score
 
     def entropy(self):
 
@@ -182,8 +182,6 @@ def cal_pos_cond_prob(node):
 
     pred_c_ind = torch.argmax(c_scores_s)
     cal_pos_cond_prob(node.children()[pred_c_ind])
-
-
 
 
 def my_infer(labelnet, scores):

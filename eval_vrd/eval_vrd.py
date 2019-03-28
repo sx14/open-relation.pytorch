@@ -61,7 +61,7 @@ for i in range(1000):
             ss_iou = compute_iou_each(gt_sbj_box, pred_sbj_box)
             oo_iou = compute_iou_each(gt_sbj_box, pred_sbj_box)
 
-            if ss_iou > 0.9 and oo_iou > 0.9 and pred_sbj == gt_sbj and pred_obj == gt_obj:
+            if ss_iou >= 0.5 and oo_iou >= 0.5 and pred_sbj == gt_sbj and pred_obj == gt_obj:
                 gt_label = raw_labels[gt_pre]
                 pred_label = raw_labels[pred_pre]
                 gt_node = prenet.get_node_by_name(gt_label)

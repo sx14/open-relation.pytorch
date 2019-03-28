@@ -216,10 +216,10 @@ def gen_Annotations(vrd_root, vrd_pascal_root):
         for i, (img_name, org_anno) in enumerate(ds_anno_pkg.items()):
             if (i+1) % 1000 == 0:
                 print(i+1)
-            if not img_name.endswith('jpg'):
+            # if not img_name.endswith('jpg'):
                 # ATTENTION: only JPEG image is legal
-                print(img_name + ' is discarded.')
-                continue
+                # print(img_name + ' is discarded.')
+                # continue
             # removing redundant objects from relations
             # collect relationships
             obj_box_labels = []
@@ -281,13 +281,13 @@ if __name__ == '__main__':
     }
 
     # # to pascal format for object detection training
-    # gen_JPEGImages(vrd_root, vrd_root)
-    # gen_ImageSets(vrd_root, vrd_root)
-    # gen_Annotations(vrd_root, vrd_root)
+    # gen_JPEGImages(VRD_ROOT, VRD_ROOT)
+    gen_ImageSets(VRD_ROOT, VRD_ROOT)
+    gen_Annotations(VRD_ROOT, VRD_ROOT)
     #
     # # to json format for predicate recognition training
-    # split_anno_pkg(vrd_config)
-    # reformat_anno(vrd_config)
+    split_anno_pkg(vrd_config)
+    reformat_anno(vrd_config)
 
     # for eval
     roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')

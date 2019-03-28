@@ -36,7 +36,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vg', type=str)
+                      default='vrd', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -263,8 +263,8 @@ if __name__ == '__main__':
     if value.requires_grad:
       # larger lr for embedding layer
       if 'order' in key:
-        # lr_use = lr * 10
-        lr_use = lr
+        lr_use = lr * 10
+        # lr_use = lr
       else:
         lr_use = lr
 

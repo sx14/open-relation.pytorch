@@ -282,8 +282,8 @@ if __name__ == '__main__':
 
     # # to pascal format for object detection training
     # gen_JPEGImages(VRD_ROOT, VRD_ROOT)
-    gen_ImageSets(VRD_ROOT, VRD_ROOT)
-    gen_Annotations(VRD_ROOT, VRD_ROOT)
+    # gen_ImageSets(VRD_ROOT, VRD_ROOT)
+    # gen_Annotations(VRD_ROOT, VRD_ROOT)
     #
     # # to json format for predicate recognition training
     split_anno_pkg(vrd_config)

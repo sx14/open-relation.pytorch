@@ -30,7 +30,6 @@ def confirm(img_path, dets):
         box[3] = h
         boxes.append(box)
 
-
     show_boxes(im, boxes, cls)
 
 

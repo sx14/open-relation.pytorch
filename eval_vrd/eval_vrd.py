@@ -17,6 +17,7 @@ def compute_iou_each(box1, box2):
         IoU = area_I / float(area1 + area2 - area_I)
     return IoU
 
+
 pred = scipy.io.loadmat('predicate_det_result.mat')
 gt = scipy.io.loadmat('gt.mat')
 

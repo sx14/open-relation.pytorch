@@ -39,6 +39,7 @@ def confirm(img_path, dets):
 
 
 # load dsr det
+dsr_proposal_path = os.path.join(PROJECT_ROOT, 'eval_dsr', 'proposal.pkl')
 with open('proposal.pkl', 'rb') as fid:
     proposals = cPickle.load(fid)
     det_boxes = proposals['boxes']
@@ -105,7 +106,8 @@ with open(save_path, 'wb') as f:
 proposals['boxes'] = det_boxes
 proposals['cls'] = det_labels
 proposals['confs'] = det_confs
-with open('proposal_nms.pkl', 'wb') as fid:
+dsr_proposal_path = os.path.join(PROJECT_ROOT, 'eval_dsr', 'proposal_nms.pkl')
+with open(dsr_proposal_path, 'wb') as fid:
     cPickle.dump(proposals, fid)
 
 

@@ -59,35 +59,33 @@ class _HierRelaVis(nn.Module):
         # Our model
         # fc7(4096) -> emb(600)
         self.order_in_embedding = nn.Sequential(
-            nn.Linear(4096 + 4 * 2, 4096 + 4 * 2),
+            nn.Linear(4096*3, 4096),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(4096 + 4 * 2, self.embedding_len))
+            nn.Linear(4096, self.embedding_len))
 
-        # self.order_ex_embedding = nn.Sequential(
-        #     nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
-        #               self.embedding_len + self._hierRCNN.embedding_len * 2),
-        #     nn.ReLU(),
-        #     nn.Dropout(),
-        #     nn.Linear(self.embedding_len + 2 * self._hierRCNN.embedding_len,
-        #               self.embedding_len))
+        self.order_ex_embedding = nn.Sequential(
+            nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
+                      self.embedding_len + self._hierRCNN.embedding_len * 2),
+            nn.ReLU(),
+            nn.Dropout(),
+            nn.Linear(self.embedding_len + 2 * self._hierRCNN.embedding_len,
+                      self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
+
+        im_info = im_info.data
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
 
-        if num_boxes.item() > 0:
-            gt_boxes = gt_boxes[:, :num_boxes.item(), :]
-        else:
-            print('[sunx] Attention: No rela box in current batch.')
+        gt_boxes = gt_boxes[:, :num_boxes.item(), :]
 
         # pre_label = gt_boxes[:, :, 4][0]
         # mask = pre_label != 0
         # gt_boxes = gt_boxes[:, mask, :]
-
 
 
         # feed image data to base model to obtain base feature map
@@ -123,28 +121,26 @@ class _HierRelaVis(nn.Module):
 
         sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
 
-        # with torch.no_grad():
-        #     sbj_obj_pooled_feat = self._hierRCNN.ext_feat(im_data, im_info,
-        #                                                 sbj_obj_boxes,num_boxes * 2,
-        #                                                 use_rpn=False)
+        with torch.no_grad():
+            sbj_obj_pooled_feat, \
+            sbj_obj_embedding = self._hierRCNN.ext_feat(im_data, im_info,
+                                                        sbj_obj_boxes,num_boxes * 2,
+                                                        use_rpn=False)
 
         num_boxes_padding = gt_boxes.size(1)
-        # sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
-        # obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
-
-        spacial_feat_use = self._ext_box_feat(gt_boxes)
+        sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
+        obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
+        sbj_embedding = sbj_obj_embedding[:num_boxes_padding, :]
+        obj_embedding = sbj_obj_embedding[num_boxes_padding:, :]
 
         # ===== class prediction part =====
         # ===== order embedding here =====\
-        pooled_feat_use = torch.cat([pre_pooled_feat, spacial_feat_use], 1)
+        pooled_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
 
         # visual embedding
-        #pre_embedding0 = self.order_in_embedding(pooled_feat_use)
-        # pre_feat = torch.cat([sbj_embedding, pre_embedding0, obj_embedding], 1)
-        # pre_embedding = self.order_ex_embedding(pre_feat)
-
-        pre_embedding = self.order_in_embedding(pooled_feat_use)
-
+        pre_embedding0 = self.order_in_embedding(pooled_feat_use)
+        pre_feat = torch.cat([sbj_embedding, pre_embedding0, obj_embedding], 1)
+        pre_embedding = self.order_ex_embedding(pre_feat)
 
         # compute order similarity
         if pre_embedding.size(0) < 30:
@@ -166,6 +162,63 @@ class _HierRelaVis(nn.Module):
 
         return rois, cls_score, RCNN_loss_cls, rois_label
 
+    def ext_fc7(self, im_data, im_info, gt_boxes, num_boxes):
+        batch_size = im_data.size(0)
+
+        im_info = im_info.data
+        gt_boxes = gt_boxes.data
+        num_boxes = num_boxes.data
+
+        # feed image data to base model to obtain base feature map
+        base_feat = self.RCNN_base(im_data)
+
+        pre_label = gt_boxes[:, :, 4][0]
+        sbj_label = gt_boxes[:, :, 9][0]
+        obj_label = gt_boxes[:, :, 14][0]
+
+        pre_boxes = gt_boxes[:, :, :5]
+        sbj_boxes = gt_boxes[:, :, 5:10]
+        obj_boxes = gt_boxes[:, :, 10:15]
+
+        raw_pre_rois = torch.zeros(pre_boxes.size())
+        raw_pre_rois[:, :, 1:] = pre_boxes[:, :, :4]
+        rois = Variable(raw_pre_rois).cuda()
+
+        if cfg.POOLING_MODE == 'crop':
+            # pdb.set_trace()
+            # pooled_feat_anchor = _crop_pool_layer(base_feat, rois.view(-1, 5))
+            grid_xy = _affine_grid_gen(rois.view(-1, 5), base_feat.size()[2:], self.grid_size)
+            grid_yx = torch.stack([grid_xy.data[:,:,:,1], grid_xy.data[:,:,:,0]], 3).contiguous()
+            pre_pooled_feat = self.RCNN_roi_crop(base_feat, Variable(grid_yx).detach())
+            if cfg.CROP_RESIZE_WITH_MAX_POOL:
+                pre_pooled_feat = F.max_pool2d(pre_pooled_feat, 2, 2)
+        elif cfg.POOLING_MODE == 'align':
+            pre_pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+        elif cfg.POOLING_MODE == 'pool':
+            pre_pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
+
+        # feed pooled features to top model(fc7)
+        pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
+
+        sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
+
+        with torch.no_grad():
+            sbj_obj_pooled_feat, \
+            sbj_obj_embedding = self._hierRCNN.ext_feat(im_data, im_info,
+                                                        sbj_obj_boxes,num_boxes * 2,
+                                                        use_rpn=False)
+
+        num_boxes_padding = gt_boxes.size(1)
+        sbj_pooled_feat = sbj_obj_pooled_feat[:num_boxes_padding, :]
+        obj_pooled_feat = sbj_obj_pooled_feat[num_boxes_padding:, :]
+        sbj_embedding = sbj_obj_embedding[:num_boxes_padding, :]
+        obj_embedding = sbj_obj_embedding[num_boxes_padding:, :]
+
+        # ===== class prediction part =====
+        # ===== order embedding here =====\
+        pooled_feat_use = torch.cat([sbj_pooled_feat, pre_pooled_feat, obj_pooled_feat], 1)
+        return pooled_feat_use
+
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):
             """
@@ -179,41 +232,7 @@ class _HierRelaVis(nn.Module):
                 m.bias.data.zero_()
 
         normal_init(list(self.order_in_embedding._modules.values())[0], 0, 0.01, cfg.TRAIN.TRUNCATED)
-        # normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
-
-
-    def _ext_box_feat(self, gt_relas):
-
-        # spacial feats
-        sbj_boxes = gt_relas[0, :, 5:9]
-        obj_boxes = gt_relas[0, :, 10:14]
-
-        sbj_boxes_w = sbj_boxes[:, 2] - sbj_boxes[:, 0]
-        sbj_boxes_h = sbj_boxes[:, 3] - sbj_boxes[:, 1]
-
-        obj_boxes_w = obj_boxes[:, 2] - obj_boxes[:, 0]
-        obj_boxes_h = obj_boxes[:, 3] - obj_boxes[:, 1]
-
-        sbj_tx = (sbj_boxes[:, 0] - obj_boxes[:, 0]) / sbj_boxes_w
-        sbj_ty = (sbj_boxes[:, 1] - obj_boxes[:, 1]) / sbj_boxes_h
-        sbj_tw = torch.log(sbj_boxes_w / obj_boxes_w)
-        sbj_th = torch.log(sbj_boxes_h / obj_boxes_h)
-
-        obj_tx = (obj_boxes[:, 0] - sbj_boxes[:, 0]) / obj_boxes_w
-        obj_ty = (obj_boxes[:, 1] - sbj_boxes[:, 1]) / obj_boxes_h
-        obj_tw = torch.log(obj_boxes_w / sbj_boxes_w)
-        obj_th = torch.log(obj_boxes_h / sbj_boxes_h)
-
-        sbj_feat_vecs = torch.cat([sbj_tx.unsqueeze(1), sbj_ty.unsqueeze(1),
-                                   sbj_tw.unsqueeze(1), sbj_th.unsqueeze(1)], dim=1)
-        obj_feat_vecs = torch.cat([obj_tx.unsqueeze(1), obj_ty.unsqueeze(1),
-                                   obj_tw.unsqueeze(1), obj_th.unsqueeze(1)], dim=1)
-
-        # transe
-        # spatial_vecs = sbj_feat_vecs - obj_feat_vecs
-        spatial_vecs = torch.cat([sbj_feat_vecs, obj_feat_vecs], dim=1)
-        return spatial_vecs
-
+        normal_init(list(self.order_ex_embedding._modules.values())[-1], 0, 0.01, cfg.TRAIN.TRUNCATED)
 
     def create_architecture(self):
         self._init_modules()

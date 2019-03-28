@@ -24,7 +24,7 @@ from lib.roi_data_layer.hierRoibatchLoader import roibatchLoader
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
 
 from global_config import HierLabelConfig
 
@@ -157,11 +157,11 @@ if __name__ == '__main__':
   print(args)
 
   if args.dataset == "vg":
-      args.imdb_name = "vg_2016_trainval"
-      args.imdbval_name = "vg_2016_test"
+      args.imdb_name = "vg_2007_trainval"
+      args.imdbval_name = "vg_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-      from lib.datasets.vg200.label_hier.obj_hier import objnet
-      from lib.datasets.vg200.label_hier.pre_hier import prenet
+      from lib.datasets.vg1000.label_hier.obj_hier import objnet
+      from lib.datasets.vg1000.label_hier.pre_hier import prenet
   elif args.dataset == "vrd":
       args.imdb_name = "vrd_2016_trainval"
       args.imdbval_name = "vrd_2016_test"
@@ -235,39 +235,24 @@ if __name__ == '__main__':
     cfg.CUDA = True
 
   # initilize the network here.
-  # with torch.no_grad():
-  #   objconf = HierLabelConfig(args.dataset, 'object')
-  #   obj_vec_path = objconf.label_vec_path()
-  #   hierRCNN = vgg16_det(objnet, objconf.label_vec_path())
-  #   hierRCNN.create_architecture()
-  #
-  #   # load HierRCNN model
-  #   # load_name = '../../data/pretrained_model/faster_rcnn_%s.pth' % args.dataset
-  #   # print("HierRCNN: load pretrained model: %s" % (load_name))
-  #   # checkpoint = torch.load(load_name)
-  #   # hierRCNN.load_state_dict(checkpoint['model'])
-  #   # hierRCNN.eval()
-  #
-  #   load_name = '../../data/pretrained_model/pretrained_%s.pth' % args.dataset
-  #   print("HierRCNN: load pretrained model: %s" % (load_name))
-  #   checkpoint = torch.load(load_name)
-  #   pre_state_dict = checkpoint['model']
-  #
-  #   pre_state_dict = {k: v for k, v in pre_state_dict.items()
-  #                     if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k}
-  #
-  #   hierRCNN_state_dict = hierRCNN.state_dict()
-  #   hierRCNN_state_dict.update(pre_state_dict)
-  #   hierRCNN.load_state_dict(hierRCNN_state_dict)
-  #
-  #   for name, p in hierRCNN.named_parameters():
-  #       p.requires_grad = False
+  with torch.no_grad():
+    objconf = HierLabelConfig(args.dataset, 'object')
+    obj_vec_path = objconf.label_vec_path()
+    hierRCNN = vgg16_det(objnet, obj_vec_path)
+    hierRCNN.create_architecture()
 
-  objconf = HierLabelConfig(args.dataset, 'object')
+    # load HierRCNN model
+    load_name = '../../data/pretrained_model/hier_rcnn_%s.pth' % args.dataset
+    print("HierRCNN: load pretrained model: %s" % (load_name))
+    checkpoint = torch.load(load_name)
+    hierRCNN.load_state_dict(checkpoint['model'])
+    hierRCNN.eval()
+    for name, p in hierRCNN.named_parameters():
+        p.requires_grad = False
+
   preconf = HierLabelConfig(args.dataset, 'predicate')
   pre_vec_path = preconf.label_vec_path()
-  obj_vec_path = objconf.label_vec_path()
-  hierVis = vgg16_rela(prenet, pre_vec_path, obj_vec_path)
+  hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
   hierVis.create_architecture()
 
 
@@ -290,11 +275,10 @@ if __name__ == '__main__':
   for key, value in dict(hierVis.named_parameters()).items():
     if value.requires_grad:
       # larger lr for embedding layer
-      if 'embedding' in key:
+      if 'order' in key:
         lr_use = lr * 10
       else:
         lr_use = lr
-      # lr_use = lr
 
       if 'bias' in key:
         params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \
@@ -311,7 +295,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
   if args.cuda:
-    # hierRCNN.cuda()
+    hierRCNN.cuda()
     hierVis.cuda()
 
   if args.resume:
@@ -355,10 +339,6 @@ if __name__ == '__main__':
       im_info.data.resize_(data[1].size()).copy_(data[1])
       gt_relas.data.resize_(data[2].size()).copy_(data[2])
       num_relas.data.resize_(data[3].size()).copy_(data[3])
-
-      if num_relas.item() == 0:
-          print('Num rela is 0.')
-          continue
 
       hierVis.zero_grad()
       rois, cls_score, \

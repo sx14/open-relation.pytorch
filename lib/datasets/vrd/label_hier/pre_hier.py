@@ -75,6 +75,8 @@ class PreNet(LabelHier):
 
         # basic level
         basic_level = {
+            'follow.i': 'interact.a',
+            'wear.i': 'interact.a',
             'on.s': 'spatial.a',
             'has.p': 'possess.a',
             'behind.s': 'spatial.a',
@@ -123,7 +125,7 @@ class PreNet(LabelHier):
         }
 
         concrete_level = {
-            'wear': 'has.p',
+            'wear': 'wear.i',
             'has': 'has.p',
             'sleep next to': 'next to',
             'sit next to': 'next to',
@@ -181,7 +183,7 @@ class PreNet(LabelHier):
             'play with': 'play with.i',
             'sleep on': 'rest on',
             'outside of': 'outside of.s',
-            'follow': 'behind',
+            'follow': 'follow.i',
             'hit': 'hit.i',
             'feed': 'feed.i',
             'kick': 'kick.i',
@@ -218,8 +220,8 @@ prenet = PreNet(label_path, pre_freq_path)
 #     n.show_hyper_paths()
 #
 # for i in range(prenet.label_sum()):
-#     n = prenet.get_node_by_index(i)
-#     cs = ''
-#     for c in n.children():
-#         cs = cs + ' | ' + c.name()
-#     print(n.name()+ ':' + cs)
+    # n = prenet.get_node_by_index(i)
+    # cs = ''
+    # for c in n.children():
+    #     cs = cs + ' | ' + c.name()
+    # print(n.name()+ ':' + cs)

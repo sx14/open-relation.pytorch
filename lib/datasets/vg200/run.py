@@ -147,6 +147,7 @@ if __name__ == '__main__':
         'ImageSets': os.path.join(VG_ROOT, 'ImageSets'),
         'JPEGImages': os.path.join(VG_ROOT, 'JPEGImages'),
         'pre_freq_path': os.path.join(VG_ROOT, 'pre_freq.txt'),
+        'ds_root': VG_ROOT
     }
 
     split_anno_pkg(vg_config)

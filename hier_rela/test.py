@@ -15,7 +15,7 @@ import time
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.faster_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
 from lib.model.hier_utils.tree_infer1 import my_infer
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # Load Detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet.get_raw_labels())
+    hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
     hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')

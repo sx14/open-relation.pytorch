@@ -70,6 +70,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         obj_gt = curr_gt_roidb[:, 14].astype(np.int).tolist()
         box_gt = np.concatenate((sub_box_gt, obj_box_gt))
         box_gt = np.unique(box_gt, axis=0)
+        count_gt = curr_gt_roidb[:, 16]
 
         N_rela = len(rela_gt)
         N_rela_total = N_rela_total + N_rela
@@ -121,6 +122,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
             gt = box_gt[b]
             box_hit = 0
             det_hit = 0
+
             for o in range(box_det.shape[0]):
                 det = box_det[o]
                 if compute_iou_each(gt, det) >= 0.5:
@@ -159,10 +161,17 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
             # for each relationship prediction
             for k in range(N_rela):
                 # for each relationship GT
+
+                if count_gt[k] == 0:
+                    continue
+
                 if mode == 'hier':
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
+
                     if (s_iou >= 0.5) and (o_iou >= 0.5):
+                        count_gt[k] -= 1
+
                         img_rlt_box_rights[j] = 1
                         img_rlt_box_gt_rights[k] = 1
                         sub_gt_node = objnet.get_node_by_index(sub_gt[k])

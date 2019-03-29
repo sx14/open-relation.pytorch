@@ -28,7 +28,7 @@ from .voc_eval import voc_eval
 # TODO: make fast_rcnn irrelevant
 # >>>> obsolete, because it depends on sth outside of this project
 from lib.model.utils.config import cfg
-from lib.datasets.vrd.label_hier.obj_hier import objnet
+from lib.datasets.vg200.label_hier.obj_hier import objnet
 
 try:
     xrange          # Python 2
@@ -256,7 +256,7 @@ class vg_voc(imdb):
             difficult = 0 if diffc == None else int(diffc.text)
             ishards[ix] = difficult
 
-            cls = self._class_to_ind[obj.find('name').text.lower().strip()]
+            cls = self._class_to_ind[obj.find('name').text.strip()]
             boxes[ix, :] = [x1, y1, x2, y2]
             gt_classes[ix] = cls
             overlaps[ix, cls] = 1.0

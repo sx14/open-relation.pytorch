@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
   # train set
   # -- Note: Use validation set and disable the flipped to enable faster loading.
-  if args.dataset == 'vg':
+  if args.dataset == 'vg_voc':
     cfg.TRAIN.USE_FLIPPED = False
   else:
     cfg.TRAIN.USE_FLIPPED = True
@@ -242,7 +242,7 @@ if __name__ == '__main__':
   fasterRCNN.create_architecture()
 
   # load pretrained model
-  load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset
+  load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset.split('_')[0]
   print("load pretrained model: %s" % (load_name))
   checkpoint = torch.load(load_name)
   pre_state_dict = checkpoint['model']

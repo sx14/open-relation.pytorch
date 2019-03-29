@@ -112,6 +112,14 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                     if pre['name'] in pres:
                         # not zero shot
                         zero_shot = 0
+            count = 0
+            pair1 = np.concatenate((np.array(sbj), np.array(obj)), axis=1)
+            for rlt1 in anno_rlts:
+                sbj1 = rlt1['subject']
+                obj1 = rlt1['object']
+                pair2 = np.concatenate((np.array(sbj), np.array(obj)), axis=1)
+                if np.sum(pair1 - pair2) == 0:
+                    count += 1
 
 
             things = [pre, sbj, obj]
@@ -130,7 +138,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                 ymax = int(thing['ymax'])
                 label_ind = labelnets[j].get_node_by_name(thing['name']).index()
                 rlt_info += [xmin, ymin, xmax, ymax, label_ind]
-            rlt_info += [1.0, 1.0, 1.0, zero_shot]
+            rlt_info += [1.0, 1.0, 1.0, zero_shot, count]
             zero_count += zero_shot
             rlt_info_list.append(rlt_info)
         rlts[image_id] = rlt_info_list

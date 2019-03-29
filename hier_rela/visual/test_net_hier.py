@@ -25,7 +25,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.heir_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from global_config import HierLabelConfig
 
 import pdb
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     # initilize the network here.
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, obj_vec_path)
+    hierRCNN = vgg16_det(objnet, obj_vec_path, class_agnostic=True)
     hierRCNN.create_architecture()
 
     preconf = HierLabelConfig(args.dataset, 'predicate')
@@ -317,21 +317,6 @@ if __name__ == '__main__':
         misc_toc = time.time()
         nms_time = misc_toc - misc_tic
 
-        sys.stdout.write('im_detect: {:d}/{:d} {:.3f}s {:.3f}s   \r' \
-                         .format(i + 1, num_images, detect_time, nms_time))
-        sys.stdout.flush()
-
-        if vis:
-            cv2.imwrite('result.png', im2show)
-            pdb.set_trace()
-            # cv2.imshow('test', im2show)
-            # cv2.waitKey(0)
-
-    with open(det_file, 'wb') as f:
-        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
-
-    print('Evaluating detections')
-    imdb.evaluate_detections(all_boxes, output_dir)
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

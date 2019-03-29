@@ -12,7 +12,7 @@ from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
 from global_config import HierLabelConfig
 
 
-dataset = 'vg'
+dataset = 'vrd'
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:

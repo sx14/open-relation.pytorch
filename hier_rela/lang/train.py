@@ -39,7 +39,7 @@ def eval(model, test_dl):
 
 """ ======= train ======= """
 
-dataset = 'vg'
+dataset = 'vrd'
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:

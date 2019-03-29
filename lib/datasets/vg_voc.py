@@ -38,7 +38,7 @@ except NameError:
 # <<<< obsolete
 
 
-class pascal_voc(imdb):
+class vg_voc(imdb):
     def __init__(self, image_set, year, devkit_path=None):
         imdb.__init__(self, 'vg_voc_' + year + '_' + image_set)
         self._year = year

@@ -18,6 +18,8 @@ from lib.datasets.vg200.vg import vg
 from lib.datasets.vg200.vg_rela import vg_rela
 from lib.datasets.vrd.vrd import vrd
 from lib.datasets.vrd.vrd_rela import vrd_rela
+from lib.datasets.vrd_voc import vrd_voc
+from lib.datasets.vg_voc import vg_voc
 
 import numpy as np
 
@@ -43,13 +45,13 @@ for year in ['2007', '2016']:
 for year in ['2007']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'vrd_voc_{}_{}'.format(year, split)
-    __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+    __sets[name] = (lambda split=split, year=year: vrd_voc(split, year))
 
 # Set up vg_voc_<year>_<split>
 for year in ['2007']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'vg_voc_{}_{}'.format(year, split)
-    __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+    __sets[name] = (lambda split=split, year=year: vg_voc(split, year))
 
 
 # Set up voc_<year>_<split>

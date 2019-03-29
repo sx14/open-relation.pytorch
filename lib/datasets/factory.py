@@ -39,6 +39,18 @@ for year in ['2007', '2016']:
     else:
         __sets[name] = (lambda split=split, year='2007': vg_rela(split, year))
 
+# Set up vrd_voc_<year>_<split>
+for year in ['2007']:
+  for split in ['train', 'val', 'trainval', 'test']:
+    name = 'vrd_voc_{}_{}'.format(year, split)
+    __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+
+# Set up vg_voc_<year>_<split>
+for year in ['2007']:
+  for split in ['train', 'val', 'trainval', 'test']:
+    name = 'vg_voc_{}_{}'.format(year, split)
+    __sets[name] = (lambda split=split, year=year: pascal_voc(split, year))
+
 
 # Set up voc_<year>_<split>
 for year in ['2007', '2012']:

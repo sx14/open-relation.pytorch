@@ -104,19 +104,14 @@ if __name__ == '__main__':
 
     np.random.seed(cfg.RNG_SEED)
     if args.dataset == "vrd_voc":
-        args.imdb_name = "voc_2007_trainval"
-        args.imdbval_name = "voc_2007_test"
+        args.imdb_name = "vrd_voc_2007_trainval"
+        args.imdbval_name = "vrd_voc_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-    elif args.dataset == "vg":
-        args.imdb_name = "vg_2007_trainval"
-        args.imdbval_name = "vg_2007_test"
+    elif args.dataset == "vg_voc":
+        args.imdb_name = "vg_voc_2007_trainval"
+        args.imdbval_name = "vg_voc_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg1000.label_hier.obj_hier import objnet
-    elif args.dataset == "vrd":
-        args.imdb_name = "vrd_2007_trainval"
-        args.imdbval_name = "vrd_2007_test"
-        args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-        from lib.datasets.vrd.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
 
     args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
 

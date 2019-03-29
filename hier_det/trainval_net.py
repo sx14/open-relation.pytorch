@@ -54,7 +54,7 @@ def parse_args():
                       default=10000, type=int)
 
   parser.add_argument('--save_dir', dest='save_dir',
-                      help='directory to save models', default="hier_output",
+                      help='directory to save models', default="fast_output",
                       type=str)
   parser.add_argument('--nw', dest='num_workers',
                       help='number of worker to load data',
@@ -157,14 +157,14 @@ if __name__ == '__main__':
   print(args)
 
   if args.dataset == "vg_voc":
-      args.imdb_name = "vg_2007_trainval"
-      args.imdbval_name = "vg_2007_test"
+      args.imdb_name = "vg_voc_2007_trainval"
+      args.imdbval_name = "vg_voc_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
       from lib.datasets.vg200.label_hier.obj_hier import objnet
 
   elif args.dataset == "vrd_voc":
-      args.imdb_name = "voc_2007_trainval"
-      args.imdbval_name = "voc_2007_test"
+      args.imdb_name = "vrd_voc_2007_trainval"
+      args.imdbval_name = "vrd_voc_2007_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
       from lib.datasets.vrd.label_hier.obj_hier import objnet
   args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
@@ -233,13 +233,13 @@ if __name__ == '__main__':
   if args.net == 'vgg16':
     labelconf = HierLabelConfig(args.dataset, 'object')
     label_vec_path = labelconf.label_vec_path()
-    hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
+    fasterRCNN = vgg16(objnet.get_raw_labels(), pretrained=False, class_agnostic=False)
   else:
     print("network is not defined")
     pdb.set_trace()
     exit(-1)
 
-  hierRCNN.create_architecture()
+  fasterRCNN.create_architecture()
 
   # load pretrained model
   load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset
@@ -250,9 +250,9 @@ if __name__ == '__main__':
   pre_state_dict = {k: v for k, v in pre_state_dict.items()
                     if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k}
 
-  hierRCNN_state_dict = hierRCNN.state_dict()
+  hierRCNN_state_dict = fasterRCNN.state_dict()
   hierRCNN_state_dict.update(pre_state_dict)
-  hierRCNN.load_state_dict(hierRCNN_state_dict)
+  fasterRCNN.load_state_dict(hierRCNN_state_dict)
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
@@ -260,20 +260,14 @@ if __name__ == '__main__':
   #tr_momentum = args.momentum
 
   params = []
-  for key, value in dict(hierRCNN.named_parameters()).items():
+  for key, value in dict(fasterRCNN.named_parameters()).items():
     if value.requires_grad:
       # larger lr for embedding layer
-      if 'order' in key:
-        lr_use = lr * 10
-        # lr_use = lr
-      else:
-        lr_use = lr
-
       if 'bias' in key:
-        params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \
+        params += [{'params':[value],'lr':lr*(cfg.TRAIN.DOUBLE_BIAS + 1), \
                     'weight_decay': cfg.TRAIN.BIAS_DECAY and cfg.TRAIN.WEIGHT_DECAY or 0}]
       else:
-        params += [{'params':[value],'lr':lr_use,
+        params += [{'params':[value],'lr':lr,
                     'weight_decay': cfg.TRAIN.WEIGHT_DECAY}]
 
   if args.optimizer == "adam":
@@ -284,19 +278,19 @@ if __name__ == '__main__':
     optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
 
   if args.cuda:
-    hierRCNN.cuda()
+    fasterRCNN.cuda()
 
 
 
 
   if args.resume:
     load_name = os.path.join(output_dir,
-      'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+      'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
     print("loading checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
     args.start_epoch = checkpoint['epoch']
-    hierRCNN.load_state_dict(checkpoint['model'])
+    fasterRCNN.load_state_dict(checkpoint['model'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr = optimizer.param_groups[0]['lr']
     if 'pooling_mode' in checkpoint.keys():
@@ -305,7 +299,7 @@ if __name__ == '__main__':
 
 
   if args.mGPUs:
-    hierRCNN = nn.DataParallel(hierRCNN)
+    fasterRCNN = nn.DataParallel(fasterRCNN)
 
   iters_per_epoch = int(train_size / args.batch_size)
 
@@ -315,7 +309,7 @@ if __name__ == '__main__':
 
   for epoch in range(args.start_epoch, args.max_epochs + 1):
     # setting to train mode
-    hierRCNN.train()
+    fasterRCNN.train()
     loss_temp = 0
     start = time.time()
 
@@ -331,11 +325,11 @@ if __name__ == '__main__':
       gt_boxes.data.resize_(data[2].size()).copy_(data[2])
       num_boxes.data.resize_(data[3].size()).copy_(data[3])
 
-      hierRCNN.zero_grad()
+      fasterRCNN.zero_grad()
       rois, cls_score, bbox_pred, \
       rpn_loss_cls, rpn_loss_box, \
       RCNN_loss_cls, RCNN_loss_bbox, \
-      rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes)
+      rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
 
       loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
            + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
@@ -345,7 +339,7 @@ if __name__ == '__main__':
       optimizer.zero_grad()
       loss.backward()
       if args.net == "vgg16":
-          clip_gradient(hierRCNN, 10.)
+          clip_gradient(fasterRCNN, 10.)
       optimizer.step()
 
       if step % args.disp_interval == 0:
@@ -390,7 +384,7 @@ if __name__ == '__main__':
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,
-      'model': hierRCNN.module.state_dict() if args.mGPUs else hierRCNN.state_dict(),
+      'model': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
       'optimizer': optimizer.state_dict(),
       'pooling_mode': cfg.POOLING_MODE,
       'class_agnostic': args.class_agnostic,

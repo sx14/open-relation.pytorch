@@ -243,11 +243,11 @@ if __name__ == '__main__':
             for ppp in range(scores.size()[1]):
                 N_count += 1
                 pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
-                pred_ind = raw_inds[pred_cate]
+                pred_ind = raw_inds[int(pred_cate)]
                 pred_node = objnet.get_node_by_index(pred_ind)
 
                 gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                gt_ind = raw_inds[gt_cate]
+                gt_ind = raw_inds[int(gt_cate)]
                 gt_node = objnet.get_node_by_index(gt_ind)
 
                 result = '%s -> %s' % (gt_node.name(), pred_node.name())

@@ -112,15 +112,28 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                     if pre['name'] in pres:
                         # not zero shot
                         zero_shot = 0
+
             count = 0
-            pair1 = np.concatenate((np.array(sbj), np.array(obj)), axis=1)
+            pair = [sbj, obj]
             for rlt1 in anno_rlts:
                 sbj1 = rlt1['subject']
                 obj1 = rlt1['object']
-                pair2 = np.concatenate((np.array(sbj), np.array(obj)), axis=1)
-                if np.sum(pair1 - pair2) == 0:
-                    count += 1
+                pair1 = [sbj1, obj1]
 
+                same = 1
+                for p in range(2):
+                    part = pair[p]
+                    part1 = pair1[p]
+                    if  part['xmin'] == part1['xmin'] and \
+                        part['ymin'] == part1['ymin'] and \
+                        part['xmax'] == part1['xmax'] and \
+                        part['ymax'] == part1['ymax'] and \
+                        part['name'] == part1['name']:
+                        pass
+                    else:
+                        same = 0
+                        break
+                count += same
 
             things = [pre, sbj, obj]
             labelnets = [prenet, objnet, objnet]

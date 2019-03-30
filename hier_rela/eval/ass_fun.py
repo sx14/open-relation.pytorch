@@ -30,7 +30,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
     N_obj_box_good = 0.0
     N_obj_det_good = 0.0
 
-
     N_zero_rela_right = 0.0
     N_zero_pre_right = 0.0
     N_zero_rela_total = 0.0

@@ -307,8 +307,8 @@ if __name__ == '__main__':
     # gen_Annotations(VRD_ROOT, VRD_ROOT)
     #
     # # to json format for predicate recognition training
-    split_anno_pkg(vrd_config)
-    reformat_anno(vrd_config)
+    # split_anno_pkg(vrd_config)
+    # reformat_anno(vrd_config)
 
     # for eval
     roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vrd.bin')

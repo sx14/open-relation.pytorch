@@ -21,7 +21,7 @@ def compute_iou_each(box1, box2):
     return IoU
 
 
-def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
+def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
     N_rela_right = 0.0
     N_pre_right = 0.0
     N_rela_total = 0.0
@@ -71,6 +71,9 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
         box_gt = np.concatenate((sub_box_gt, obj_box_gt))
         box_gt = np.unique(box_gt, axis=0)
         count_gt = curr_gt_roidb[:, 16]
+
+        if k == 1:
+            count_gt[:] = 1
 
         N_rela = len(rela_gt)
         N_rela_total = N_rela_total + N_rela
@@ -194,6 +197,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet):
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
                     if (s_iou >= 0.5) and (o_iou >= 0.5):
+                        count_gt[k] -= 1
+
                         img_rlt_box_rights[j] = 1
                         img_rlt_box_gt_rights[k] = 1
                         if (sub_gt[k] == sub_dete[j]) and (obj_gt[k] == obj_dete[j]):

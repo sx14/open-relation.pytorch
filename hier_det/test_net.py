@@ -26,6 +26,7 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.faster_rcnn.vgg16 import vgg16
 from lib.model.faster_rcnn.resnet import resnet
+from global_config import PROJECT_ROOT
 
 
 import pdb
@@ -186,7 +187,7 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 100
+    max_per_image = 20
 
     vis = args.vis
 
@@ -240,9 +241,9 @@ if __name__ == '__main__':
         boxes = rois.data[:, :, 1:5]
 
         img_dets = []
+        raw_inds = objnet.get_raw_indexes()
 
         if not use_rpn:
-            raw_inds = objnet.get_raw_indexes()
             for ppp in range(scores.size()[1]):
                 N_count += 1
                 pred_cate = np.argmax(scores[0][ppp][1:].cpu().data.numpy()) + 1
@@ -321,25 +322,29 @@ if __name__ == '__main__':
                     cls_dets[:, 5] = cls_ind
                     img_dets += cls_dets.cpu().data.numpy().tolist()
 
-        # nms again
-        # img_dets = np.array(img_dets)
-        # img_dets = torch.from_numpy(img_dets)
-        # keep = nms(img_dets, 0.6, force_cpu=cfg.USE_GPU_NMS)
-        # img_dets = img_dets[keep.view(-1).long(), :]
+            # nms again
+            img_dets = np.array(img_dets)
+            # img_dets = torch.from_numpy(img_dets)
+            # keep = nms(img_dets, 0.6, force_cpu=cfg.USE_GPU_NMS)
+            # img_dets = img_dets[keep.view(-1).long(), :]
 
-        # box cls score
-        img_dets = torch.cat([img_dets[:, :4],
-                              img_dets[:, 5:6],
-                              img_dets[:, 4:5]], 1).cpu().numpy()
+            # box cls score
+            img_dets = torch.cat([img_dets[:, :4],
+                                  img_dets[:, 5:6],
+                                  img_dets[:, 4:5]], 1).cpu().numpy()
 
-        img_det_scrs = img_dets[:, -1]
-        if img_dets.shape[0] > max_per_image:
-            order = np.argsort(img_det_scrs)[::-1]
-            img_dets = img_dets[order[:max_per_image], :]
+            img_det_scrs = img_dets[:, -1]
+            if img_dets.shape[0] > max_per_image:
+                order = np.argsort(img_det_scrs)[::-1]
+                img_dets = img_dets[order[:max_per_image], :]
 
-        obj_det_roidbs[im_id[0]] = img_dets
+            obj_det_roidbs[im_id[0]] = img_dets
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
+
+    save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vg.bin')
+    with open(save_path, 'wb') as f:
+        pickle.dump(obj_det_roidbs, f)

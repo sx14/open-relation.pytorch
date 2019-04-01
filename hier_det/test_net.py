@@ -216,9 +216,9 @@ if __name__ == '__main__':
     fasterRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
-    use_rpn = False
+    use_rpn = True
     TP_count = 0.0
-    N_count = 0.0
+    N_count = 0.1
 
     obj_det_roidbs = {}
 
@@ -324,7 +324,7 @@ if __name__ == '__main__':
 
             # nms again
             img_dets = np.array(img_dets)
-            # img_dets = torch.from_numpy(img_dets)
+            img_dets = torch.from_numpy(img_dets)
             # keep = nms(img_dets, 0.6, force_cpu=cfg.USE_GPU_NMS)
             # img_dets = img_dets[keep.view(-1).long(), :]
 
@@ -332,6 +332,7 @@ if __name__ == '__main__':
             img_dets = torch.cat([img_dets[:, :4],
                                   img_dets[:, 5:6],
                                   img_dets[:, 4:5]], 1).cpu().numpy()
+
 
             img_det_scrs = img_dets[:, -1]
             if img_dets.shape[0] > max_per_image:

@@ -3,16 +3,23 @@ import pickle
 import cv2
 import numpy as np
 from hier_det.show_box import show_boxes
-from global_config import VRD_ROOT, PROJECT_ROOT
-from lib.datasets.vrd.label_hier.obj_hier import objnet
+from global_config import VRD_ROOT, PROJECT_ROOT, VG_ROOT
 
 
-dataset = 'vrd'
-det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vrd.bin')
+
+dataset = 'vg'
+det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % dataset)
 det_roidb = pickle.load(open(det_roidb_path))
 
+if dataset == 'vg':
+    DS_ROOT = VG_ROOT
+    from lib.datasets.vg200.label_hier.obj_hier import objnet
 
-img_root = os.path.join(VRD_ROOT, 'JPEGImages')
+else:
+    DS_ROOT = VRD_ROOT
+    from lib.datasets.vrd.label_hier.obj_hier import objnet
+
+img_root = os.path.join(DS_ROOT, 'JPEGImages')
 for img_id in det_roidb:
     img_path = os.path.join(img_root, img_id+'.jpg')
     im = cv2.imread(img_path)

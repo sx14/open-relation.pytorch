@@ -36,7 +36,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vrd', type=str)
+                      default='vg', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -157,11 +157,11 @@ if __name__ == '__main__':
   print(args)
 
   if args.dataset == "vg":
-      args.imdb_name = "vg_2007_trainval"
-      args.imdbval_name = "vg_2007_test"
+      args.imdb_name = "vg_2016_trainval"
+      args.imdbval_name = "vg_2016_test"
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-      from lib.datasets.vg1000.label_hier.obj_hier import objnet
-      from lib.datasets.vg1000.label_hier.pre_hier import prenet
+      from lib.datasets.vg200.label_hier.obj_hier import objnet
+      from lib.datasets.vg200.label_hier.pre_hier import prenet
   elif args.dataset == "vrd":
       args.imdb_name = "vrd_2016_trainval"
       args.imdbval_name = "vrd_2016_test"

@@ -239,6 +239,8 @@ if __name__ == '__main__':
         scores = cls_prob.data
         boxes = rois.data[:, :, 1:5]
 
+        img_dets = []
+
         if not use_rpn:
             raw_inds = objnet.get_raw_indexes()
             for ppp in range(scores.size()[1]):
@@ -315,15 +317,17 @@ if __name__ == '__main__':
 
                     cls_ind = objnet.get_node_by_index(raw_inds[j]).index()
 
+                    # box score cls
                     cls_dets[:, 5] = cls_ind
                     img_dets += cls_dets.cpu().data.numpy().tolist()
 
         # nms again
-        img_dets = np.array(img_dets)
-        img_dets = torch.from_numpy(img_dets)
-        keep = nms(img_dets, 0.6, force_cpu=cfg.USE_GPU_NMS)
-        img_dets = img_dets[keep.view(-1).long(), :]
+        # img_dets = np.array(img_dets)
+        # img_dets = torch.from_numpy(img_dets)
+        # keep = nms(img_dets, 0.6, force_cpu=cfg.USE_GPU_NMS)
+        # img_dets = img_dets[keep.view(-1).long(), :]
 
+        # box cls score
         img_dets = torch.cat([img_dets[:, :4],
                               img_dets[:, 5:6],
                               img_dets[:, 4:5]], 1).cpu().numpy()

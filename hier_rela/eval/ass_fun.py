@@ -69,7 +69,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
         obj_gt = curr_gt_roidb[:, 14].astype(np.int).tolist()
         box_gt = np.concatenate((sub_box_gt, obj_box_gt))
         box_gt = np.unique(box_gt, axis=0)
-        count_gt = curr_gt_roidb[:, 16]
+        count_gt = curr_gt_roidb[:, -1]
 
         if k == 1:
             count_gt[:] = 1

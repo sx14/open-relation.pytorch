@@ -36,7 +36,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vg', type=str)
+                      default='vrd', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -45,7 +45,7 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--epochs', dest='max_epochs',
                       help='number of epochs to train',
-                      default=20, type=int)
+                      default=100, type=int)
   parser.add_argument('--disp_interval', dest='disp_interval',
                       help='number of iterations to display',
                       default=100, type=int)
@@ -98,7 +98,7 @@ def parse_args():
 # resume trained model
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',
-                      default=True, type=bool)
+                      default=False, type=bool)
   parser.add_argument('--checksession', dest='checksession',
                       help='checksession to load model',
                       default=1, type=int)
@@ -266,6 +266,9 @@ if __name__ == '__main__':
                     if k in hierVis_state_dict}
   hierVis_state_dict.update(pre_state_dict)
   hierVis.load_state_dict(hierVis_state_dict)
+  for name, p in hierVis.named_parameters():
+      if 'order' not in name and 'top' not in name:
+        p.requires_grad = False
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr

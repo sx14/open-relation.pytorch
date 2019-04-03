@@ -276,7 +276,7 @@ if __name__ == '__main__':
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
                 # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
 
-
+                # if hier_src > 0:
                 if inf_scr > 0:
                     hit[ppp, 0] = inf_scr
                     flat_count += 1

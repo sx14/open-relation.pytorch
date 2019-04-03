@@ -65,6 +65,8 @@ class _HierRelaVis(nn.Module):
             nn.Linear(4096, self.embedding_len))
 
         self.order_ex_embedding = nn.Sequential(
+            nn.ReLU(),
+            nn.Dropout(),
             nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
                       self.embedding_len + self._hierRCNN.embedding_len * 2),
             nn.ReLU(),

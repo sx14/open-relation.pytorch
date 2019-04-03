@@ -377,7 +377,7 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    if epoch % (10+1) == 0:
+    if epoch % 5 == 0:
         save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
         save_checkpoint({
           'session': args.session,

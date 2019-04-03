@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     start = time.time()
     N_img = len(rela_roidb_use.keys())
     for i, img_id in enumerate(rela_roidb_use.keys()):
-        print('pred [%d/%d]' % (N_img, i+1))
+        print('pred [%d/%d] %s' % (N_img, i + 1, img_id))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
         if not os.path.exists(img_path):
             continue
@@ -217,6 +217,7 @@ if __name__ == '__main__':
 
         raw_label_inds = set(prenet.get_raw_indexes())
 
+        hit = torch.zeros(scores.size()[1], 1)
         for ppp in range(scores.size()[1]):
             N_count += 1
 
@@ -245,7 +246,7 @@ if __name__ == '__main__':
             pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':
-                print('=== %s ===' % gt_node.name())
+                # print('=== %s ===' % gt_node.name())
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
                 vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
                 lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
@@ -277,6 +278,7 @@ if __name__ == '__main__':
 
 
                 if inf_scr > 0:
+                    hit[ppp, 0] = inf_scr
                     flat_count += 1
                     if relas_zero[ppp] == 1:
                         zero_flat_count += 1
@@ -294,7 +296,7 @@ if __name__ == '__main__':
 
         pred_rois[:, 4] = pred_cates
         # remove [pconf, sconf, oconf], cat rela_conf
-        pred_rois = torch.cat((pred_rois[:, :15], rela_scores), dim=1)
+        pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
         pred_roidb[img_id] = pred_rois.numpy()
         # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf
 

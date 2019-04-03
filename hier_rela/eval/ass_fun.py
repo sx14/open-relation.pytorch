@@ -34,8 +34,10 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
     N_zero_pre_right = 0.0
     N_zero_rela_total = 0.0
 
+    N_img = len(gt_roidb.keys())
     results = {}
-    for image_id in gt_roidb:
+    for i, image_id in enumerate(gt_roidb):
+        print('pred [%d/%d] %s' % (N_img, i + 1, image_id))
         results[image_id] = {
             'N_rlt': 0,
             'N_rlt_right': 0,
@@ -69,7 +71,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
         obj_gt = curr_gt_roidb[:, 14].astype(np.int).tolist()
         box_gt = np.concatenate((sub_box_gt, obj_box_gt))
         box_gt = np.unique(box_gt, axis=0)
-        count_gt = curr_gt_roidb[:, -1]
+        count_gt = curr_gt_roidb[:, 19]
 
         if k == 1:
             count_gt[:] = 1
@@ -95,7 +97,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
 
         if N_recall < N_pred:
             # get Top N predictions
-            top_inds = np.argsort(curr_pred_roidb[:, -1])[::-1][:N_recall]
+            top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1][:N_recall]
             curr_pred_roidb = curr_pred_roidb[top_inds, :]
             N_pred = len(curr_pred_roidb)
 
@@ -159,6 +161,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
         img_rlt_box_gt_rights = [0 for _ in range(N_rela)]
         img_rlt_pair_gt_rights = [0 for _ in range(N_rela)]
 
+        pred_scores = np.zeros((N_pred))
+        pred_scores1 = curr_pred_roidb[:, 16]
         for j in range(N_pred):
             # for each relationship prediction
             for k in range(N_rela):
@@ -186,6 +190,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
                             pre_gt_node = prenet.get_node_by_index(rela_gt[k])
                             pre_score = pre_gt_node.score(rela_pred[j])
                             if pre_score > 0:
+                                pred_scores[j] = pre_score
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1
                                 # rela_score = (sub_score + obj_score + pre_score)/3.0

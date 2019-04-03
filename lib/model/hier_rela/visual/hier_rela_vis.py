@@ -91,7 +91,8 @@ class _HierRelaVis(nn.Module):
 
 
         # feed image data to base model to obtain base feature map
-        base_feat = self.RCNN_base(im_data)
+        with torch.no_grad():
+            base_feat = self.RCNN_base(im_data)
 
         pre_label = gt_boxes[:, :, 4][0]
         sbj_label = gt_boxes[:, :, 9][0]

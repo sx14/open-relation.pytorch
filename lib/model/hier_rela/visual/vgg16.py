@@ -38,9 +38,12 @@ class vgg16(_HierRelaVis):
     # not using the last maxpool layer
     self.RCNN_base = nn.Sequential(*list(vgg.features._modules.values())[:-1])
 
+    # fix RCNN_base
+    for p in self.RCNN_base.parameters(): p.requires_grad = False
+
     # Fix the layers before conv3:
-    for layer in range(10):
-      for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
+    #for layer in range(10):
+    #  for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
 
 
     # fc7 4096

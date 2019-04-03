@@ -82,7 +82,7 @@ def parse_args():
                       default="sgd", type=str)
   parser.add_argument('--lr', dest='lr',
                       help='starting learning rate',
-                      default=0.001, type=float)
+                      default=0.01, type=float)
   parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                       help='step to do learning rate decay, unit is epoch',
                       default=5, type=int)
@@ -106,7 +106,7 @@ def parse_args():
                       help='checkepoch to load model',
                       default=1, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
-                      help='checkpoint to load model',
+                      help='checkpoint to load model ',
                       default=73793, type=int)
 # log and diaplay
   parser.add_argument('--use_tfb', dest='use_tfboard',
@@ -266,9 +266,7 @@ if __name__ == '__main__':
                     if k in hierVis_state_dict}
   hierVis_state_dict.update(pre_state_dict)
   hierVis.load_state_dict(hierVis_state_dict)
-  for name, p in hierVis.named_parameters():
-      if 'order' not in name and 'top' not in name:
-        p.requires_grad = False
+
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
@@ -278,10 +276,11 @@ if __name__ == '__main__':
   for key, value in dict(hierVis.named_parameters()).items():
     if value.requires_grad:
       # larger lr for embedding layer
-      if 'order' in key:
-        lr_use = lr * 10
-      else:
-        lr_use = lr
+      # if 'order' in key:
+      #   lr_use = lr * 10
+      # else:
+      #   lr_use = lr
+      lr_use = lr
 
       if 'bias' in key:
         params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \

@@ -40,6 +40,7 @@ class vgg16(_HierRelaVis):
 
     # fix RCNN_base
     for p in self.RCNN_base.parameters(): p.requires_grad = False
+    self.RCNN_base.eval()
 
     # Fix the layers before conv3:
     #for layer in range(10):
@@ -49,6 +50,7 @@ class vgg16(_HierRelaVis):
     # fc7 4096
     self.RCNN_top = vgg.classifier
     for p in self.RCNN_top.parameters(): p.requires_grad = False
+    self.RCNN_top.eval()
 
 
   def _head_to_tail(self, pool5):

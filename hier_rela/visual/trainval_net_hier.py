@@ -377,16 +377,17 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
-    save_checkpoint({
-      'session': args.session,
-      'epoch': epoch + 1,
-      'model': hierVis.module.state_dict() if args.mGPUs else hierVis.state_dict(),
-      'optimizer': optimizer.state_dict(),
-      'pooling_mode': cfg.POOLING_MODE,
-      'class_agnostic': args.class_agnostic,
-    }, save_name)
-    print('save model: {}'.format(save_name))
+    if epoch % (10+1) == 0:
+        save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
+        save_checkpoint({
+          'session': args.session,
+          'epoch': epoch + 1,
+          'model': hierVis.module.state_dict() if args.mGPUs else hierVis.state_dict(),
+          'optimizer': optimizer.state_dict(),
+          'pooling_mode': cfg.POOLING_MODE,
+          'class_agnostic': args.class_agnostic,
+        }, save_name)
+        print('save model: {}'.format(save_name))
 
   if args.use_tfboard:
     logger.close()

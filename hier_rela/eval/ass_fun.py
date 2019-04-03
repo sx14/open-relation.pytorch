@@ -59,7 +59,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             'N_obj_gt': 0
         }
 
-        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname
+        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, pconf, sconf, oconf, zero, c
         curr_gt_roidb = np.array(gt_roidb[image_id])
         if len(curr_gt_roidb) == 0:
             continue
@@ -162,7 +162,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         img_rlt_pair_gt_rights = [0 for _ in range(N_rela)]
 
         pred_scores = np.zeros((N_pred))
-        pred_scores1 = curr_pred_roidb[:, 16]
+        # pred_scores1 = curr_pred_roidb[:, 16]
         for j in range(N_pred):
             # for each relationship prediction
             for k in range(N_rela):

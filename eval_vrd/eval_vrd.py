@@ -34,6 +34,7 @@ gt_sbj_boxes = gt['gt_sub_bboxes'][0]
 N_all = 0
 N_score = 0
 N_right = 0.0
+N_flat = 0.0
 
 raw_labels = prenet.get_raw_labels()
 
@@ -51,6 +52,7 @@ for i in range(1000):
 
         hit = 0.0
         max_scr = 0.0
+        flat = 0.0
         for k in range(len(img_pred_tuples)):
             pred_sbj_box = pred_sbj_boxes[i][k].astype(np.int)
             pred_obj_box = pred_obj_boxes[i][k].astype(np.int)
@@ -69,6 +71,9 @@ for i in range(1000):
                 pred_node = prenet.get_node_by_name(pred_label)
                 scr = gt_node.score(pred_node.index())
 
+                if scr > 0:
+                    flat = 1
+
                 if pred_pre == gt_pre:
                     hit = max([hit, 1])
 
@@ -76,11 +81,13 @@ for i in range(1000):
 
 
 
+
         N_right += hit
         N_score += max_scr
+        N_flat += flat
 
 
 
 print('%.4f' % (N_right / N_all))
-
 print('%.4f' % (N_score / N_all))
+print('%.4f' % (N_flat / N_all))

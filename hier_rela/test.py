@@ -295,10 +295,10 @@ if __name__ == '__main__':
         rela_scores = rela_scores.unsqueeze(1)
 
         pred_rois[:, 4] = pred_cates
-        # remove [pconf, sconf, oconf], cat rela_conf
+        # remove [pconf, sconf, oconf], cat rela_conf, hit
         pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
         pred_roidb[img_id] = pred_rois.numpy()
-        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf
+        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
 
 
 

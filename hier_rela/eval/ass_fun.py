@@ -21,7 +21,7 @@ def compute_iou_each(box1, box2):
     return IoU
 
 
-def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
+def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.5, alpha=1):
     N_rela_right = 0.0
     N_pre_right = 0.0
     N_rela_total = 0.0
@@ -73,7 +73,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
         box_gt = np.unique(box_gt, axis=0)
         count_gt = curr_gt_roidb[:, 19]
 
-        if k == 1:
+        if alpha == 1:
             count_gt[:] = 1
 
         N_rela = len(rela_gt)
@@ -129,7 +129,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
 
             for o in range(box_det.shape[0]):
                 det = box_det[o]
-                if compute_iou_each(gt, det) >= 0.5:
+                if compute_iou_each(gt, det) >= box_thr:
                     img_obj_box_rights[o] = 1
                     img_obj_box_gt_rights[b] = 1
                     box_hit = 1
@@ -175,7 +175,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
 
-                    if (s_iou >= 0.5) and (o_iou >= 0.5):
+                    if (s_iou >= box_thr) and (o_iou >= box_thr):
                         count_gt[k] -= 1
 
                         img_rlt_box_rights[j] = 1
@@ -200,7 +200,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, k=1):
                 else:
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
-                    if (s_iou >= 0.5) and (o_iou >= 0.5):
+                    if (s_iou >= box_thr) and (o_iou >= box_thr):
                         count_gt[k] -= 1
 
                         img_rlt_box_rights[j] = 1

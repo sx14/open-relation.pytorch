@@ -120,7 +120,8 @@ class _HierRelaVis(nn.Module):
             pre_pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
         # feed pooled features to top model(fc7)
-        pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
+        with torch.no_grad():
+            pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
 
         sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
 

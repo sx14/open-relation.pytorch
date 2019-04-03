@@ -40,7 +40,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -77,7 +77,7 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=7547, type=int)
+                        default=73793, type=int)
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         args.imdb_name = "vg_2007_trainval"
         args.imdbval_name = "vg_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg1000.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
         args.class_agnostic = True
 
     elif args.dataset == "vrd":

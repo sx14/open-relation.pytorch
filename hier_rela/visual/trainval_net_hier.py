@@ -98,7 +98,7 @@ def parse_args():
 # resume trained model
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',
-                      default=False, type=bool)
+                      default=True, type=bool)
   parser.add_argument('--checksession', dest='checksession',
                       help='checksession to load model',
                       default=1, type=int)
@@ -107,7 +107,7 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
                       help='checkpoint to load model',
-                      default=0, type=int)
+                      default=73793, type=int)
 # log and diaplay
   parser.add_argument('--use_tfb', dest='use_tfboard',
                       help='whether use tensorboard',

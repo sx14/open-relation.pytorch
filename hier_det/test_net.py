@@ -335,7 +335,6 @@ if __name__ == '__main__':
                                   img_dets[:, 5:6],
                                   img_dets[:, 4:5]], 1).cpu().numpy()
 
-
             img_det_scrs = img_dets[:, -1]
             if img_dets.shape[0] > max_per_image:
                 order = np.argsort(img_det_scrs)[::-1]

@@ -85,7 +85,7 @@ def parse_args():
                       default=0.01, type=float)
   parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                       help='step to do learning rate decay, unit is epoch',
-                      default=10, type=int)
+                      default=50, type=int)
   parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                       help='learning rate decay ratio',
                       default=0.1, type=float)
@@ -94,7 +94,6 @@ def parse_args():
   parser.add_argument('--s', dest='session',
                       help='training session',
                       default=1, type=int)
-
 # resume trained model
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',

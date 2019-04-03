@@ -48,6 +48,7 @@ class vgg16(_HierRelaVis):
 
     # fc7 4096
     self.RCNN_top = vgg.classifier
+    for p in self.RCNN_top.parameters(): p.requires_grad = False
 
 
   def _head_to_tail(self, pool5):

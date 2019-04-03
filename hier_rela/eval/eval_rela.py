@@ -8,8 +8,8 @@ if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.obj_hier import objnet
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
-    from lib.datasets.vg1000.label_hier.obj_hier import objnet
-    from lib.datasets.vg1000.label_hier.pre_hier import prenet
+    from lib.datasets.vg200.label_hier.obj_hier import objnet
+    from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 
 # target = 'rela'
@@ -18,11 +18,11 @@ target = 'pre'
 gt_roidb_path = '../gt_rela_roidb_%s.bin' % dataset
 gt_roidb = pickle.load(open(gt_roidb_path))
 
-pred_roidb_path = '../%s_box_label_%s.bin' % (target, dataset)
+pred_roidb_path = '../%s_box_label_%s_dsr.bin' % (target, dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
-rela_R50, pre_R50, results_R50 = rela_recall('hier', gt_roidb, pred_roidb, 50, objnet, prenet, alpha=2, box_thr=1)
-rela_R100, pre_R100, results_R100 = rela_recall('hier', gt_roidb, pred_roidb, 100, objnet, prenet, alpha=2, box_thr=1)
+rela_R50, pre_R50, results_R50 = rela_recall('hier', gt_roidb, pred_roidb, 50, objnet, prenet, alpha=2, box_thr=0.5)
+rela_R100, pre_R100, results_R100 = rela_recall('hier', gt_roidb, pred_roidb, 100, objnet, prenet, alpha=2, box_thr=0.5)
 
 
 # analysis

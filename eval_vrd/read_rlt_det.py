@@ -70,6 +70,6 @@ for i in range(1000):
                                 pred_confs), axis=1)
     pred_roidb[img_id] = pred_rois
 
-save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_vrd1.bin')
+save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_vrd_lu.bin')
 with open(save_path, 'wb') as f:
     pickle.dump(pred_roidb, f)

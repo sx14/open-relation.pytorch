@@ -127,8 +127,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                     if  part['xmin'] == part1['xmin'] and \
                         part['ymin'] == part1['ymin'] and \
                         part['xmax'] == part1['xmax'] and \
-                        part['ymax'] == part1['ymax'] and \
-                        part['name'] == part1['name']:
+                        part['ymax'] == part1['ymax']:
                         pass
                     else:
                         same = 0

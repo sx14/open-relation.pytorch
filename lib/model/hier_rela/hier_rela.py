@@ -31,22 +31,27 @@ class HierRela(nn.Module):
         sbj_label = gt_relas[:, :, 9][0].long()
         obj_label = gt_relas[:, :, 14][0].long()
 
+        if self._hierVis is None and self._hierLang is None:
+            print('HierRela: no visual module, no language module.')
+            exit(-1)
+
         if self._hierVis is not None:
             _, vis_score, _, _ = self._hierVis(im_data, im_info, gt_relas, num_relas)
             vis_score = vis_score[0]
-            score = vis_score
 
-        if self._hierLang is not None and self._obj_lab_vecs is not None:
+        if self._hierLang is not None:
             sbj_lab_vecs = self._obj_lab_vecs[sbj_label]
             obj_lab_vecs = self._obj_lab_vecs[obj_label]
-
             lan_score = self._hierLang(sbj_lab_vecs, obj_lab_vecs)
-            score = lan_score
 
-        if self._hierVis is not None and self._hierLang is not None:
-            score = 0.7 * lan_score + 0.3 * vis_score
-            score[score < -3] = -3
+        if self._hierLang is None:
+            lan_score = vis_score
 
+        if self._hierVis is None:
+            vis_score = lan_score
+
+        score = 0.7 * lan_score + 0.3 * vis_score
+        score[score < -3] = -3
 
         pre_boxes = gt_relas[:, :, :5]
         raw_pre_rois = torch.zeros(pre_boxes.size())

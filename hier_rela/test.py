@@ -241,16 +241,16 @@ if __name__ == '__main__':
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
 
+            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+            vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
+            lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
+
             pred_cates[ppp] = pred_cate
             pred_scores[ppp] = pred_scr
             pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':
                 # print('=== %s ===' % gt_node.name())
-                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
-                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
-
                 if vis_cate == gt_cate or lan_cate == gt_cate:
                     raw_score_sum_u += 1
 
@@ -275,8 +275,6 @@ if __name__ == '__main__':
 
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
                 # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
-
-
                 if inf_scr > 0:
                     hit[ppp, 0] = inf_scr
                     flat_count += 1

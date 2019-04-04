@@ -106,6 +106,26 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                         # not zero shot
                         zero_shot = 0
 
+            count = 0
+            pair = [sbj, obj]
+            for rlt1 in anno_rlts:
+                sbj1 = rlt1['subject']
+                obj1 = rlt1['object']
+                pair1 = [sbj1, obj1]
+
+                same = 1
+                for p in range(2):
+                    part = pair[p]
+                    part1 = pair1[p]
+                    if part['xmin'] == part1['xmin'] and \
+                            part['ymin'] == part1['ymin'] and \
+                            part['xmax'] == part1['xmax'] and \
+                            part['ymax'] == part1['ymax']:
+                        pass
+                    else:
+                        same = 0
+                        break
+                count += same
 
             things = [pre, sbj, obj]
             labelnets = [prenet, objnet, objnet]
@@ -123,7 +143,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
                 ymax = int(thing['ymax'])
                 label_ind = labelnets[j].get_node_by_name(thing['name']).index()
                 rlt_info += [xmin, ymin, xmax, ymax, label_ind]
-            rlt_info += [1.0, 1.0, 1.0, zero_shot]
+            rlt_info += [1.0, 1.0, 1.0, zero_shot, count]
             zero_count += zero_shot
             rlt_info_list.append(rlt_info)
         rlts[image_id] = rlt_info_list

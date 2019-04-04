@@ -3,35 +3,25 @@ import cPickle
 import scipy.io
 import numpy as np
 
-from lib.datasets.vrd.label_hier.pre_hier import prenet
-from lib.datasets.vrd.label_hier.obj_hier import objnet
+from lib.datasets.vg200.label_hier.pre_hier import prenet
+from lib.datasets.vg200.label_hier.obj_hier import objnet
 
-with open('gt_rela_roidb_vrd.bin', 'rb') as f:
+dataset = 'vg'
+
+
+with open('%s/gt_rela_roidb_%s.bin' % (dataset, dataset), 'rb') as f:
     anno = pickle.load(f)
 
-with open('test.pkl', 'rb') as f:
-    dsr_test = cPickle.load(f)
-
-dsr_annos = []
+dsr_test = []
 raw_obj_labels = objnet.get_raw_labels()
 raw_pre_labels = prenet.get_raw_labels()
-for i in range(1000):
-    if dsr_test[i] is None or dsr_test[i]['img_path'] is None:
-        continue
-
-    img_path = dsr_test[i]['img_path']
-    img_id = img_path.split('/')[-1].split('.')[0]
-
-    if img_id not in anno:
-        continue
+for img_id in anno:
 
     img_anno = anno[img_id]
     if len(img_anno) == 0:
         continue
 
     img_anno_np = np.array(img_anno)
-
-    dsr_anno = dsr_test[i]
     sbj_dets = img_anno_np[:, 5:10]
     obj_dets = img_anno_np[:, 10:15]
     all_obj_dets = np.concatenate([sbj_dets, obj_dets], axis=0)
@@ -60,7 +50,6 @@ for i in range(1000):
     for h in range(h_pre_classes.shape[0]):
         h_pre_cls = h_pre_classes[h]
         h_node = prenet.get_node_by_index(int(h_pre_cls))
-
         find = False
         for ri, raw_pre_label in enumerate(raw_pre_labels):
             if raw_pre_label == h_node.name():
@@ -69,13 +58,15 @@ for i in range(1000):
                 break
         assert find
 
+
+    dsr_anno = {}
     dsr_anno['boxes'] = boxes
     dsr_anno['classes'] = r_obj_classes
     dsr_anno['ix1'] = ix1
     dsr_anno['ix2'] = ix2
     dsr_anno['rel_classes'] = r_pre_classes
-    dsr_test[i] = dsr_anno
+    dsr_test.append(dsr_anno)
 
-with open('test_gt.pkl', 'wb') as f:
+with open('%s/test_gt.pkl' % dataset, 'wb') as f:
     cPickle.dump(dsr_test, f)
 

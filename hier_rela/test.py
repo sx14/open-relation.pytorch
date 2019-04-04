@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre')
+                        default='rela')
 
 
     args = parser.parse_args()
@@ -246,7 +246,7 @@ if __name__ == '__main__':
             lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
 
             pred_cates[ppp] = pred_cate
-            pred_scores[ppp] = pred_scr
+            pred_scores[ppp] = float(pred_scr)
             pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':

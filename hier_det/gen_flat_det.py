@@ -147,6 +147,7 @@ if __name__ == '__main__':
     pred_roidb = {}
     start = time.time()
     N_img = len(det_roidb.keys())
+    raw_inds = objnet.get_raw_indexes()
     for i, img_id in enumerate(det_roidb.keys()):
         print('pred [%d/%d]' % (N_img, i+1))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
@@ -181,6 +182,8 @@ if __name__ == '__main__':
             all_scores = scores[0][ppp].cpu().data.numpy()
             pred_cate = np.argmax(all_scores[1:]) + 1
             pred_scr = all_scores[pred_cate]
+
+            pred_cate = raw_inds[pred_cate]
             im_boxes[0][ppp][4] = pred_cate
             im_boxes[0][ppp][5] = float(pred_scr)
 

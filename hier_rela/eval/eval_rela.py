@@ -4,9 +4,9 @@ from ass_fun import *
 # vrd - vg
 dataset = 'vrd'
 # rela - pre
-target = 'pre'
+target = 'rela'
 # lu - dsr - vts - ours - dr
-method = 'lu'
+method = 'dr'
 
 
 

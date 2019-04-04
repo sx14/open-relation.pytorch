@@ -95,10 +95,12 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         if N_pred == 0:
             continue
 
+        top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1]
+        curr_pred_roidb = curr_pred_roidb[top_inds, :]
+
         if N_recall < N_pred:
             # get Top N predictions
-            top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1][:N_recall]
-            curr_pred_roidb = curr_pred_roidb[top_inds, :]
+            curr_pred_roidb = curr_pred_roidb[:N_recall, :]
             N_pred = len(curr_pred_roidb)
 
         results[image_id]['N_rlt'] = N_pred

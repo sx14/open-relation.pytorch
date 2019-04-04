@@ -348,6 +348,7 @@ if __name__ == '__main__':
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
+    # hier object cls
     save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vg.bin')
     with open(save_path, 'wb') as f:
         pickle.dump(obj_det_roidbs, f)

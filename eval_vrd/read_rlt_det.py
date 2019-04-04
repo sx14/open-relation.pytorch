@@ -7,7 +7,7 @@ from lib.datasets.vrd.label_hier.pre_hier import prenet
 from lib.datasets.vrd.label_hier.obj_hier import objnet
 from global_config import PROJECT_ROOT
 
-pred = scipy.io.loadmat('relationship_det_result.mat')
+pred = scipy.io.loadmat('predicate_det_result.mat')
 pred_rlt_labels = pred['rlp_labels_ours'][0]
 pred_rlt_confs = pred['rlp_confs_ours'][0]
 pred_obj_boxes = pred['obj_bboxes_ours'][0]

@@ -222,3 +222,5 @@ runs
 
 *.mat
 *.data
+*.pdf
+*.gv

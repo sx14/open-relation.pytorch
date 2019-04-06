@@ -288,13 +288,14 @@ if __name__ == '__main__':
         img_pred_rois = None
         for t in range(4):
             pred_rois = torch.FloatTensor(rois_use)
-            sbj_scores = pred_rois[:, -3]
-            obj_scores = pred_rois[:, -2]
+            sbj_scores = pred_rois[:, 16]
+            obj_scores = pred_rois[:, 17]
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
-            rela_scores = rela_scores.unsqueeze(1)
-            rela_scores = rela_scores + t
+            rela_scores = rela_scores + t*10
             rela_indexes = np.argsort(rela_scores.numpy())[::-1]
+            rela_scores = rela_scores.unsqueeze(1)
+
 
             pred_rois[:, 4] = pred_cates[:, t]
             # remove [pconf, sconf, oconf], cat rela_conf, hit

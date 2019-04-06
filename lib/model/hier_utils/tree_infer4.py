@@ -164,7 +164,7 @@ def top_down_search(root, mode='hier'):
         # if node.entropy() > 0.7 and node.depth() > 2:
         #     break
 
-        inds = np.argsort(c_scores_s.numpy())
+        inds = np.argsort(c_scores_s.numpy())[::-1]
         pred_c_node = None
         for ind in inds:
             cand = node.children()[ind]
@@ -172,6 +172,7 @@ def top_down_search(root, mode='hier'):
                 continue
             else:
                 pred_c_node = cand
+                break
         assert pred_c_node is not None
         # pred_c_ind = torch.argmax(c_scores_s)
         # pred_c_node = node.children()[pred_c_ind]

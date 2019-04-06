@@ -158,7 +158,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -241,8 +241,10 @@ if __name__ == '__main__':
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
 
+            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+
             pred_cates[ppp] = pred_cate
-            pred_scores[ppp] = pred_scr
+            pred_scores[ppp] = float(pred_scr)
             pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'pre':

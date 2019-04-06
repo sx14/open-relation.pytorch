@@ -221,3 +221,6 @@ runs
 /VG
 
 *.mat
+*.pdf
+*.gv
+*.data

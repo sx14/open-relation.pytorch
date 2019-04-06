@@ -2,14 +2,11 @@ import pickle
 from ass_fun import *
 
 # vrd - vg
-dataset = 'vrd'
+dataset = 'vg'
 # rela - pre
 target = 'rela'
 # lu - dsr - vts - ours - dr
-method = 'dr'
-
-
-
+method = 'dsr'
 
 
 if dataset == 'vrd':

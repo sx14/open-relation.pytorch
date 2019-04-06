@@ -191,6 +191,10 @@ if __name__ == '__main__':
 
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
+        rois_use = np.array(rois_use)
+        rois_use[:, 4] = 0
+        rois_use_uni = np.unique(rois_use, axis=0)
+        rois_use = rois_use_uni.tolist()
 
         # Attention: resized image data
         data = get_input_data(img, rois_use)
@@ -292,7 +296,7 @@ if __name__ == '__main__':
             obj_scores = pred_rois[:, 17]
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
-            rela_scores = rela_scores + t*10
+            rela_scores = rela_scores + (3-t)*10
             rela_indexes = np.argsort(rela_scores.numpy())[::-1]
             rela_scores = rela_scores.unsqueeze(1)
 
@@ -307,7 +311,7 @@ if __name__ == '__main__':
                 img_pred_rois = pred_rois
             else:
                 img_pred_rois = np.concatenate((img_pred_rois, pred_rois), axis=0)
-        pred_roidb[img_id] = img_pred_rois.numpy()
+        pred_roidb[img_id] = img_pred_rois
             # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
 
 

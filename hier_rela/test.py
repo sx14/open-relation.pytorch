@@ -18,7 +18,7 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.tree_infer4 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -212,8 +212,8 @@ if __name__ == '__main__':
         vis_scores = vis_score.data
         lan_scores = lan_score.data
 
-        pred_cates = torch.zeros(rois[0].shape[0])
-        pred_scores = torch.zeros(rois[0].shape[0])
+        pred_cates = torch.zeros(rois[0].shape[0], 4)
+        pred_scores = torch.zeros(rois[0].shape[0], 4)
 
         raw_label_inds = set(prenet.get_raw_indexes())
 
@@ -228,26 +228,21 @@ if __name__ == '__main__':
             l_scores = lan_scores[0][ppp].cpu().data.numpy()
             v_scores = vis_scores[0][ppp].cpu().data.numpy()
 
-            # print('==== %s ====' % gt_node.name())
-            # ranked_inds = np.argsort(all_scores)[::-1][:20]
-            # sorted_scrs = np.sort(all_scores)[::-1][:20]
-            # for item in zip(ranked_inds, sorted_scrs):
-            #     print('%s (%.2f)' % (prenet.get_node_by_index(item[0]).name(), item[1]))
-
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
 
-            top2 = my_infer(prenet, all_scores)
-            pred_cate = top2[0][0]
-            pred_scr = top2[0][1]
+            top4 = my_infer(prenet, all_scores)
+            for t in range(4):
+                pred_cate = top4[t][0]
+                pred_scr = top4[t][1]
 
-            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+                # raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
 
-            pred_cates[ppp] = pred_cate
-            pred_scores[ppp] = float(pred_scr)
-            pred_node = prenet.get_node_by_index(pred_cate)
+                pred_cates[ppp, t] = pred_cate
+                pred_scores[ppp, t] = float(pred_scr)
+                pred_node = prenet.get_node_by_index(pred_cate)
 
-            if args.mode == 'pre':
+            if args.mode == 'aaa':
                 # print('=== %s ===' % gt_node.name())
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
                 vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
@@ -290,17 +285,24 @@ if __name__ == '__main__':
                     pass
                 print(info)
 
-        pred_rois = torch.FloatTensor(rois_use)
-        sbj_scores = pred_rois[:, -3]
-        obj_scores = pred_rois[:, -2]
-        rela_scores = pred_scores * sbj_scores * obj_scores
-        rela_scores = rela_scores.unsqueeze(1)
+        img_pred_rois = None
+        for t in range(4):
+            pred_rois = torch.FloatTensor(rois_use)
+            sbj_scores = pred_rois[:, -3]
+            obj_scores = pred_rois[:, -2]
 
-        pred_rois[:, 4] = pred_cates
-        # remove [pconf, sconf, oconf], cat rela_conf, hit
-        pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
-        pred_roidb[img_id] = pred_rois.numpy()
-        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
+            rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
+            rela_scores = rela_scores.unsqueeze(1)
+
+            pred_rois[:, 4] = pred_cates[:, t]
+            # remove [pconf, sconf, oconf], cat rela_conf, hit
+            pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
+            if img_pred_rois is None:
+                img_pred_rois = pred_rois
+            else:
+                img_pred_rois = torch.cat((img_pred_rois, pred_rois), dim=0)
+        pred_roidb[img_id] = img_pred_rois.numpy()
+            # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
 
 
 

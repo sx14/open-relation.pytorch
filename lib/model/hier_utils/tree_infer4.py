@@ -154,10 +154,7 @@ def top_down_search(root, mode='hier'):
     while len(node.children()) > 0:
         c_scores = []
         for c in node.children():
-            if c.is_used():
-                c_scores.append(-10000)
-            else:
-                c_scores.append(c.raw_score())
+            c_scores.append(c.raw_score())
         c_scores_v = Variable(Tensor(c_scores))
         c_scores_s = softmax(c_scores_v, 0)
 
@@ -167,8 +164,17 @@ def top_down_search(root, mode='hier'):
         # if node.entropy() > 0.7 and node.depth() > 2:
         #     break
 
-        pred_c_ind = torch.argmax(c_scores_s)
-        pred_c_node = node.children()[pred_c_ind]
+        inds = np.argsort(c_scores_s.numpy())
+        pred_c_node = None
+        for ind in inds:
+            cand = node.children()[ind]
+            if cand.is_used():
+                continue
+            else:
+                pred_c_node = cand
+        assert pred_c_node is not None
+        # pred_c_ind = torch.argmax(c_scores_s)
+        # pred_c_node = node.children()[pred_c_ind]
         hedge_c_scr = pred_c_node.info_ratio() * (1 - node.entropy())
 
         node.set_used()

@@ -293,7 +293,8 @@ if __name__ == '__main__':
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
             rela_scores = rela_scores.unsqueeze(1)
-            rela_indexes = np.argsort(rela_scores)[::-1]
+            rela_scores = rela_scores + t
+            rela_indexes = np.argsort(rela_scores.numpy())[::-1]
 
             pred_rois[:, 4] = pred_cates[:, t]
             # remove [pconf, sconf, oconf], cat rela_conf, hit

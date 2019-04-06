@@ -293,14 +293,18 @@ if __name__ == '__main__':
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
             rela_scores = rela_scores.unsqueeze(1)
+            rela_indexes = np.argsort(rela_scores)[::-1]
 
             pred_rois[:, 4] = pred_cates[:, t]
             # remove [pconf, sconf, oconf], cat rela_conf, hit
             pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
+            pred_rois = pred_rois.numpy()
+            pred_rois = pred_rois[rela_indexes, :]
+
             if img_pred_rois is None:
                 img_pred_rois = pred_rois
             else:
-                img_pred_rois = torch.cat((img_pred_rois, pred_rois), dim=0)
+                img_pred_rois = np.concatenate((img_pred_rois, pred_rois), axis=0)
         pred_roidb[img_id] = img_pred_rois.numpy()
             # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
 

@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -106,12 +106,12 @@ if __name__ == '__main__':
     hierVis.create_architecture()
 
     # Load HierVis
-    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
-    print("load checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-    hierVis.load_state_dict(checkpoint['model'])
-    if 'pooling_mode' in checkpoint.keys():
-        cfg.POOLING_MODE = checkpoint['pooling_mode']
+    # load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
+    # print("load checkpoint %s" % (load_name))
+    # checkpoint = torch.load(load_name)
+    # hierVis.load_state_dict(checkpoint['model'])
+    # if 'pooling_mode' in checkpoint.keys():
+    #     cfg.POOLING_MODE = checkpoint['pooling_mode']
 
     # Load HierLan
     hierLan = HierLang(600 * 2, preconf.label_vec_path())
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     hierLan.load_state_dict(checkpoint)
 
     # get HierRela
-    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(None, hierLan, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
     hierVis.eval()
@@ -158,7 +158,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)

@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -106,12 +106,12 @@ if __name__ == '__main__':
     hierVis.create_architecture()
 
     # Load HierVis
-    # load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
-    # print("load checkpoint %s" % (load_name))
-    # checkpoint = torch.load(load_name)
-    # hierVis.load_state_dict(checkpoint['model'])
-    # if 'pooling_mode' in checkpoint.keys():
-    #     cfg.POOLING_MODE = checkpoint['pooling_mode']
+    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
+    print("load checkpoint %s" % (load_name))
+    checkpoint = torch.load(load_name)
+    hierVis.load_state_dict(checkpoint['model'])
+    if 'pooling_mode' in checkpoint.keys():
+        cfg.POOLING_MODE = checkpoint['pooling_mode']
 
     # Load HierLan
     hierLan = HierLang(600 * 2, preconf.label_vec_path())
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     hierLan.load_state_dict(checkpoint)
 
     # get HierRela
-    hierRela = HierRela(None, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, None, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
     hierVis.eval()
@@ -241,10 +241,10 @@ if __name__ == '__main__':
                 pred_cate = top4[t][0]
                 pred_scr = top4[t][1]
 
-                # raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
 
-                pred_cates[ppp, t] = pred_cate
-                pred_scores[ppp, t] = float(pred_scr)
+                pred_cates[ppp, t] = raw_cate
+                pred_scores[ppp, t] = float(raw_score)
                 pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'aaa':

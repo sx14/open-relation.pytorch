@@ -94,7 +94,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         N_pred = len(curr_pred_roidb)
 
         # pre, sbj, obj, scr
-        curr_eval_rec = np.zeros((N_pred, 4))
+        curr_eval_rec = np.ones((N_pred, 4)) * (-1)
 
 
         if N_pred == 0:
@@ -177,8 +177,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             for k in range(N_rela):
                 # for each relationship GT
 
-                # if count_gt[k] == 0:
-                #     continue
+                if count_gt[k] == 0:
+                    continue
 
                 if mode == 'hier':
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
@@ -189,15 +189,23 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
 
                         img_rlt_box_rights[j] = 1
                         img_rlt_box_gt_rights[k] = 1
+
                         sub_gt_node = objnet.get_node_by_index(sub_gt[k])
                         obj_gt_node = objnet.get_node_by_index(obj_gt[k])
+                        pre_gt_node = prenet.get_node_by_index(rela_gt[k])
+
                         sub_score = sub_gt_node.score(sub_dete[j])
                         obj_score = obj_gt_node.score(obj_dete[j])
+                        pre_score = pre_gt_node.score(rela_pred[j])
+                        rela_score = min([sub_score, obj_score, pre_score])
+
+                        # box_hit_gt_ind, gt_pre, gt_sub, gt_obj, score
+                        if rela_score > curr_eval_rec[j, -1]:
+                            curr_eval_rec[j, :] = [k, pre_gt_node.index(), sub_gt_node.index(), obj_gt_node.index(), rela_score]
+
                         if sub_score > 0 and obj_score > 0:
                             img_rlt_pair_rights[j] = 1
                             img_rlt_pair_gt_rights[k] = 1
-                            pre_gt_node = prenet.get_node_by_index(rela_gt[k])
-                            pre_score = pre_gt_node.score(rela_pred[j])
                             if pre_score > 0:
                                 sub_node = objnet.get_node_by_index(int(sub_dete[j]))
                                 obj_node = objnet.get_node_by_index(int(obj_dete[j]))
@@ -208,11 +216,11 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1
                                 # rela_score = (sub_score + obj_score + pre_score)/3.0
-                                rela_score = min([sub_score, obj_score, pre_score])
+
                                 rela_scores[k] = max(rela_scores[k], rela_score)
                                 pre_scores[k] = max(pre_scores[k], pre_score)
 
-                                curr_eval_rec[j, :] = [pre_gt_node.index(), sub_gt_node.index(), obj_gt_node.index(), rela_score]
+
                 else:
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])

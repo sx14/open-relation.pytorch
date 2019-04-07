@@ -11,7 +11,7 @@ target = 'rela'
 method = 'ours'
 
 
-def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
+def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
     N_rlt_gt = img_results['N_rlt_gt']
     N_rlt_right = img_results['N_rlt_gt_right']
 
@@ -19,8 +19,8 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
         return
 
 
-    keep = pred_roidb[:, -1] > 0
-    hit_roidb = pred_roidb[keep, :]
+    keep = img_roidb[:, -1] > 0
+    hit_roidb = img_roidb[keep, :]
     sbj_dets = hit_roidb[:, 5:10]
     obj_dets = hit_roidb[:, 10:15]
 
@@ -34,47 +34,28 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
         label = objnet.get_node_by_index(int(uni_det_cls))
         uni_det_labels.append(label)
 
-    gt_print = np.ones(gt_roidb.shape[0])
+
     print('----' + img_id + '----')
-    for i in range(pred_roidb.shape[0]):
-        if pred_roidb[i, -5] > -1:  # box hit
-            pre_cls = pred_roidb[i, 4]
-            sbj_cls = pred_roidb[i, 9]
-            obj_cls = pred_roidb[i, 14]
+    for i in range(img_roidb.shape[0]):
+        if img_roidb[i, -1] > 0:
+            pre_cls = img_roidb[i, 4]
+            sbj_cls = img_roidb[i, 9]
+            obj_cls = img_roidb[i, 14]
 
             pre_label = prenet.get_node_by_index(int(pre_cls)).name().split('.')[0]
             sbj_label = objnet.get_node_by_index(int(sbj_cls)).name().split('.')[0]
             obj_label = objnet.get_node_by_index(int(obj_cls)).name().split('.')[0]
 
-            pre_gt = pred_roidb[i, -4]
-            sbj_gt = pred_roidb[i, -3]
-            obj_gt = pred_roidb[i, -2]
+            pre_gt = img_roidb[i, -4]
+            sbj_gt = img_roidb[i, -3]
+            obj_gt = img_roidb[i, -2]
 
             pre_gt_label = prenet.get_node_by_index(int(pre_gt))
             sbj_gt_label = objnet.get_node_by_index(int(sbj_gt))
             obj_gt_label = objnet.get_node_by_index(int(obj_gt))
 
-            if pred_roidb[i, -1] > 0: # rela hit
-                gt_print[pred_roidb[i, -5]] = 0
-
-                print('%.2f <%s, %s, %s>|<%s, %s, %s>' % (pred_roidb[i, -1], sbj_gt_label, pre_gt_label, obj_gt_label,
-                                                            sbj_label, pre_label, obj_label))
-            else:
-                print('%.2f             |<%s, %s, %s>' % (pred_roidb[i, -1], sbj_label, pre_label, obj_label))
-
-    for i in range(gt_print.shape[0]):
-        if gt_print[i] == 0:
-            pre_gt = gt_roidb[i, 4]
-            sbj_gt = gt_roidb[i, 9]
-            obj_gt = gt_roidb[i, 14]
-
-            pre_gt_label = prenet.get_node_by_index(int(pre_gt))
-            sbj_gt_label = objnet.get_node_by_index(int(sbj_gt))
-            obj_gt_label = objnet.get_node_by_index(int(obj_gt))
-
-            print('%.2f  <%s, %s, %s>|              ' % (pred_roidb[i, -1], sbj_gt_label, pre_gt_label, obj_gt_label))
-
-
+            print('<%s, %s, %s>\t<%s, %s, %s>\t%.2f' % (sbj_gt_label, pre_gt_label, obj_gt_label,
+                                                  sbj_label, pre_label, obj_label, img_roidb[i, -1]))
 
     dets_temp = np.copy(uni_det_boxes)
     dets_temp[:, 2] = uni_det_boxes[:, 2] - uni_det_boxes[:, 0]  # width
@@ -106,19 +87,15 @@ results = pickle.load(open(results_path))
 
 img_root = os.path.join(ds_root, 'JPEGImages')
 
-for img_id in gt_roidb:
-    curr_gt = gt_roidb[img_id]
-    curr_gt = np.array(curr_gt)
-    if img_id not in pred_roidb:
-        continue
+img_id = ''
 
-    curr_pr = pred_roidb[img_id]
-    curr_rs = results[img_id]
-    img_path = os.path.join(img_root, img_id+'.jpg')
-    im = plt.imread(img_path)
-    if im is None or curr_gt is None or curr_pr is None or curr_gt.shape[0] == 0 or curr_pr.shape[0] == 0:
-        continue
+curr_gt = gt_roidb[img_id]
 
-    show_img_relas(curr_pr, curr_rs, im, objnet, prenet, 0.3)
+curr_pr = pred_roidb[img_id]
+curr_rs = results[img_id]
+img_path = os.path.join(img_root, img_id+'.jpg')
+im = plt.imread(img_path)
+
+show_img_relas(curr_pr, curr_rs, im, objnet, prenet, 0.1)
 
 

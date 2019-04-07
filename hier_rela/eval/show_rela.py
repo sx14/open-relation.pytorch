@@ -1,5 +1,5 @@
 import pickle
-import cv2
+from matplotlib import pyplot as plt
 from ass_fun import *
 from hier_det.show_box import show_boxes
 from global_config import VRD_ROOT, VG_ROOT
@@ -92,7 +92,7 @@ for img_id in gt_roidb:
     curr_pr = pred_roidb[img_id]
     curr_rs = results[img_id]
     img_path = os.path.join(img_root, img_id+'.jpg')
-    im = cv2.imread(img_path)
+    im = plt.imread(img_path)
     if im is None or curr_gt is None or curr_pr is None or len(curr_gt) == 0 or curr_pr.shape[0] == 0:
         continue
 

@@ -235,6 +235,9 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
 
         if curr_pred_roidb_all.shape[1] == 18:
             pred_roidb[image_id] = np.concatenate((curr_pred_roidb_all, curr_eval_rec), axis=1)
+        else:
+            curr_pred_roidb_all[:, 18:] = curr_eval_rec
+            pred_roidb[image_id] =curr_pred_roidb_all
 
     # print('Proposal recall: %.4f' % (N_obj_box_good / N_obj_total))
     # print('Detection recall: %.4f' % (N_obj_det_good / N_obj_total))

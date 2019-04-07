@@ -102,6 +102,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
 
         top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1]
         curr_pred_roidb = curr_pred_roidb[top_inds, :]
+        curr_pred_roidb_all = curr_pred_roidb_all[top_inds, :]
 
         if N_recall < N_pred:
             # get Top N predictions
@@ -201,8 +202,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                                 sub_node = objnet.get_node_by_index(int(sub_dete[j]))
                                 obj_node = objnet.get_node_by_index(int(obj_dete[j]))
                                 pre_node = prenet.get_node_by_index(int(rela_pred[j]))
-                                print('<%s, %s, %s> | <%s, %s, %s>' % (sub_gt_node.name(), pre_gt_node.name(), obj_gt_node.name(),
-                                                                       sub_node.name(), pre_node.name, obj_node.name()))
+                                # print('<%s, %s, %s> | <%s, %s, %s>' % (sub_gt_node.name(), pre_gt_node.name(), obj_gt_node.name(),
+                                #                                        sub_node.name(), pre_node.name(), obj_node.name()))
 
                                 curr_eval_rec[j, :] = [pre_gt_node.index(), sub_gt_node.index(), obj_gt_node.index(), pre_score]
                                 pred_scores[j] = pre_score

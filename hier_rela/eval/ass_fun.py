@@ -198,6 +198,12 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                             pre_gt_node = prenet.get_node_by_index(rela_gt[k])
                             pre_score = pre_gt_node.score(rela_pred[j])
                             if pre_score > 0:
+                                sub_node = objnet.get_node_by_index(int(sub_dete[j]))
+                                obj_node = objnet.get_node_by_index(int(obj_dete[j]))
+                                pre_node = prenet.get_node_by_index(int(rela_pred[j]))
+                                print('<%s, %s, %s> | <%s, %s, %s>' % (sub_gt_node.name(), pre_gt_node.name(), obj_gt_node.name(),
+                                                                       sub_node.name(), pre_node.name, obj_node.name()))
+
                                 curr_eval_rec[j, :] = [pre_gt_node.index(), sub_gt_node.index(), obj_gt_node.index(), pre_score]
                                 pred_scores[j] = pre_score
                                 img_rlt_rights[j] = 1

@@ -48,7 +48,10 @@ def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
 
             print('<%s, %s, %s>' % (sbj_label, pre_label, obj_label))
 
-    show_boxes(img, uni_det_boxes, uni_det_labels, uni_det_confs, 'all')
+    dets_temp = np.copy(uni_det_boxes)
+    dets_temp[:, 2] = uni_det_boxes[:, 2] - uni_det_boxes[:, 0]  # width
+    dets_temp[:, 3] = uni_det_boxes[:, 3] - uni_det_boxes[:, 1]  # height
+    show_boxes(img, dets_temp, uni_det_labels, uni_det_confs, 'all')
 
 if dataset == 'vrd':
     ds_root = VRD_ROOT

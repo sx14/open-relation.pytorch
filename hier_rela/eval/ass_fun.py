@@ -94,7 +94,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         N_pred = len(curr_pred_roidb)
 
         # pre, sbj, obj, scr
-        curr_eval_rec = np.ones((N_pred, 4)) * (-1)
+        curr_eval_rec = np.ones((N_pred, 5)) * (-1)
 
 
         if N_pred == 0:

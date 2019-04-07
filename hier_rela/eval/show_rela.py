@@ -46,7 +46,16 @@ def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
             sbj_label = objnet.get_node_by_index(int(sbj_cls))
             obj_label = objnet.get_node_by_index(int(obj_cls))
 
-            print('<%s, %s, %s>' % (sbj_label, pre_label, obj_label))
+            pre_gt = img_roidb[-4]
+            sbj_gt = img_roidb[-3]
+            obj_gt = img_roidb[-2]
+
+            pre_gt_label = prenet.get_node_by_index(int(pre_gt))
+            sbj_gt_label = objnet.get_node_by_index(int(sbj_gt))
+            obj_gt_label = objnet.get_node_by_index(int(obj_gt))
+
+            print('<%s, %s, %s>\t<%s, %s, %s>' % (sbj_gt_label, pre_gt_label, obj_gt_label,
+                                                  sbj_label, pre_label, obj_label))
 
     dets_temp = np.copy(uni_det_boxes)
     dets_temp[:, 2] = uni_det_boxes[:, 2] - uni_det_boxes[:, 0]  # width

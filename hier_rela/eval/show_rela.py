@@ -69,7 +69,7 @@ gt_roidb = pickle.load(open(gt_roidb_path))
 pred_roidb_path = '../%s_box_label_%s_%s.bin' % (target, dataset, method)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
-results_path = '../results_%s_%s.bin' % (dataset, method)
+results_path = '../eval_results_%s_%s.bin' % (dataset, method)
 results = pickle.load(open(results_path))
 
 img_root = os.path.join(ds_root, 'JPEGImages')

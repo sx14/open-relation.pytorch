@@ -31,7 +31,7 @@ rela_R50, pre_R50, results_R50 = rela_recall('hier', gt_roidb, pred_roidb, 50, o
 rela_R100, pre_R100, results_R100 = rela_recall('hier', gt_roidb, pred_roidb, 100, objnet, prenet, alpha=2, box_thr=box_thr)
 
 pickle.dump(pred_roidb, open(pred_roidb_path, 'wb'))
-pickle.dump(results_R100, open('results_%s_%s.bin' % (dataset, method), 'wb'))
+pickle.dump(results_R100, open('eval_results_%s_%s.bin' % (dataset, method), 'wb'))
 
 # analysis
 recall_Ns = [50, 100]

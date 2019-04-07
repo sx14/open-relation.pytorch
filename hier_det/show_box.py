@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 
 def show_boxes(im, dets, cls, confs, mode='single'):
     """Draw detected bounding boxes."""
+    fig, ax = plt.subplots(figsize=(12, 12))
+    ax.imshow(im, aspect='equal')
     for i in range(0, len(dets)):
-        fig, ax = plt.subplots(figsize=(12, 12))
-        ax.imshow(im, aspect='equal')
         bbox = dets[i]
         ax.add_patch(
             plt.Rectangle((bbox[0], bbox[1]),

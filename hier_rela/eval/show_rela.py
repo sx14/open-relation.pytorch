@@ -34,8 +34,8 @@ def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
         label = objnet.get_node_by_index(int(uni_det_cls))
         uni_det_labels.append(label)
 
-    show_boxes(img, uni_det_boxes, uni_det_labels, uni_det_confs)
 
+    print('----' + img_id + '----')
     for i in range(img_roidb.shape[0]):
         if img_roidb[i, -1] > 0:
             pre_cls = img_roidb[i, 4]
@@ -48,6 +48,7 @@ def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
 
             print('<%s, %s, %s>' % (sbj_label, pre_label, obj_label))
 
+    show_boxes(img, uni_det_boxes, uni_det_labels, uni_det_confs, 'all')
 
 if dataset == 'vrd':
     ds_root = VRD_ROOT
@@ -69,7 +70,7 @@ gt_roidb = pickle.load(open(gt_roidb_path))
 pred_roidb_path = '../%s_box_label_%s_%s.bin' % (target, dataset, method)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
-results_path = '../eval_results_%s_%s.bin' % (dataset, method)
+results_path = 'eval_results_%s_%s.bin' % (dataset, method)
 results = pickle.load(open(results_path))
 
 img_root = os.path.join(ds_root, 'JPEGImages')

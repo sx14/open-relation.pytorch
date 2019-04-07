@@ -21,8 +21,8 @@ def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
 
     keep = img_roidb[:, -1] > 0
     hit_roidb = img_roidb[keep, :]
-    sbj_dets = hit_roidb[5:10]
-    obj_dets = hit_roidb[10:15]
+    sbj_dets = hit_roidb[:, 5:10]
+    obj_dets = hit_roidb[:, 10:15]
 
     dets = np.concatenate((sbj_dets, obj_dets), axis=0)
     uni_dets = np.unique(dets, axis=0)
@@ -80,7 +80,7 @@ for img_id in gt_roidb:
     curr_rs = results[img_id]
     img_path = os.path.join(img_root, img_id+'.jpg')
     im = cv2.imread(img_path)
-    if im is None or curr_gt is None or curr_pr is None or curr_gt.shape[0] == 0 or curr_pr.shape[0] == 0:
+    if im is None or curr_gt is None or curr_pr is None or len(curr_gt) == 0 or curr_pr.shape[0] == 0:
         continue
 
     show_img_relas(curr_pr, curr_rs, im, objnet, prenet, 0.3)

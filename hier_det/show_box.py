@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 
 
-def show_boxes(im, dets, cls, confs):
+def show_boxes(im, dets, cls, confs, mode='single'):
     """Draw detected bounding boxes."""
     for i in range(0, len(dets)):
         fig, ax = plt.subplots(figsize=(12, 12))
@@ -21,10 +21,14 @@ def show_boxes(im, dets, cls, confs):
                 '%s (%.2f)' % (cls[i], confs[i]),
                 bbox=dict(facecolor='blue', alpha=0.5),
                 fontsize=14, color='white')
+        if mode == 'single':
+            plt.axis('off')
+            plt.tight_layout()
+            plt.show()
+    if mode != 'single':
         plt.axis('off')
         plt.tight_layout()
         plt.show()
-
 
 def get_pres(img_root, anno_root, img_name):
     img_path = os.path.join(img_root, img_name)

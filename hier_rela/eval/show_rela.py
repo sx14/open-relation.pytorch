@@ -14,8 +14,8 @@ method = 'ours'
 def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     N_rlt_gt = img_results['N_rlt_gt']
     N_rlt_right = img_results['N_rlt_gt_right']
-
-    if N_rlt_right * 1.0 / N_rlt_gt < thr:
+    recall = N_rlt_right * 1.0 / N_rlt_gt
+    if recall < thr:
         return
 
 
@@ -35,7 +35,7 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
         uni_det_labels.append(label)
 
     gt_print = np.ones(gt_roidb.shape[0])
-    print('----' + img_id + '----')
+    print('---- %s : %.2f ----' % (img_id, recall))
     for i in range(pred_roidb.shape[0]):
         if pred_roidb[i, -5] > -1:  # box hit
             pre_cls = pred_roidb[i, 4]
@@ -55,7 +55,8 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
             obj_gt_label = objnet.get_node_by_index(int(obj_gt))
 
             if pred_roidb[i, -1] > 0: # rela hit
-                gt_print[pred_roidb[i, -5]] = 0
+                k = pred_roidb[i, -5]
+                gt_print[int(k)] = 0
 
                 print('%.2f <%s, %s, %s>|<%s, %s, %s>' % (pred_roidb[i, -1], sbj_gt_label, pre_gt_label, obj_gt_label,
                                                             sbj_label, pre_label, obj_label))
@@ -72,7 +73,7 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
             sbj_gt_label = objnet.get_node_by_index(int(sbj_gt))
             obj_gt_label = objnet.get_node_by_index(int(obj_gt))
 
-            print('%.2f  <%s, %s, %s>|              ' % (pred_roidb[i, -1], sbj_gt_label, pre_gt_label, obj_gt_label))
+            print('%.2f  <%s, %s, %s>|              ' % (0.0, sbj_gt_label, pre_gt_label, obj_gt_label))
 
 
 
@@ -119,6 +120,6 @@ for img_id in gt_roidb:
     if im is None or curr_gt is None or curr_pr is None or curr_gt.shape[0] == 0 or curr_pr.shape[0] == 0:
         continue
 
-    show_img_relas(curr_pr, curr_rs, im, objnet, prenet, 0.3)
+    show_img_relas(curr_gt, curr_pr, curr_rs, im, objnet, prenet, 0.3)
 
 

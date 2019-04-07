@@ -92,6 +92,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         curr_pred_roidb = np.array(pred_roidb[image_id])
         N_pred = len(curr_pred_roidb)
 
+        # pre, sbj, obj, scr
+        curr_eval_rec = np.zeros((N_pred, 4))
 
 
         if N_pred == 0:
@@ -105,8 +107,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             curr_pred_roidb = curr_pred_roidb[:N_recall, :]
             N_pred = len(curr_pred_roidb)
 
-        # pre, sbj, obj, scr
-        curr_eval_rec = np.zeros((N_pred, 4))
+
         results[image_id]['N_rlt'] = N_pred
 
         rela_pred = curr_pred_roidb[:, 4].astype(np.int).tolist()

@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
             rela_scores = rela_scores + (3-t)*10
-            rela_indexes = np.argsort(rela_scores.numpy())[::-1]
+            # rela_indexes = np.argsort(rela_scores.numpy())[::-1]
             rela_scores = rela_scores.unsqueeze(1)
 
 
@@ -306,12 +306,26 @@ if __name__ == '__main__':
             # remove [pconf, sconf, oconf], cat rela_conf, hit
             pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
             pred_rois = pred_rois.numpy()
-            pred_rois = pred_rois[rela_indexes, :]
+            # pred_rois = pred_rois[rela_indexes, :]
 
             if img_pred_rois is None:
                 img_pred_rois = pred_rois
             else:
                 img_pred_rois = np.concatenate((img_pred_rois, pred_rois), axis=0)
+
+        # mix sort
+        k = img_pred_rois.shape[0]/4
+        for kk in range(k-1):
+            last2batch = img_pred_rois[kk * k: (kk+2) * k, :]
+            last2batch_scrs = last2batch[:, 15]
+            ranked_inds = np.argsort(last2batch_scrs)[::-1]
+
+            last2batch = last2batch[ranked_inds]
+            img_pred_rois[kk * k: (kk+2) * k, :] = last2batch[:, :]
+
+
+
+
         pred_roidb[img_id] = img_pred_rois
             # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
 

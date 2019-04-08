@@ -27,8 +27,8 @@ gt_roidb = pickle.load(open(gt_roidb_path))
 pred_roidb_path = '../%s_box_label_%s_%s.bin' % (target, dataset, method)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
-rela_R50, pre_R50, results_R50 = rela_recall('hier', gt_roidb, pred_roidb, 50, objnet, prenet, alpha=2, box_thr=box_thr)
-rela_R100, pre_R100, results_R100 = rela_recall('hier', gt_roidb, pred_roidb, 100, objnet, prenet, alpha=2, box_thr=box_thr)
+rela_R50, pre_R50, results_R50 = rela_recall('raw', gt_roidb, pred_roidb, 50, objnet, prenet, alpha=2, box_thr=box_thr)
+rela_R100, pre_R100, results_R100 = rela_recall('raw', gt_roidb, pred_roidb, 100, objnet, prenet, alpha=2, box_thr=box_thr)
 
 # pickle.dump(pred_roidb, open(pred_roidb_path, 'wb'))
 # pickle.dump(results_R100, open('eval_results_%s_%s.bin' % (dataset, method), 'wb'))

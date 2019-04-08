@@ -77,7 +77,7 @@ class PreNet(LabelHier):
         basic_level = {
             'follow.i': 'interact.a',
             'wear.i': 'interact.a',
-            'on.s': 'spatial.a',
+            'above.s': 'spatial.a',
             'has.p': 'possess.a',
             'behind.s': 'spatial.a',
             'in the front of.s': 'spatial.a',
@@ -115,7 +115,7 @@ class PreNet(LabelHier):
             'near': 'near.s',
             'behind': 'behind.s',
             'under': 'under.s',
-            'on': 'on.s',
+            'on': 'above.s',
         }
 
         sup_level1 = {
@@ -132,7 +132,7 @@ class PreNet(LabelHier):
             'stand next to': 'next to',
             'park next to': 'next to',
             'walk next to': 'next to',
-            'above': 'on.s',
+            'above': 'above.s',
             'stand behind': 'behind',
             'sit behind': 'behind',
             'park behind': 'behind',
@@ -145,7 +145,7 @@ class PreNet(LabelHier):
             'in': 'in.s',
             'below': 'under.s',
             'walk beside': 'beside',
-            'over': 'on.s',
+            'over': 'above.s',
             'hold': 'carry.i',
             'by': 'beside',
             'beneath': 'under.s',

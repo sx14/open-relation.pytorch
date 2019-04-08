@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre')
+                        default='rela')
 
 
     args = parser.parse_args()
@@ -158,7 +158,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -243,8 +243,8 @@ if __name__ == '__main__':
 
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
 
-                pred_cates[ppp, t] = pred_cate
-                pred_scores[ppp, t] = float(pred_scr)
+                pred_cates[ppp, t] = raw_cate
+                pred_scores[ppp, t] = float(raw_score)
                 pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'aaa':

@@ -4,6 +4,7 @@ import cv2
 import torch
 from torch.autograd import Variable
 from scipy.misc import imread
+from math import log, exp
 
 
 def get_raw_pred(all_scores, raw_inds, N):
@@ -17,7 +18,11 @@ def get_raw_pred(all_scores, raw_inds, N):
             if N == 0:
                 break
     assert pred_raw_ind > -1
-    return pred_raw_ind, all_scores[pred_raw_ind]
+    score = all_scores[pred_raw_ind]
+    pred_score = -log(-min(score, -0.0001))
+
+    pred_score = 1 / 1 + exp(-pred_score)
+    return pred_raw_ind, pred_score
 
 
 def im_list_to_blob(ims):

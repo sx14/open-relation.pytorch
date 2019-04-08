@@ -18,7 +18,6 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     if recall < thr:
         return
 
-
     keep = pred_roidb[:, -1] > 0
     hit_roidb = pred_roidb[keep, :]
     sbj_dets = hit_roidb[:, 5:10]
@@ -73,9 +72,7 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
             sbj_gt_label = objnet.get_node_by_index(int(sbj_gt))
             obj_gt_label = objnet.get_node_by_index(int(obj_gt))
 
-            print('%.2f  <%s, %s, %s>|              ' % (0.0, sbj_gt_label, pre_gt_label, obj_gt_label))
-
-
+            print('%.2f <%s, %s, %s>|              ' % (0.0, sbj_gt_label, pre_gt_label, obj_gt_label))
 
     dets_temp = np.copy(uni_det_boxes)
     dets_temp[:, 2] = uni_det_boxes[:, 2] - uni_det_boxes[:, 0]  # width

@@ -4,12 +4,17 @@ import json
 from matplotlib import pyplot as plt
 
 
-
 def show_boxes(im, dets, cls, confs, mode='single'):
     """Draw detected bounding boxes."""
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.imshow(im, aspect='equal')
+    if mode != 'single':
+        fig, ax = plt.subplots(figsize=(12, 12))
+        ax.imshow(im, aspect='equal')
+
     for i in range(0, len(dets)):
+        if mode == 'single':
+            fig, ax = plt.subplots(figsize=(12, 12))
+            ax.imshow(im, aspect='equal')
+
         bbox = dets[i]
         ax.add_patch(
             plt.Rectangle((bbox[0], bbox[1]),
@@ -25,6 +30,7 @@ def show_boxes(im, dets, cls, confs, mode='single'):
             plt.axis('off')
             plt.tight_layout()
             plt.show()
+
     if mode != 'single':
         plt.axis('off')
         plt.tight_layout()

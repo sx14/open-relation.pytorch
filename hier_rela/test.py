@@ -158,7 +158,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -243,8 +243,8 @@ if __name__ == '__main__':
 
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
 
-                pred_cates[ppp, t] = raw_cate
-                pred_scores[ppp, t] = float(raw_score)
+                pred_cates[ppp, t] = pred_cate
+                pred_scores[ppp, t] = float(pred_scr)
                 pred_node = prenet.get_node_by_index(pred_cate)
 
             if args.mode == 'aaa':
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'pre_box_label_%s.bin' % args.dataset)
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s.bin' % (args.mode, args.dataset))
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

@@ -6,7 +6,7 @@ dataset = 'vrd'
 # rela - pre
 target = 'rela'
 # lu - dsr - vts - ours - dr
-method = 'dr'
+method = 'dsr'
 
 
 if dataset == 'vrd':

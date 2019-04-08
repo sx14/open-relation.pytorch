@@ -44,6 +44,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             'N_rlt_box_right': 0,
             'N_rlt_pair_right': 0,
 
+            'N_rlt_gt': 0,
             'N_rlt_gt_right': 0,
             'N_rlt_box_gt_right': 0,
             'N_rlt_pair_gt_right': 0,
@@ -52,11 +53,12 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             'N_obj_box_right': 0,
             'N_obj_det_right': 0,
 
+            'N_obj_gt': 0,
             'N_obj_box_gt_right': 0,
             'N_obj_det_gt_right': 0,
 
-            'N_rlt_gt': 0,
-            'N_obj_gt': 0
+
+
         }
 
         # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname
@@ -92,13 +94,11 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         curr_pred_roidb = np.array(pred_roidb[image_id])
         curr_pred_roidb_all = np.array(pred_roidb[image_id])
         N_pred = len(curr_pred_roidb)
+        if N_pred == 0:
+            continue
 
         # pre, sbj, obj, scr
         curr_eval_rec = np.ones((N_pred, 5)) * (-1)
-
-
-        if N_pred == 0:
-            continue
 
         top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1]
         curr_pred_roidb = curr_pred_roidb[top_inds, :]
@@ -170,8 +170,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         img_rlt_box_gt_rights = [0 for _ in range(N_rela)]
         img_rlt_pair_gt_rights = [0 for _ in range(N_rela)]
 
-        pred_scores = np.zeros((N_pred))
-        # pred_scores1 = curr_pred_roidb[:, 16]
         for j in range(N_pred):
             # for each relationship prediction
             for k in range(N_rela):
@@ -198,12 +196,11 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                         obj_score = obj_gt_node.score(obj_dete[j])
                         pre_score = pre_gt_node.score(rela_pred[j])
 
+                        # rela_score = min([sub_score, obj_score, pre_score])
                         if sub_score > 0 and obj_score > 0 and pre_score > 0:
                             rela_score = (sub_score + obj_score + pre_score) / 3.0
                         else:
                             rela_score = 0
-
-                        # rela_score = min([sub_score, obj_score, pre_score])
 
                         # box_hit_gt_ind, gt_pre, gt_sub, gt_obj, score
                         if rela_score > curr_eval_rec[j, -1]:
@@ -214,7 +211,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                             img_rlt_pair_gt_rights[k] = 1
 
                             if pre_score > 0:
-                                pred_scores[j] = pre_score
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1
                                 # rela_score = (sub_score + obj_score + pre_score)/3.0

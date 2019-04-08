@@ -212,8 +212,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                         if sub_score > 0 and obj_score > 0:
                             img_rlt_pair_rights[j] = 1
                             img_rlt_pair_gt_rights[k] = 1
-                            if pre_score > 0:
 
+                            if pre_score > 0:
                                 pred_scores[j] = pre_score
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1

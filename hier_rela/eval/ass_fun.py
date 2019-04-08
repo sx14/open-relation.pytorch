@@ -197,7 +197,13 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                         sub_score = sub_gt_node.score(sub_dete[j])
                         obj_score = obj_gt_node.score(obj_dete[j])
                         pre_score = pre_gt_node.score(rela_pred[j])
-                        rela_score = min([sub_score, obj_score, pre_score])
+
+                        if sub_score > 0 and obj_score > 0 and pre_score > 0:
+                            rela_score = (sub_score + obj_score + pre_score) / 3.0
+                        else:
+                            rela_score = 0
+
+                        # rela_score = min([sub_score, obj_score, pre_score])
 
                         # box_hit_gt_ind, gt_pre, gt_sub, gt_obj, score
                         if rela_score > curr_eval_rec[j, -1]:
@@ -207,11 +213,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                             img_rlt_pair_rights[j] = 1
                             img_rlt_pair_gt_rights[k] = 1
                             if pre_score > 0:
-                                sub_node = objnet.get_node_by_index(int(sub_dete[j]))
-                                obj_node = objnet.get_node_by_index(int(obj_dete[j]))
-                                pre_node = prenet.get_node_by_index(int(rela_pred[j]))
-                                # print('<%s, %s, %s> | <%s, %s, %s>' % (sub_gt_node.name(), pre_gt_node.name(), obj_gt_node.name(),
-                                #                                        sub_node.name(), pre_node.name(), obj_node.name()))
+
                                 pred_scores[j] = pre_score
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1

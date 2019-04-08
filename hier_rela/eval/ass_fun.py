@@ -191,8 +191,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                                 pred_scores[j] = pre_score
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1
-                                # rela_score = (sub_score + obj_score + pre_score)/3.0
-                                rela_score = min([sub_score, obj_score, pre_score])
+                                rela_score = (sub_score + obj_score + pre_score)/3.0
+                                # rela_score = min([sub_score, obj_score, pre_score])
                                 rela_scores[k] = max(rela_scores[k], rela_score)
                                 pre_scores[k] = max(pre_scores[k], pre_score)
                 else:

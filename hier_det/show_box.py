@@ -2,10 +2,17 @@ import cv2
 import os
 import json
 from matplotlib import pyplot as plt
-
+import random
 
 def show_boxes(im, dets, cls, confs, mode='single'):
     """Draw detected bounding boxes."""
+
+    def random_color():
+        color = []
+        for i in range(3):
+            color.append(random.randint(0, 255) / 255.0)
+        return color
+
     if mode != 'single':
         fig, ax = plt.subplots(figsize=(12, 12))
         ax.imshow(im, aspect='equal')
@@ -20,7 +27,7 @@ def show_boxes(im, dets, cls, confs, mode='single'):
             plt.Rectangle((bbox[0], bbox[1]),
                           bbox[2],
                           bbox[3], fill=False,
-                          edgecolor='red', linewidth=1.5)
+                          edgecolor=random_color(), linewidth=5)
         )
         ax.text(bbox[0], bbox[1] - 2,
                 '%s' % (cls[i]),

@@ -21,7 +21,7 @@ def get_raw_pred(all_scores, raw_inds, N):
     score = all_scores[pred_raw_ind]
     pred_score = -log(-min(score, -0.0001))
 
-    pred_score = 1 / 1 + exp(-pred_score)
+    pred_score = 1 / (1 + exp(-pred_score))
     return pred_raw_ind, pred_score
 
 

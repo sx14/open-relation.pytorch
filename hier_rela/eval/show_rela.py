@@ -31,7 +31,7 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     for i in range(uni_dets.shape[0]):
         uni_det_cls = uni_dets[i, 4]
         label = objnet.get_node_by_index(int(uni_det_cls))
-        uni_det_labels.append(label)
+        uni_det_labels.append(label.split('.')[0])
 
     gt_print = np.ones(gt_roidb.shape[0])
     print('---- %s : %.2f ----' % (img_id, recall))

@@ -3,6 +3,8 @@ from matplotlib import pyplot as plt
 from ass_fun import *
 from hier_det.show_box import show_boxes
 from global_config import VRD_ROOT, VG_ROOT
+from nms import py_cpu_nms
+
 # vrd - vg
 dataset = 'vrd'
 # rela - pre
@@ -24,13 +26,19 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     obj_dets = hit_roidb[:, 10:15]
 
     dets = np.concatenate((sbj_dets, obj_dets), axis=0)
+
+
+
     uni_dets = np.unique(dets, axis=0)
+    keep = py_cpu_nms(uni_dets, 0.7)
+    uni_dets = uni_dets[keep]
+
     uni_det_boxes = uni_dets[:, :4]
     uni_det_confs = np.zeros(uni_dets.shape[0])
     uni_det_labels = []
     for i in range(uni_dets.shape[0]):
         uni_det_cls = uni_dets[i, 4]
-        label = objnet.get_node_by_index(int(uni_det_cls))
+        label = objnet.get_node_by_index(int(uni_det_cls)).name()
         uni_det_labels.append(label.split('.')[0])
 
     gt_print = np.ones(gt_roidb.shape[0])

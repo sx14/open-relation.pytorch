@@ -4,7 +4,6 @@ import json
 from matplotlib import pyplot as plt
 import random
 
-
 def show_boxes(im, dets, cls, confs, mode='single'):
     """Draw detected bounding boxes."""
 
@@ -14,27 +13,35 @@ def show_boxes(im, dets, cls, confs, mode='single'):
             color.append(random.randint(0, 255) / 255.0)
         return color
 
-
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.imshow(im, aspect='equal')
+    if mode != 'single':
+        fig, ax = plt.subplots(figsize=(12, 12))
+        ax.imshow(im, aspect='equal')
 
     for i in range(0, len(dets)):
+        if mode == 'single':
+            fig, ax = plt.subplots(figsize=(12, 12))
+            ax.imshow(im, aspect='equal')
+
         bbox = dets[i]
-        color = random_color()
         ax.add_patch(
             plt.Rectangle((bbox[0], bbox[1]),
                           bbox[2],
                           bbox[3], fill=False,
-                          edgecolor=color, linewidth=5)
+                          edgecolor=random_color(), linewidth=5)
         )
         ax.text(bbox[0], bbox[1] - 2,
                 '%s' % (cls[i]),
                 bbox=dict(facecolor='blue', alpha=0.5),
-                fontsize=30, color='white')
+                fontsize=14, color='white')
+        if mode == 'single':
+            plt.axis('off')
+            plt.tight_layout()
+            plt.show()
 
-    plt.axis('off')
-    plt.tight_layout()
-    plt.show()
+    if mode != 'single':
+        plt.axis('off')
+        plt.tight_layout()
+        plt.show()
 
 def get_pres(img_root, anno_root, img_name):
     img_path = os.path.join(img_root, img_name)

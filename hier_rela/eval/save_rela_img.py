@@ -98,10 +98,17 @@ img_id = '10050248663_2cdb49c115_b'# bus car !
 img_id = '3732568219_585f6efb46_b' # train car .
 img_id = '9563755622_a8a5e16fb8_b' # table dish .
 
-img_id = '4370372957_91f0753201_b' # man truck !!!!
+img_id = '4370372957_91f0753201_b' # man truck !!!!!!!
 img_id = '1006083276_0c1a4345fb_o' # people !!!
 img_id = '7993454099_f05c523d8a_b' # people
 img_id = '4137217003_bc1bd860c0_o' # skateboard
+img_id = '7987560060_c4e5b82ae2_o' # drink man figure2
+img_id = '7857447002_8d24cba097_b' # vehicle
+img_id = '9317704644_c015200b30_b' # cook, figure1
+img_id = '7577204808_3c75f97ced_b' # woman back good
+img_id = '3131916266_569965d104_b' # man horse figure2
+img_id = '8708536141_0dc6882a29_b' # motorcycle india
+
 curr_gt = gt_roidb[img_id]
 
 curr_pr = pred_roidb[img_id]

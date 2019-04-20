@@ -31,7 +31,8 @@ def show_img_relas(img_roidb, img_results, img, objnet, prenet, thr):
     uni_det_labels = []
     for i in range(uni_dets.shape[0]):
         uni_det_cls = uni_dets[i, 4]
-        label = objnet.get_node_by_index(int(uni_det_cls))
+        # label = objnet.get_node_by_index(int(uni_det_cls))
+        label = objnet.get_node_by_index(int(uni_det_cls)).name().split('.')[0]
         uni_det_labels.append(label)
 
 
@@ -102,6 +103,15 @@ img_id = '4370372957_91f0753201_b' # man truck !!!!
 img_id = '1006083276_0c1a4345fb_o' # people !!!
 img_id = '7993454099_f05c523d8a_b' # people
 img_id = '4137217003_bc1bd860c0_o' # skateboard
+img_id = '6824201485_dd143cffe2_b' # skateboard
+
+
+img_id = '3131916266_569965d104_b' # horse sand
+
+
+# fig1
+
+
 curr_gt = gt_roidb[img_id]
 
 curr_pr = pred_roidb[img_id]

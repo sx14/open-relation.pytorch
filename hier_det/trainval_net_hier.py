@@ -253,6 +253,15 @@ if __name__ == '__main__':
   hierRCNN_state_dict.update(pre_state_dict)
   hierRCNN.load_state_dict(hierRCNN_state_dict)
 
+  # ==== freeze backbone ====
+  for k, v in dict(hierRCNN.named_parameters()).items():
+    if 'order' in k or 'RCNN_top' in k:
+        pass
+    else:
+        v.requires_grad = False
+  # ==== freeze backbone ====
+  
+
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
   #tr_momentum = cfg.TRAIN.MOMENTUM
@@ -264,7 +273,6 @@ if __name__ == '__main__':
       # larger lr for embedding layer
       if 'order' in key:
         lr_use = lr * 10
-        # lr_use = lr
       else:
         lr_use = lr
 

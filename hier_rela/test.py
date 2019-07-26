@@ -18,7 +18,7 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.tree_infer4 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='rela')
+                        default='pre')
     parser.add_argument('--use_vis', dest='use_vis',
                         action='store_true',
                         default=True)
@@ -203,8 +203,13 @@ if __name__ == '__main__':
         if not os.path.exists(img_path):
             continue
 
+        # use unique object pairs
         img = cv2.imread(img_path)
         rois_use = rela_roidb_use[img_id]
+        rois_use = np.array(rois_use)
+        rois_use[:, 4] = 0
+        rois_use_uni = np.unique(rois_use, axis=0)
+        rois_use = rois_use_uni.tolist()
 
         # Attention: resized image data
         data = get_input_data(img, rois_use)
@@ -226,8 +231,8 @@ if __name__ == '__main__':
         vis_scores = vis_score.data
         lan_scores = lan_score.data
 
-        pred_cates = torch.zeros(rois[0].shape[0])
-        pred_scores = torch.zeros(rois[0].shape[0])
+        pred_cates = torch.zeros(rois[0].shape[0], 4)
+        pred_scores = torch.zeros(rois[0].shape[0], 4)
 
         raw_label_inds = set(prenet.get_raw_indexes())
 
@@ -245,20 +250,23 @@ if __name__ == '__main__':
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
 
-            top2 = my_infer(prenet, all_scores)
-            pred_cate = top2[0][0]
-            pred_scr = top2[0][1]
+            top4 = my_infer(prenet, all_scores)
+            for t in range(4):
+                pred_cate = top4[t][0]
+                pred_scr = top4[t][1]
 
-            raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-            vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
-            lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
 
-            pred_cates[ppp] = pred_cate
-            pred_scores[ppp] = float(pred_scr)
-            pred_node = prenet.get_node_by_index(pred_cate)
+                pred_cates[ppp, t] = pred_cate
+                pred_scores[ppp, t] = float(pred_scr)
+                pred_node = prenet.get_node_by_index(pred_cate)
 
-            if args.mode == 'pre':
+            if args.mode == 'aaa':
                 # print('=== %s ===' % gt_node.name())
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
+                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
+
                 if vis_cate == gt_cate or lan_cate == gt_cate:
                     raw_score_sum_u += 1
 
@@ -283,6 +291,8 @@ if __name__ == '__main__':
 
                 info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
                 # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
+
+                # if hier_src > 0:
                 if inf_scr > 0:
                     hit[ppp, 0] = inf_scr
                     flat_count += 1
@@ -294,17 +304,30 @@ if __name__ == '__main__':
                     pass
                 print(info)
 
-        pred_rois = torch.FloatTensor(rois_use)
-        sbj_scores = pred_rois[:, -3]
-        obj_scores = pred_rois[:, -2]
-        rela_scores = pred_scores * sbj_scores * obj_scores
-        rela_scores = rela_scores.unsqueeze(1)
+        img_pred_rois = None
+        for t in range(4):
+            pred_rois = torch.FloatTensor(rois_use)
+            sbj_scores = pred_rois[:, 16]
+            obj_scores = pred_rois[:, 17]
 
-        pred_rois[:, 4] = pred_cates
-        # remove [pconf, sconf, oconf], cat rela_conf, hit
-        pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
-        pred_roidb[img_id] = pred_rois.numpy()
-        # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
+            rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
+            rela_scores = rela_scores + (3-t)*10
+            rela_indexes = np.argsort(rela_scores.numpy())[::-1]
+            rela_scores = rela_scores.unsqueeze(1)
+
+
+            pred_rois[:, 4] = pred_cates[:, t]
+            # remove [pconf, sconf, oconf], cat rela_conf, hit
+            pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
+            pred_rois = pred_rois.numpy()
+            pred_rois = pred_rois[rela_indexes, :]
+
+            if img_pred_rois is None:
+                img_pred_rois = pred_rois
+            else:
+                img_pred_rois = np.concatenate((img_pred_rois, pred_rois), axis=0)
+        pred_roidb[img_id] = img_pred_rois
+            # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
 
 
 
@@ -321,7 +344,7 @@ if __name__ == '__main__':
     print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours.bin' % (args.mode, args.dataset))
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s.bin' % (args.mode, args.dataset))
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

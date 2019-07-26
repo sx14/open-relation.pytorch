@@ -65,6 +65,8 @@ class _HierRelaVis(nn.Module):
             nn.Linear(4096, self.embedding_len))
 
         self.order_ex_embedding = nn.Sequential(
+            nn.ReLU(),
+            nn.Dropout(),
             nn.Linear(self.embedding_len + self._hierRCNN.embedding_len * 2,
                       self.embedding_len + self._hierRCNN.embedding_len * 2),
             nn.ReLU(),
@@ -89,7 +91,8 @@ class _HierRelaVis(nn.Module):
 
 
         # feed image data to base model to obtain base feature map
-        base_feat = self.RCNN_base(im_data)
+        with torch.no_grad():
+            base_feat = self.RCNN_base(im_data)
 
         pre_label = gt_boxes[:, :, 4][0]
         sbj_label = gt_boxes[:, :, 9][0]
@@ -117,7 +120,8 @@ class _HierRelaVis(nn.Module):
             pre_pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
         # feed pooled features to top model(fc7)
-        pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
+        with torch.no_grad():
+            pre_pooled_feat = self._head_to_tail(pre_pooled_feat)
 
         sbj_obj_boxes = torch.cat([sbj_boxes, obj_boxes], 1)
 

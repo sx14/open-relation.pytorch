@@ -58,7 +58,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             'N_obj_det_gt_right': 0,
         }
 
-        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname
+        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, pconf, sconf, oconf, zero, count
         curr_gt_roidb = np.array(gt_roidb[image_id])
         if len(curr_gt_roidb) == 0:
             continue

@@ -36,7 +36,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
   parser.add_argument('--dataset', dest='dataset',
                       help='training dataset',
-                      default='vg', type=str)
+                      default='vrd', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
                     default='vgg16', type=str)
@@ -45,7 +45,7 @@ def parse_args():
                       default=1, type=int)
   parser.add_argument('--epochs', dest='max_epochs',
                       help='number of epochs to train',
-                      default=20, type=int)
+                      default=100, type=int)
   parser.add_argument('--disp_interval', dest='disp_interval',
                       help='number of iterations to display',
                       default=100, type=int)
@@ -85,7 +85,7 @@ def parse_args():
                       default=0.001, type=float)
   parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                       help='step to do learning rate decay, unit is epoch',
-                      default=5, type=int)
+                      default=30, type=int)
   parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                       help='learning rate decay ratio',
                       default=0.1, type=float)
@@ -94,11 +94,10 @@ def parse_args():
   parser.add_argument('--s', dest='session',
                       help='training session',
                       default=1, type=int)
-
 # resume trained model
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',
-                      default=True, type=bool)
+                      default=False, type=bool)
   parser.add_argument('--checksession', dest='checksession',
                       help='checksession to load model',
                       default=1, type=int)
@@ -106,7 +105,7 @@ def parse_args():
                       help='checkepoch to load model',
                       default=1, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
-                      help='checkpoint to load model',
+                      help='checkpoint to load model ',
                       default=73793, type=int)
 # log and diaplay
   parser.add_argument('--use_tfb', dest='use_tfboard',
@@ -267,6 +266,7 @@ if __name__ == '__main__':
   hierVis_state_dict.update(pre_state_dict)
   hierVis.load_state_dict(hierVis_state_dict)
 
+
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
 
@@ -275,10 +275,11 @@ if __name__ == '__main__':
   for key, value in dict(hierVis.named_parameters()).items():
     if value.requires_grad:
       # larger lr for embedding layer
-      if 'order' in key:
-        lr_use = lr * 10
-      else:
-        lr_use = lr
+      # if 'order' in key:
+      #   lr_use = lr * 10
+      # else:
+      #   lr_use = lr
+      lr_use = lr
 
       if 'bias' in key:
         params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \
@@ -376,16 +377,17 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
-    save_checkpoint({
-      'session': args.session,
-      'epoch': epoch + 1,
-      'model': hierVis.module.state_dict() if args.mGPUs else hierVis.state_dict(),
-      'optimizer': optimizer.state_dict(),
-      'pooling_mode': cfg.POOLING_MODE,
-      'class_agnostic': args.class_agnostic,
-    }, save_name)
-    print('save model: {}'.format(save_name))
+    if epoch % 5 == 0:
+        save_name = os.path.join(output_dir, 'hier_rela_vis_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
+        save_checkpoint({
+          'session': args.session,
+          'epoch': epoch + 1,
+          'model': hierVis.module.state_dict() if args.mGPUs else hierVis.state_dict(),
+          'optimizer': optimizer.state_dict(),
+          'pooling_mode': cfg.POOLING_MODE,
+          'class_agnostic': args.class_agnostic,
+        }, save_name)
+        print('save model: {}'.format(save_name))
 
   if args.use_tfboard:
     logger.close()

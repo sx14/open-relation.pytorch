@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -54,6 +54,12 @@ def parse_args():
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
                         default='rela')
+    parser.add_argument('--use_vis', dest='use_vis',
+                        action='store_true',
+                        default=True)
+    parser.add_argument('--use_lan', dest='use_lan',
+                        action='store_true',
+                        default=True)
 
 
     args = parser.parse_args()
@@ -94,38 +100,46 @@ if __name__ == '__main__':
     pprint.pprint(cfg)
 
     # initilize the network here.
-    # Load Detector
-    objconf = HierLabelConfig(args.dataset, 'object')
-    obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
-    hierRCNN.create_architecture()
-
-    preconf = HierLabelConfig(args.dataset, 'predicate')
-    pre_vec_path = preconf.label_vec_path()
-    hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
-    hierVis.create_architecture()
+    obj_conf = HierLabelConfig(args.dataset, 'object')
+    obj_vec_path = obj_conf.label_vec_path()
+    pre_conf = HierLabelConfig(args.dataset, 'predicate')
+    pre_vec_path = pre_conf.label_vec_path()
 
     # Load HierVis
-    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
-    print("load checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-    hierVis.load_state_dict(checkpoint['model'])
-    if 'pooling_mode' in checkpoint.keys():
-        cfg.POOLING_MODE = checkpoint['pooling_mode']
+    if args.use_vis:
+        # Load Detector
+        hierRCNN = vgg16_det(objnet, obj_conf.label_vec_path(), class_agnostic=True)
+        hierRCNN.create_architecture()
+
+        hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
+        hierVis.create_architecture()
+        load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
+        print("load checkpoint %s" % (load_name))
+        checkpoint = torch.load(load_name)
+        hierVis.load_state_dict(checkpoint['model'])
+        if 'pooling_mode' in checkpoint.keys():
+           cfg.POOLING_MODE = checkpoint['pooling_mode']
+        hierVis.eval()
+    else:
+        hierVis = None
 
     # Load HierLan
-    hierLan = HierLang(600 * 2, preconf.label_vec_path())
-    load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
-    print("load checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-    hierLan.load_state_dict(checkpoint)
+    if args.use_lan:
+        hierLan = HierLang(600 * 2, pre_conf.label_vec_path())
+        load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
+        print("load checkpoint %s" % (load_name))
+        checkpoint = torch.load(load_name)
+        hierLan.load_state_dict(checkpoint)
+        hierLan.eval()
+    else:
+        hierLan = None
+
+    assert hierLan is not None or hierVis is not None
 
     # get HierRela
-    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, hierLan, obj_conf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
-    hierVis.eval()
-    hierLan.eval()
     hierRela.eval()
     print('load model successfully!')
 
@@ -158,7 +172,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -227,12 +241,6 @@ if __name__ == '__main__':
             all_scores = scores[0][ppp].cpu().data.numpy()
             l_scores = lan_scores[0][ppp].cpu().data.numpy()
             v_scores = vis_scores[0][ppp].cpu().data.numpy()
-
-            # print('==== %s ====' % gt_node.name())
-            # ranked_inds = np.argsort(all_scores)[::-1][:20]
-            # sorted_scrs = np.sort(all_scores)[::-1][:20]
-            # for item in zip(ranked_inds, sorted_scrs):
-            #     print('%s (%.2f)' % (prenet.get_node_by_index(item[0]).name(), item[1]))
 
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))

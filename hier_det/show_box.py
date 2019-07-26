@@ -3,6 +3,7 @@ import os
 import json
 from matplotlib import pyplot as plt
 import random
+import numpy as np
 
 def show_boxes(im, dets, cls, confs, mode='single'):
     """Draw detected bounding boxes."""
@@ -71,3 +72,43 @@ def get_objs(img_root, anno_root, img_name):
         cls.append(obj['name'])
         boxes.append([obj['xmin'], obj['ymin'], obj['xmax']-obj['xmin'], obj['ymax']-obj['ymin']])
     return im, cls, boxes
+
+
+def draw_boxes(im, boxes, colors=None):
+
+    def random_color():
+        color = []
+        for i in range(3):
+            color.append(random.randint(0, 255))
+        return color
+    colors = get_colors()
+    boxes = boxes.astype(np.int)
+    default_color = np.array([0, 0, 255])
+    if colors is None or len(colors) < len(boxes):
+        colors_np = np.tile(default_color, (len(boxes), 1))
+    else:
+        colors_np = np.array(colors)
+    im_dets = im.copy()
+    for i, box in enumerate(boxes):
+        x1, y1, w, h = box
+        x2 = x1 + w
+        y2 = y1 + h
+        if i < len(colors):
+            color = colors[i]
+        else:
+            color = random_color()
+        im_dets = cv2.rectangle(im_dets, (x1, y1), (x2, y2), color, cv2.LINE_4, 0)
+    return im_dets
+
+
+def get_colors():
+    colors = [
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255],
+        [255, 255, 0],
+        [255, 0, 255],
+        [0, 255, 255],
+        [255, 255, 255]
+    ]
+    return np.array(colors)

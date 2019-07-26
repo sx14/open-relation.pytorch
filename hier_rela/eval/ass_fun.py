@@ -56,9 +56,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             'N_obj_gt': 0,
             'N_obj_box_gt_right': 0,
             'N_obj_det_gt_right': 0,
-
-
-
         }
 
         # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname
@@ -91,23 +88,40 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         if image_id not in pred_roidb:
             continue
 
-        curr_pred_roidb = np.array(pred_roidb[image_id])
         curr_pred_roidb_all = np.array(pred_roidb[image_id])
-        N_pred = len(curr_pred_roidb)
-        if N_pred == 0:
+        curr_pred_roidb = curr_pred_roidb_all.copy()
+        if len(curr_pred_roidb) == 0:
             continue
 
-        # pre, sbj, obj, scr
-        curr_eval_rec = np.ones((N_pred, 5)) * (-1)
-
         top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1]
-        curr_pred_roidb = curr_pred_roidb[top_inds, :]
         curr_pred_roidb_all = curr_pred_roidb_all[top_inds, :]
+        # gt-k, pre, sbj, obj, scr
+        curr_eval_rec = np.ones((len(curr_pred_roidb_all), 5)) * (-1)
 
-        if N_recall < N_pred:
-            # get Top N predictions
-            curr_pred_roidb = curr_pred_roidb[:N_recall, :]
-            N_pred = len(curr_pred_roidb)
+        curr_pred_roidb = curr_pred_roidb[top_inds[:N_recall], :]
+        N_pred = len(curr_pred_roidb)
+
+        # [Attention] make hier
+        for d in range(len(curr_pred_roidb)):
+            if d >= 50:
+                pre_ind = curr_pred_roidb[d, 4].astype(np.int).tolist()
+                sbj_ind = curr_pred_roidb[d, 9].astype(np.int).tolist()
+                obj_ind = curr_pred_roidb[d, 14].astype(np.int).tolist()
+
+                pre_node = prenet.get_node_by_index(pre_ind)
+                sbj_node = objnet.get_node_by_index(sbj_ind)
+                obj_node = objnet.get_node_by_index(obj_ind)
+
+                if len(pre_node.hypers()) > 0:
+                    pre_hyper = pre_node.hypers()[0]
+                    curr_pred_roidb[d, 4] = pre_hyper.index()
+                if len(sbj_node.hypers()) > 0:
+                    sbj_hyper = sbj_node.hypers()[0]
+                    curr_pred_roidb[d, 9] = sbj_hyper.index()
+                if len(obj_node.hypers()) > 0:
+                    obj_hyper = obj_node.hypers()[0]
+                    curr_pred_roidb[d, 14] = obj_hyper.index()
+        # =====================
 
 
         results[image_id]['N_rlt'] = N_pred
@@ -213,7 +227,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                             if pre_score > 0:
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1
-                                # rela_score = (sub_score + obj_score + pre_score)/3.0
 
                                 rela_scores[k] = max(rela_scores[k], rela_score)
                                 pre_scores[k] = max(pre_scores[k], pre_score)
@@ -247,7 +260,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         N_pre_right += np.sum(pre_scores)
 
 
-        pred_roidb[image_id] = np.concatenate((curr_pred_roidb_all[:, :16], curr_eval_rec), axis=1)
+        # pred_roidb[image_id] = np.concatenate((curr_pred_roidb_all[:, :16], curr_eval_rec), axis=1)
 
 
     # print('Proposal recall: %.4f' % (N_obj_box_good / N_obj_total))

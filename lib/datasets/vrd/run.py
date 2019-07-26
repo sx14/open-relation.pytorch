@@ -28,6 +28,7 @@ def all_relationships(anno_root, anno_list_path):
     # sbj -> obj -> pre
     rlts = dict()
     pre_count = dict()
+    rlt_count = 0
 
     # load img id list
     with open(anno_list_path, 'r') as anno_list_file:
@@ -43,6 +44,8 @@ def all_relationships(anno_root, anno_list_path):
         anno = json.load(open(anno_path, 'r'))
         image_id = anno_list[i]
         anno_rlts = anno['relationships']
+
+        rlt_count += len(anno_rlts)
         if len(anno_rlts) == 0:
             continue
 
@@ -68,7 +71,7 @@ def all_relationships(anno_root, anno_list_path):
                 pre_count[pre['name']] = 0
 
             pre_count[pre['name']] = pre_count[pre['name']] + 1
-
+    print('>>> training set rlt count: %d' % rlt_count)
     return rlts, pre_count
 
 
@@ -78,6 +81,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
     # image id -> rlt info
     rlts = dict()
     zero_count = 0
+    rlt_count = 0
 
     # load img id list
     with open(anno_list_path, 'r') as anno_list_file:
@@ -93,6 +97,8 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
         anno = json.load(open(anno_path, 'r'))
         image_id = anno_list[i]
         anno_rlts = anno['relationships']
+
+        rlt_count += len(anno_rlts)
         if len(anno_rlts) == 0:
             continue
 
@@ -155,6 +161,7 @@ def prepare_relationship_roidb(objnet, prenet, anno_root, anno_list_path, box_la
             rlt_info_list.append(rlt_info)
         rlts[image_id] = rlt_info_list
     print('zero: %d' % zero_count)
+    print('test rlt: %d' % rlt_count)
     with open(box_label_path, 'wb') as box_label_file:
         pickle.dump(rlts, box_label_file)
 

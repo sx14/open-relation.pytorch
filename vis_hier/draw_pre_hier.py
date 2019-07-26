@@ -1,8 +1,14 @@
 # coding: utf-8
 from graphviz import Graph
 
-# from lib.datasets.vrd.label_hier.obj_hier import objnet
-from lib.datasets.vrd.label_hier.pre_hier import prenet
+dataset = 'vrd'
+
+if dataset == 'vrd':
+    from lib.datasets.vrd.label_hier.obj_hier import objnet
+    from lib.datasets.vrd.label_hier.pre_hier import prenet
+else:
+    from lib.datasets.vg200.label_hier.obj_hier import objnet
+    from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 
 def hill_sort(all_nodes):
@@ -36,33 +42,24 @@ for i in range(len(hill_nodes)):
     else:
         dot.node(str(hill_nodes[i].index()), hill_nodes[i].name().split('.')[0], shape='none')
 
-dot.node(str(999), 'comparative', shape='none')
+if dataset == 'vrd':
+    dot.node(str(999), 'comparative', shape='none')
 
 for i in range(1, labelnet.label_sum()):
     n = labelnet.get_node_by_index(i)
     for c in n.children():
-        if n.name() == 'relation.r.01' and c.name() == 'taller than':
+        if dataset == 'vrd' and n.name() == 'relation.r' and c.name() == 'taller than':
             continue
         dot.edge(str(n.index()), str(c.index()), shape='none')
 
-
-dot.edge(str(labelnet.get_node_by_name('relation.r.01').index()), str(999))
-dot.edge(str(999), str(labelnet.get_node_by_name('taller than').index()))
+if dataset == 'vrd':
+    dot.edge(str(labelnet.get_node_by_name('relation.r').index()), str(999))
+    dot.edge(str(999), str(labelnet.get_node_by_name('taller than').index()))
 
 
 # 获取DOT source源码的字符串形式
 print(dot.source)
-# // The Test Table
-# digraph {
-#   A [label="Dot A"]
-#   B [label="Dot B"]
-#   C [label="Dot C"]
-#   A -> B
-#   A -> C
-#   A -> B
-#   B -> C [label=test]
-# }
 
 
 # 保存source到文件，并提供Graphviz引擎
-dot.render('test-output/test-table.gv', view=True)
+dot.render('%s-predicate.gv' % dataset, view=True)

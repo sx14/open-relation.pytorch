@@ -1,7 +1,7 @@
 import pickle
 from matplotlib import pyplot as plt
 from ass_fun import *
-from hier_det.show_box import show_boxes
+from hier_det.show_box import show_boxes, draw_boxes
 from global_config import VRD_ROOT, VG_ROOT
 from nms import py_cpu_nms
 
@@ -26,8 +26,6 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     obj_dets = hit_roidb[:, 10:15]
 
     dets = np.concatenate((sbj_dets, obj_dets), axis=0)
-
-
 
     uni_dets = np.unique(dets, axis=0)
     keep = py_cpu_nms(uni_dets, 0.7)
@@ -88,6 +86,12 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     dets_temp[:, 3] = uni_det_boxes[:, 3] - uni_det_boxes[:, 1]  # height
     show_boxes(img, dets_temp, uni_det_labels, uni_det_confs, 'all')
 
+    # --- save ----
+    img_bgr = np.stack((img[:,:,2], img[:,:,1], img[:,:,0]), axis=2)
+    im_sav = draw_boxes(img_bgr, dets_temp)
+    cv2.imwrite('temp.jpg', im_sav)
+
+
 if dataset == 'vrd':
     ds_root = VRD_ROOT
     from lib.datasets.vrd.label_hier.obj_hier import objnet
@@ -114,6 +118,9 @@ results = pickle.load(open(results_path))
 img_root = os.path.join(ds_root, 'JPEGImages')
 
 for img_id in gt_roidb:
+
+    img_id = '6093897610_9cd5e8b05a_b'
+
     curr_gt = gt_roidb[img_id]
     curr_gt = np.array(curr_gt)
     if img_id not in pred_roidb:

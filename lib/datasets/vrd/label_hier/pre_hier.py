@@ -60,17 +60,17 @@ class PreNet(LabelHier):
         # root node
         # 0 is background
         next_label_ind = 1
-        root = LabelNode('relation.r.01', next_label_ind, False)
+        root = LabelNode('relation.r', next_label_ind, False)
         self._index2node.append(root)
-        self._label2node['relation.r.01'] = root
+        self._label2node['relation.r'] = root
         next_label_ind += 1
 
         # abstract level
         # interact, spatial, belong, comparison
-        abs_level = {'interact.a': 'relation.r.01',
-                     'spatial.a': 'relation.r.01',
-                     'possess.a': 'relation.r.01',
-                     'compare.a': 'relation.r.01'}
+        abs_level = {'interact.a': 'relation.r',
+                     'spatial.a': 'relation.r',
+                     'possess.a': 'relation.r',
+                     'compare.a': 'relation.r'}
 
 
         # basic level

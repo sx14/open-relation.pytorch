@@ -1,9 +1,14 @@
 # coding: utf-8
 from graphviz import Graph
 
-from lib.datasets.vrd.label_hier.obj_hier import objnet
-from lib.datasets.vrd.label_hier.pre_hier import prenet
+dataset = 'vg'
 
+if dataset == 'vrd':
+    from lib.datasets.vrd.label_hier.obj_hier import objnet
+    from lib.datasets.vrd.label_hier.pre_hier import prenet
+else:
+    from lib.datasets.vg200.label_hier.obj_hier import objnet
+    from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 def hill_sort(all_nodes):
     # curr = all_nodes[objnet.root().index()]
@@ -42,17 +47,6 @@ for i in range(1, labelnet.label_sum()):
 
 # 获取DOT source源码的字符串形式
 print(dot.source)
-# // The Test Table
-# digraph {
-#   A [label="Dot A"]
-#   B [label="Dot B"]
-#   C [label="Dot C"]
-#   A -> B
-#   A -> C
-#   A -> B
-#   B -> C [label=test]
-# }
-
 
 # 保存source到文件，并提供Graphviz引擎
-dot.render('test-output/test-table.gv', view=True)
+dot.render('%s-object.gv' % dataset, view=True)

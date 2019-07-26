@@ -43,14 +43,20 @@ class vgg16(_HierRCNN):
     # not using the last maxpool layer
     self.RCNN_base = nn.Sequential(*list(vgg.features._modules.values())[:-1])
 
+    # fix RCNN_base
+    for p in self.RCNN_base.parameters(): p.requires_grad = False
+    self.RCNN_base.eval()
+
     # Fix the layers before conv3:
-    for layer in range(10):
-      for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
+    # for layer in range(10):
+    #   for p in self.RCNN_base[layer].parameters(): p.requires_grad = False
 
     # self.RCNN_base = _RCNN_base(vgg.features, self.classes, self.dout_base_model)
 
     # fc7 4096
     self.RCNN_top = vgg.classifier
+    for p in self.RCNN_top.parameters(): p.requires_grad = False
+    self.RCNN_top.eval()
 
     # 新建分类层，得分
     # not used in hier-rcnn

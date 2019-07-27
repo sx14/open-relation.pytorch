@@ -184,7 +184,7 @@ if __name__ == '__main__':
   # train set
   # -- Note: Use validation set and disable the flipped to enable faster loading.
   if args.dataset == 'vg':
-    cfg.TRAIN.USE_FLIPPED = False
+    cfg.TRAIN.USE_FLIPPED = True
   else:
     cfg.TRAIN.USE_FLIPPED = True
 

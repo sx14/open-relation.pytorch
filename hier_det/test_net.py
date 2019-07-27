@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     start = time.time()
 
-    max_per_image = 20
+    max_per_image = 100
 
     vis = args.vis
 
@@ -327,8 +327,6 @@ if __name__ == '__main__':
             # nms again
             img_dets = np.array(img_dets)
             img_dets = torch.from_numpy(img_dets)
-            # keep = nms(img_dets, 0.6, force_cpu=cfg.USE_GPU_NMS)
-            # img_dets = img_dets[keep.view(-1).long(), :]
 
             # box cls score
             img_dets = torch.cat([img_dets[:, :4],
@@ -347,6 +345,6 @@ if __name__ == '__main__':
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
-    save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_vg.bin')
+    save_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_vg_100.bin')
     with open(save_path, 'wb') as f:
         pickle.dump(obj_det_roidbs, f)

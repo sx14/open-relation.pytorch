@@ -1,19 +1,17 @@
 import pickle
-from matplotlib import pyplot as plt
-from ass_fun import *
-from hier_det.show_box import show_boxes
+import numpy as np
 from global_config import VRD_ROOT, VG_ROOT
-# vrd - vg
+
+
+def show_triplet(method, triplet, objnet, prenet):
+    pre = prenet.get_node_by_index(int(triplet[0])).name()
+    sbj = objnet.get_node_by_index(int(triplet[1])).name()
+    obj = objnet.get_node_by_index(int(triplet[2])).name()
+    scr = triplet[3]
+    print('<%s, %s, %s> (%.2f) %s' % (sbj, pre, obj, scr, method))
+
+
 dataset = 'vrd'
-# rela - pre
-target = 'rela'
-# lu - dsr - vts - ours - dr
-methods = ['lu', 'dsr', 'vts', 'dr', 'ours']
-results = []
-for method in methods:
-    results_path = 'eval_results_%s_%s.bin' % (dataset, method)
-    result = pickle.load(open(results_path))
-    results.append(result)
 
 if dataset == 'vrd':
     ds_root = VRD_ROOT
@@ -24,27 +22,35 @@ else:
     from lib.datasets.vg200.label_hier.obj_hier import objnet
     from lib.datasets.vg200.label_hier.pre_hier import prenet
 
-
-for img_id in results[0]:
-    img_results = []
-
-    for i in range(len(methods)):
-        img_results.append(results[i][img_id])
-
-    max_recall = 0
-    max_recall_id = -1
-    for i in range(len(img_results)):
-        N_rlt_gt = img_results[i]['N_rlt_gt']
-        N_rlt_right = img_results[i]['N_rlt_gt_right']
-        recall = N_rlt_right * 1.0 / N_rlt_gt
-        if recall > max_recall:
-            max_recall = recall
-            max_recall_id = i
-
-    if max_recall_id == len(methods) - 1:
-        print('%s: %.2f' % (img_id, max_recall))
+eval_res_path = 'eval_results_%s_%s.bin'
+ours_eval_res_path = eval_res_path % (dataset, 'ours')
+with open(ours_eval_res_path) as f:
+    ours_eval_res = pickle.load(f)
 
 
+comparisons = ['vts', 'dsr', 'dr', 'lu']
+com_eval_res_list = []
+for com in comparisons:
+    com_eval_res_path = eval_res_path % (dataset, com)
+    with open(com_eval_res_path) as f:
+        com_eval_res_list.append(pickle.load(f))
 
+for img_id in ours_eval_res:
+    ours = ours_eval_res[img_id]
 
+    recall_ours = np.sum(ours[:, -1]) * 1.0 / ours.shape[0]
+    recall_com_max = -1
 
+    for i in range(len(com_eval_res_list)):
+        com_eval_res = com_eval_res_list[i][img_id]
+        recall = np.sum(com_eval_res[:, -1]) * 1.0 / com_eval_res[:, -1].shape[0]
+        recall_com_max = max(recall_com_max, recall)
+
+    if recall_ours > 0.3 and recall_ours > recall_com_max:
+        print('==== %s (%.2f) ====' % (img_id, recall_ours))
+        for j in range(ours.shape[0]):
+            if ours[j][-1] > 0:
+                print('----------')
+                show_triplet('ours', ours[j], objnet, prenet)
+                for i in range(len(com_eval_res_list)):
+                    show_triplet(comparisons[i], com_eval_res_list[i][img_id][j], objnet, prenet)

@@ -119,7 +119,7 @@ img_root = os.path.join(ds_root, 'JPEGImages')
 
 for img_id in gt_roidb:
 
-    img_id = '6093897610_9cd5e8b05a_b'
+    img_id = '5972285362_4bf7f957a2_b'
 
     curr_gt = gt_roidb[img_id]
     curr_gt = np.array(curr_gt)

@@ -36,6 +36,8 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
 
     N_img = len(gt_roidb.keys())
     results = {}
+    gt_eval = {}
+
     for i, image_id in enumerate(gt_roidb):
         print('pred [%d/%d] %s' % (N_img, i + 1, image_id))
         results[image_id] = {
@@ -58,8 +60,12 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             'N_obj_det_gt_right': 0,
         }
 
-        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, pconf, sconf, oconf, zero, count
+        # px1, py1, px2, py2, pid, sx1, sy1, sx2, sy2, sid, ox1, oy1, ox2, oy2, oid, pconf, sconf, oconf, zero, count
         curr_gt_roidb = np.array(gt_roidb[image_id])
+        # pid, sid, oid, score
+        curr_gt_eval = np.zeros((curr_gt_roidb.shape[0], 4))
+        gt_eval[image_id] = curr_gt_eval
+
         if len(curr_gt_roidb) == 0:
             continue
 
@@ -88,16 +94,11 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         if image_id not in pred_roidb:
             continue
 
-        curr_pred_roidb_all = np.array(pred_roidb[image_id])
-        curr_pred_roidb = curr_pred_roidb_all.copy()
+        curr_pred_roidb = np.array(pred_roidb[image_id])
         if len(curr_pred_roidb) == 0:
             continue
 
         top_inds = np.argsort(curr_pred_roidb[:, 15])[::-1]
-        curr_pred_roidb_all = curr_pred_roidb_all[top_inds, :]
-        # gt-k, pre, sbj, obj, scr
-        curr_eval_rec = np.ones((len(curr_pred_roidb_all), 5)) * (-1)
-
         curr_pred_roidb = curr_pred_roidb[top_inds[:N_recall], :]
         N_pred = len(curr_pred_roidb)
 
@@ -122,7 +123,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                     obj_hyper = obj_node.hypers()[0]
                     curr_pred_roidb[d, 14] = obj_hyper.index()
         # =====================
-
 
         results[image_id]['N_rlt'] = N_pred
 
@@ -188,7 +188,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             # for each relationship prediction
             for k in range(N_rela):
                 # for each relationship GT
-
                 if count_gt[k] == 0:
                     continue
 
@@ -216,10 +215,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                         else:
                             rela_score = 0
 
-                        # box_hit_gt_ind, gt_pre, gt_sub, gt_obj, score
-                        if rela_score > curr_eval_rec[j, -1]:
-                            curr_eval_rec[j, :] = [k, pre_gt_node.index(), sub_gt_node.index(), obj_gt_node.index(), rela_score]
-
                         if sub_score > 0 and obj_score > 0:
                             img_rlt_pair_rights[j] = 1
                             img_rlt_pair_gt_rights[k] = 1
@@ -231,10 +226,15 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                                 rela_scores[k] = max(rela_scores[k], rela_score)
                                 pre_scores[k] = max(pre_scores[k], pre_score)
 
-
+                        if rela_score >= curr_gt_eval[k, -1]:
+                            curr_gt_eval[k, 0] = rela_pred[j]
+                            curr_gt_eval[k, 1] = sub_dete[j]
+                            curr_gt_eval[k, 2] = obj_dete[j]
+                            curr_gt_eval[k, 3] = rela_score
                 else:
                     s_iou = compute_iou_each(sub_box_dete[j], sub_box_gt[k])
                     o_iou = compute_iou_each(obj_box_dete[j], obj_box_gt[k])
+                    rela_score = 0
                     if (s_iou >= box_thr) and (o_iou >= box_thr):
                         count_gt[k] -= 1
                         img_rlt_box_rights[j] = 1
@@ -243,10 +243,17 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                             img_rlt_pair_rights[j] = 1
                             img_rlt_pair_gt_rights[k] = 1
                             if rela_gt[k] == rela_pred[j]:
+                                rela_score = 1
                                 img_rlt_rights[j] = 1
                                 img_rlt_gt_rights[k] = 1
                                 rela_scores[k] = 1
                                 pre_scores[k] = 1
+
+                    if rela_score >= curr_gt_eval[k, -1]:
+                        curr_gt_eval[k, 0] = rela_pred[j]
+                        curr_gt_eval[k, 1] = sub_dete[j]
+                        curr_gt_eval[k, 2] = obj_dete[j]
+                        curr_gt_eval[k, 3] = rela_score
 
         results[image_id]['N_rlt_right'] = sum(img_rlt_rights)
         results[image_id]['N_rlt_box_right'] = sum(img_rlt_box_rights)
@@ -259,13 +266,6 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         N_rela_right += np.sum(rela_scores)
         N_pre_right += np.sum(pre_scores)
 
-
-        # pred_roidb[image_id] = np.concatenate((curr_pred_roidb_all[:, :16], curr_eval_rec), axis=1)
-
-
-    # print('Proposal recall: %.4f' % (N_obj_box_good / N_obj_total))
-    # print('Detection recall: %.4f' % (N_obj_det_good / N_obj_total))
-
     det_acc = N_rela_right / N_rela_total
     rec_acc = N_pre_right / N_rela_total
-    return det_acc, rec_acc, results
+    return det_acc, rec_acc, results, gt_eval

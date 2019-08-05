@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -106,12 +106,8 @@ if __name__ == '__main__':
     hierVis.create_architecture()
 
     # Load HierVis
-    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
-    print("load checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-    hierVis.load_state_dict(checkpoint['model'])
-    if 'pooling_mode' in checkpoint.keys():
-        cfg.POOLING_MODE = checkpoint['pooling_mode']
+
+
 
     # Load HierLan
     hierLan = HierLang(600 * 2, preconf.label_vec_path())
@@ -121,7 +117,7 @@ if __name__ == '__main__':
     hierLan.load_state_dict(checkpoint)
 
     # get HierRela
-    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(None, hierLan, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
     hierVis.eval()
@@ -158,7 +154,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s_04.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -241,54 +237,9 @@ if __name__ == '__main__':
                 pred_cate = top4[t][0]
                 pred_scr = top4[t][1]
 
-                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
-
-                pred_cates[ppp, t] = raw_cate
-                pred_scores[ppp, t] = float(raw_score)
+                pred_cates[ppp, t] = pred_cate
+                pred_scores[ppp, t] = float(pred_scr)
                 pred_node = prenet.get_node_by_index(pred_cate)
-
-            if args.mode == 'aaa':
-                # print('=== %s ===' % gt_node.name())
-                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
-                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
-
-                if vis_cate == gt_cate or lan_cate == gt_cate:
-                    raw_score_sum_u += 1
-
-                raw_node = prenet.get_node_by_index(raw_cate)
-                vis_node = prenet.get_node_by_index(vis_cate)
-                lan_node = prenet.get_node_by_index(lan_cate)
-
-                if raw_cate == gt_cate:
-                    raw_score_sum += 1
-
-                inf_scr = gt_node.score(pred_cate)
-                infer_score_sum += inf_scr
-
-                hier_scr = gt_node.score(raw_cate)
-                hier_score_sum += hier_scr
-
-                if relas_zero[ppp] == 1:
-                    if raw_cate == gt_cate:
-                        zero_raw_score_sum += 1
-                    zero_hier_score_sum += hier_scr
-                    zero_infer_score_sum += inf_scr
-
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
-                # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
-
-                # if hier_src > 0:
-                if inf_scr > 0:
-                    hit[ppp, 0] = inf_scr
-                    flat_count += 1
-                    if relas_zero[ppp] == 1:
-                        zero_flat_count += 1
-                    info = 'T: ' + info
-                else:
-                    info = 'F: ' + info
-                    pass
-                print(info)
 
         img_pred_rois = None
         for t in range(4):

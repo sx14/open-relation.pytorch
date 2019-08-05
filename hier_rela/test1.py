@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -243,52 +243,11 @@ if __name__ == '__main__':
 
                 raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
 
-                pred_cates[ppp, t] = pred_cate
-                pred_scores[ppp, t] = float(pred_scr)
+                pred_cates[ppp, t] = raw_cate
+                pred_scores[ppp, t] = float(raw_score)
                 pred_node = prenet.get_node_by_index(pred_cate)
 
-            if args.mode == 'aaa':
-                # print('=== %s ===' % gt_node.name())
-                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
-                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
-                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
 
-                if vis_cate == gt_cate or lan_cate == gt_cate:
-                    raw_score_sum_u += 1
-
-                raw_node = prenet.get_node_by_index(raw_cate)
-                vis_node = prenet.get_node_by_index(vis_cate)
-                lan_node = prenet.get_node_by_index(lan_cate)
-
-                if raw_cate == gt_cate:
-                    raw_score_sum += 1
-
-                inf_scr = gt_node.score(pred_cate)
-                infer_score_sum += inf_scr
-
-                hier_scr = gt_node.score(raw_cate)
-                hier_score_sum += hier_scr
-
-                if relas_zero[ppp] == 1:
-                    if raw_cate == gt_cate:
-                        zero_raw_score_sum += 1
-                    zero_hier_score_sum += hier_scr
-                    zero_infer_score_sum += inf_scr
-
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
-                # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
-
-                # if hier_src > 0:
-                if inf_scr > 0:
-                    hit[ppp, 0] = inf_scr
-                    flat_count += 1
-                    if relas_zero[ppp] == 1:
-                        zero_flat_count += 1
-                    info = 'T: ' + info
-                else:
-                    info = 'F: ' + info
-                    pass
-                print(info)
 
         img_pred_rois = None
         for t in range(4):

@@ -72,8 +72,7 @@ class _HierRCNN(nn.Module):
         num_boxes = num_boxes.data
 
         # feed image data to base model to obtain base feature map
-        with torch.no_grad():
-            base_feat = self.RCNN_base(im_data)
+        base_feat = self.RCNN_base(im_data)
 
         if use_rpn:
             # feed base feature map tp RPN to obtain rois

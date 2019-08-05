@@ -25,6 +25,7 @@ from lib.roi_data_layer.roibatchLoader import roibatchLoader
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 from lib.model.hier_rcnn.vgg16 import vgg16
+from lib.model.hier_rcnn.resnet import resnet
 
 from global_config import HierLabelConfig
 
@@ -39,7 +40,7 @@ def parse_args():
                       default='vg', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
-                    default='vgg16', type=str)
+                    default='res101', type=str)
   parser.add_argument('--start_epoch', dest='start_epoch',
                       help='starting epoch',
                       default=1, type=int)
@@ -85,7 +86,7 @@ def parse_args():
                       default=0.001, type=float)
   parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                       help='step to do learning rate decay, unit is epoch',
-                      default=5, type=int)
+                      default=3, type=int)
   parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                       help='learning rate decay ratio',
                       default=0.1, type=float)
@@ -229,10 +230,12 @@ if __name__ == '__main__':
     cfg.CUDA = True
 
   # initilize the network here.
+  labelconf = HierLabelConfig(args.dataset, 'object')
+  label_vec_path = labelconf.label_vec_path()
   if args.net == 'vgg16':
-    labelconf = HierLabelConfig(args.dataset, 'object')
-    label_vec_path = labelconf.label_vec_path()
     hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
+  if args.net == 'res101':
+    hierRCNN = resnet(objnet, label_vec_path, pretrained=False, class_agnostic=True)
   else:
     print("network is not defined")
     pdb.set_trace()
@@ -241,13 +244,15 @@ if __name__ == '__main__':
   hierRCNN.create_architecture()
 
   # load pretrained model
-  load_name = '../data/pretrained_model/pretrained_%s.pth' % args.dataset
+  load_name = '../data/pretrained_model/pretrained_%s_%s.pth' % (args.dataset, args.net)
   print("load pretrained model: %s" % (load_name))
   checkpoint = torch.load(load_name)
   pre_state_dict = checkpoint['model']
 
+  # pre_state_dict = {k: v for k, v in pre_state_dict.items()
+  #                   if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k}
   pre_state_dict = {k: v for k, v in pre_state_dict.items()
-                    if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k}
+                    if 'RCNN_bbox_pred' not in k and 'RCNN_cls_score' not in k and 'RPN' not in k}
 
   hierRCNN_state_dict = hierRCNN.state_dict()
   hierRCNN_state_dict.update(pre_state_dict)
@@ -261,13 +266,10 @@ if __name__ == '__main__':
   params = []
   for key, value in dict(hierRCNN.named_parameters()).items():
     if value.requires_grad:
-      # larger lr for embedding layer
-      # if 'order' in key:
-      #   lr_use = lr * 10
-      #   # lr_use = lr
-      # else:
-      #   lr_use = lr
-      lr_use = lr
+      if 'order' in key:
+        lr_use = lr * 10
+      else:
+        lr_use = lr
 
       if 'bias' in key:
         params += [{'params':[value],'lr':lr_use*(cfg.TRAIN.DOUBLE_BIAS + 1), \
@@ -384,7 +386,7 @@ if __name__ == '__main__':
         loss_temp = 0
         start = time.time()
 
-    if epoch % 5 == 0:
+    if epoch % 2 == 0:
         save_name = os.path.join(output_dir, 'hier_rcnn_{}_{}_{}.pth'.format(args.session, epoch, step))
         save_checkpoint({
           'session': args.session,

@@ -20,7 +20,7 @@ from lib.model.hier_utils.hier_utils import OrderSimilarity, OrderLoss
 
 class _HierRCNN(nn.Module):
     """ Hier RCNN """
-    def __init__(self, class_agnostic, objnet, label_vec_path):
+    def __init__(self, class_agnostic, objnet, label_vec_path, feat_dim=4096):
         super(_HierRCNN, self).__init__()
 
         # config heir classes
@@ -57,10 +57,10 @@ class _HierRCNN(nn.Module):
 
         # fc7(4096) -> emb(600)
         self.order_embedding = nn.Sequential(
-            nn.Linear(4096, 4096),
+            nn.Linear(feat_dim, feat_dim),
             nn.ReLU(),
             nn.Dropout(),
-            nn.Linear(4096, self.embedding_len))
+            nn.Linear(feat_dim, self.embedding_len))
 
         self.order_score = OrderSimilarity(norm=2)
 

@@ -17,7 +17,7 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     N_rlt_gt = img_results['N_rlt_gt']
     N_rlt_right = img_results['N_rlt_gt_right']
     recall = N_rlt_right * 1.0 / N_rlt_gt
-    if recall < thr:
+    if N_rlt_right < thr:
         return
 
     keep = pred_roidb[:, -1] > 0
@@ -26,6 +26,9 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
     obj_dets = hit_roidb[:, 10:15]
 
     dets = np.concatenate((sbj_dets, obj_dets), axis=0)
+
+    if len(dets) == 0:
+        return
 
     uni_dets = np.unique(dets, axis=0)
     keep = py_cpu_nms(uni_dets, 0.7)
@@ -48,9 +51,9 @@ def show_img_relas(gt_roidb, pred_roidb, img_results, img, objnet, prenet, thr):
             sbj_cls = pred_roidb[i, 9]
             obj_cls = pred_roidb[i, 14]
 
-            pre_label = prenet.get_node_by_index(int(pre_cls)).name().split('.')[0]
-            sbj_label = objnet.get_node_by_index(int(sbj_cls)).name().split('.')[0]
-            obj_label = objnet.get_node_by_index(int(obj_cls)).name().split('.')[0]
+            pre_label = prenet.get_node_by_index(int(pre_cls)).name()
+            sbj_label = objnet.get_node_by_index(int(sbj_cls)).name()
+            obj_label = objnet.get_node_by_index(int(obj_cls)).name()
 
             pre_gt = pred_roidb[i, -4]
             sbj_gt = pred_roidb[i, -3]
@@ -117,9 +120,14 @@ results = pickle.load(open(results_path))
 
 img_root = os.path.join(ds_root, 'JPEGImages')
 
+start = False
 for img_id in gt_roidb:
 
-    img_id = '5972285362_4bf7f957a2_b'
+    if img_id == '2315425426_e246d4483f_b':
+        start = True
+
+    if not start:
+        continue
 
     curr_gt = gt_roidb[img_id]
     curr_gt = np.array(curr_gt)
@@ -133,6 +141,6 @@ for img_id in gt_roidb:
     if im is None or curr_gt is None or curr_pr is None or curr_gt.shape[0] == 0 or curr_pr.shape[0] == 0:
         continue
 
-    show_img_relas(curr_gt, curr_pr, curr_rs, im, objnet, prenet, 0.3)
+    show_img_relas(curr_gt, curr_pr, curr_rs, im, objnet, prenet, 4)
 
 

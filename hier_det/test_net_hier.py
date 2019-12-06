@@ -21,6 +21,7 @@ from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rcnn.vgg16 import vgg16
+from lib.model.hier_rcnn.resnet import resnet
 from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import HierLabelConfig, PROJECT_ROOT
 from hier_det.test_utils import det_recall, load_vrd_det_boxes
@@ -40,7 +41,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -77,7 +78,7 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=73793, type=int)
+                        default=7547, type=int)
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
@@ -141,7 +142,11 @@ if __name__ == '__main__':
     if args.net == 'vgg16':
         labelconf = HierLabelConfig(args.dataset, 'object')
         label_vec_path = labelconf.label_vec_path()
-        hierRCNN = vgg16(objnet, label_vec_path, pretrained=True, class_agnostic=True)
+        hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
+    elif args.net == 'res101':
+        labelconf = HierLabelConfig(args.dataset, 'object')
+        label_vec_path = labelconf.label_vec_path()
+        hierRCNN = resnet(objnet, label_vec_path, pretrained=False, class_agnostic=True)
     else:
         print("network is not defined")
         pdb.set_trace()
@@ -290,10 +295,10 @@ if __name__ == '__main__':
         my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
         det_roidb[im_id] = my_dets.cpu().data.numpy()
 
-    with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
-        pickle.dump(det_roidb, f)
-    with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
-        pickle.dump(gt_roidb, f)
+    #with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
+    #    pickle.dump(det_roidb, f)
+    #with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
+    #    pickle.dump(gt_roidb, f)
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

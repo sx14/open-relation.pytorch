@@ -15,6 +15,7 @@ import time
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_rcnn.resnet import resnet as res101_det
 from lib.model.hier_utils.tree_infer1 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_det.det_utils import *
@@ -36,7 +37,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -45,7 +46,7 @@ def parse_args():
                         nargs=argparse.REMAINDER)
     parser.add_argument('--net', dest='net',
                         help='vgg16, res50, res101, res152',
-                        default='vgg16', type=str)
+                        default='res101', type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
                         action='store_true',
@@ -55,10 +56,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=20, type=int)
+                        default=8, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=7547, type=int)
+                        default=147587, type=int)
     parser.add_argument('--load_dir', dest='load_dir',
                         help='directory to load models', default="hier_output",
                         type=str)
@@ -99,8 +100,13 @@ if __name__ == '__main__':
     # load detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
-    hierRCNN.create_architecture()
+
+    if args.net == 'vgg16':
+        hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
+        hierRCNN.create_architecture()
+    elif args.net == 'res101':
+        hierRCNN = res101_det(objnet, objconf.label_vec_path(), class_agnostic=True)
+        hierRCNN.create_architecture()
 
     # load weights
     input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
@@ -140,7 +146,7 @@ if __name__ == '__main__':
         hierRCNN.cuda()
     hierRCNN.eval()
     # load proposals
-    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s_04.bin' % args.dataset)
     with open(det_roidb_path, 'rb') as f:
         det_roidb = pickle.load(f)
 
@@ -187,7 +193,7 @@ if __name__ == '__main__':
         im_boxes[:,:,:4] = im_boxes[:,:,:4] / im_scale
         pred_roidb[img_id] = im_boxes[0].data.cpu().numpy()
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s_04res.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

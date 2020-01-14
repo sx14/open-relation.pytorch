@@ -55,7 +55,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=20, type=int)
+                        default=10, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
                         default=7547, type=int)
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         fasterRCNN.cuda()
     fasterRCNN.eval()
     # load proposals
-    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s.bin' % args.dataset)
+    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s_04.bin' % args.dataset)
     with open(det_roidb_path, 'rb') as f:
         det_roidb = pickle.load(f)
 

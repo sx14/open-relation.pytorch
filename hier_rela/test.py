@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -106,7 +106,12 @@ if __name__ == '__main__':
     hierVis.create_architecture()
 
     # Load HierVis
-
+    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
+    print("load checkpoint %s" % (load_name))
+    checkpoint = torch.load(load_name)
+    hierVis.load_state_dict(checkpoint['model'])
+    if 'pooling_mode' in checkpoint.keys():
+        cfg.POOLING_MODE = checkpoint['pooling_mode']
 
 
     # Load HierLan
@@ -117,7 +122,7 @@ if __name__ == '__main__':
     hierLan.load_state_dict(checkpoint)
 
     # get HierRela
-    hierRela = HierRela(None, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
     hierVis.eval()
@@ -154,7 +159,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s_04.bin' % args.dataset)
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_vgg.bin')
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -237,6 +242,8 @@ if __name__ == '__main__':
                 pred_cate = top4[t][0]
                 pred_scr = top4[t][1]
 
+                # raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t + 1)
+
                 pred_cates[ppp, t] = pred_cate
                 pred_scores[ppp, t] = float(pred_scr)
                 pred_node = prenet.get_node_by_index(pred_cate)
@@ -248,7 +255,7 @@ if __name__ == '__main__':
             obj_scores = pred_rois[:, 17]
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
-            rela_scores = rela_scores + (3-t)*10
+            rela_scores = rela_scores
             rela_indexes = np.argsort(rela_scores.numpy())[::-1]
             rela_scores = rela_scores.unsqueeze(1)
 
@@ -281,7 +288,7 @@ if __name__ == '__main__':
     print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours.bin' % (args.mode, args.dataset))
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours_hier_01.bin' % (args.mode, args.dataset))
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

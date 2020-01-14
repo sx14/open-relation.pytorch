@@ -156,6 +156,16 @@ class LabelNode(object):
     def weight(self):
         return self._weight
 
+    def is_partial_order(self, node):
+        hyper_path_indexes = node.trans_hyper_inds()
+        has_order = self._index in hyper_path_indexes
+        if has_order:
+            return (hyper_path_indexes.index(self._index)+1) / float(len(hyper_path_indexes))
+        else:
+            return 0
+
+
+
     def set_weight(self, w):
         self._weight = w
 

@@ -10,7 +10,6 @@ from __future__ import print_function
 import os
 import argparse
 import pprint
-import time
 
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
@@ -20,6 +19,7 @@ from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
 from lib.model.hier_utils.tree_infer4 import my_infer
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
+from hier_det import demo_hier2
 from hier_rela.test_utils import *
 
 from global_config import HierLabelConfig
@@ -31,6 +31,8 @@ try:
 except NameError:
     xrange = range  # Python 3
 
+args = None
+hierRela = None
 
 def parse_args():
     """
@@ -39,7 +41,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -53,15 +55,15 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre')
+                        default='rela')
 
 
     args = parser.parse_args()
     return args
 
 
-if __name__ == '__main__':
-
+def load_model():
+    global args, hierRela
     args = parse_args()
 
     print('Called with args:')
@@ -73,7 +75,6 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg200.label_hier.obj_hier import objnet
         from lib.datasets.vg200.label_hier.pre_hier import prenet
-        img_root = os.path.join(VG_ROOT, 'JPEGImages')
 
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2016_trainval"
@@ -81,7 +82,10 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
-        img_root = os.path.join(VRD_ROOT, 'JPEGImages')
+
+
+    if args.cuda:
+        cfg.CUDA = True
 
     args.cfg_file = "../cfgs/vgg16.yml"
 
@@ -96,7 +100,6 @@ if __name__ == '__main__':
     # initilize the network here.
     # Load Detector
     objconf = HierLabelConfig(args.dataset, 'object')
-    obj_vec_path = objconf.label_vec_path()
     hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
     hierRCNN.create_architecture()
 
@@ -113,6 +116,7 @@ if __name__ == '__main__':
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
+
     # Load HierLan
     hierLan = HierLang(600 * 2, preconf.label_vec_path())
     load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
@@ -128,6 +132,15 @@ if __name__ == '__main__':
     hierLan.eval()
     hierRela.eval()
     print('load model successfully!')
+
+def infer(batch, scale = True):
+    if args.dataset == "vg":
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.pre_hier import prenet
+
+    elif args.dataset == "vrd":
+        from lib.datasets.vrd.label_hier.obj_hier import objnet
+        from lib.datasets.vrd.label_hier.pre_hier import prenet
 
     # Initilize the tensor holder here.
     im_data = torch.FloatTensor(1)
@@ -147,50 +160,22 @@ if __name__ == '__main__':
     im_info = Variable(im_info)
     relas_num = Variable(relas_num)
     relas_box = Variable(relas_box)
-
-    if args.cuda:
-        cfg.CUDA = True
-
-    if args.mode == 'pre':
-        # Load gt data
-        gt_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_%s.bin' % args.dataset)
-        with open(gt_roidb_path, 'rb') as f:
-            gt_roidb = pickle.load(f)
-            rela_roidb_use = gt_roidb
-    else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
-        with open(det_roidb_path, 'rb') as f:
-            det_roidb = pickle.load(f)
-        cond_roidb = gen_rela_conds(det_roidb)
-        rela_roidb_use = cond_roidb
+    # det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_vgg.bin')
+    # with open(det_roidb_path, 'rb') as f:
+        # det_roidb = pickle.load(f)
+    det_roidb = demo_hier2.infer(batch, scale=False)
+    cond_roidb = gen_rela_conds(det_roidb)
+    rela_roidb_use = cond_roidb
 
     N_count = 1e-10
-    flat_count = 0.0
-    hier_score_sum = 0.0
-    raw_score_sum = 0.0
-    infer_score_sum = 0.0
-
-    raw_score_sum_u = 0.0
-
     zero_N_count = 1e-10
-    zero_flat_count = 0.0
-    zero_hier_score_sum = 0.0
-    zero_raw_score_sum = 0.0
-    zero_infer_score_sum = 0.0
-
-
 
     pred_roidb = {}
-    start = time.time()
     N_img = len(rela_roidb_use.keys())
     for i, img_id in enumerate(rela_roidb_use.keys()):
         print('pred [%d/%d] %s' % (N_img, i + 1, img_id))
-        img_path = os.path.join(img_root, '%s.jpg' % img_id)
-        if not os.path.exists(img_path):
-            continue
-
         # use unique object pairs
-        img = cv2.imread(img_path)
+        img = batch[batch.keys()[i]]
         rois_use = rela_roidb_use[img_id]
         rois_use = np.array(rois_use)
         rois_use[:, 4] = 0
@@ -208,19 +193,15 @@ if __name__ == '__main__':
 
         im_scale = data[4]
 
-        det_tic = time.time()
         with torch.no_grad():
             rois, cls_score, \
             _, rois_label, vis_score, lan_score = hierRela(im_data, im_info, relas_box, relas_num)
 
         scores = cls_score.data
-        vis_scores = vis_score.data
-        lan_scores = lan_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0], 4)
         pred_scores = torch.zeros(rois[0].shape[0], 4)
 
-        raw_label_inds = set(prenet.get_raw_indexes())
 
         hit = torch.zeros(scores.size()[1], 1)
         for ppp in range(scores.size()[1]):
@@ -230,24 +211,16 @@ if __name__ == '__main__':
                 zero_N_count += 1
 
             all_scores = scores[0][ppp].cpu().data.numpy()
-            l_scores = lan_scores[0][ppp].cpu().data.numpy()
-            v_scores = vis_scores[0][ppp].cpu().data.numpy()
-
-            gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
-            gt_node = prenet.get_node_by_index(int(gt_cate))
 
             top4 = my_infer(prenet, all_scores)
             for t in range(4):
                 pred_cate = top4[t][0]
                 pred_scr = top4[t][1]
 
-                # raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
+                # raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t + 1)
 
                 pred_cates[ppp, t] = pred_cate
-                pred_scores[ppp, t] = pred_scr
-                pred_node = prenet.get_node_by_index(pred_cate)
-
-
+                pred_scores[ppp, t] = float(pred_scr)
 
         img_pred_rois = None
         for t in range(4):
@@ -256,8 +229,8 @@ if __name__ == '__main__':
             obj_scores = pred_rois[:, 17]
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
-            rela_scores = rela_scores + (3-t)*10
-            # rela_indexes = np.argsort(rela_scores.numpy())[::-1]
+            rela_scores = rela_scores
+            rela_indexes = np.argsort(rela_scores.numpy())[::-1]
             rela_scores = rela_scores.unsqueeze(1)
 
 
@@ -265,45 +238,15 @@ if __name__ == '__main__':
             # remove [pconf, sconf, oconf], cat rela_conf, hit
             pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
             pred_rois = pred_rois.numpy()
-            # pred_rois = pred_rois[rela_indexes, :]
+            pred_rois = pred_rois[rela_indexes, :]
 
             if img_pred_rois is None:
                 img_pred_rois = pred_rois
             else:
                 img_pred_rois = np.concatenate((img_pred_rois, pred_rois), axis=0)
-
-        # mix sort
-        k = img_pred_rois.shape[0]/4
-        for kk in range(k-1):
-            last2batch = img_pred_rois[kk * k: (kk+2) * k, :]
-            last2batch_scrs = last2batch[:, 15]
-            ranked_inds = np.argsort(last2batch_scrs)[::-1]
-
-            last2batch = last2batch[ranked_inds]
-            img_pred_rois[kk * k: (kk+2) * k, :] = last2batch[:, :]
-
-
-
-
-        pred_roidb[img_id] = img_pred_rois
+        if scale:
+            img_pred_rois[:, [0,2,5,7,10,12]] = img_pred_rois[:, [0,2,5,7,10,12]] / img.shape[1]
+            img_pred_rois[:, [1, 3, 6, 8, 11, 13]] = img_pred_rois[:, [1, 3, 6, 8, 11, 13]] / img.shape[0]
+        pred_roidb[img_id] = img_pred_rois.tolist()
             # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
-
-
-
-    print("==== overall test result ==== ")
-    print("Rec raw  Acc: %.4f" % (raw_score_sum / N_count))
-    print("Rec raw_v+l  Acc: %.4f" % (raw_score_sum_u / N_count))
-    print("Rec heir Acc: %.4f" % (hier_score_sum / N_count))
-    print("Rec infer Acc: %.4f" % (infer_score_sum / N_count))
-    print("Rec flat Acc: %.4f" % (flat_count / N_count))
-
-    print("==== zero-shot test result ==== ")
-    print("Rec raw  Acc: %.4f" % (zero_raw_score_sum / zero_N_count))
-    print("Rec heir Acc: %.4f" % (zero_hier_score_sum / zero_N_count))
-    print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
-    print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
-
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours.bin' % (args.mode, args.dataset))
-    with open(pred_roidb_path, 'wb') as f:
-        pickle.dump(pred_roidb, f)
-
+    return pred_roidb

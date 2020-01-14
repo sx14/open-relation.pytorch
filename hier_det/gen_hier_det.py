@@ -37,7 +37,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -46,7 +46,7 @@ def parse_args():
                         nargs=argparse.REMAINDER)
     parser.add_argument('--net', dest='net',
                         help='vgg16, res50, res101, res152',
-                        default='res101', type=str)
+                        default='vgg16', type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
                         action='store_true',
@@ -56,10 +56,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=8, type=int)
+                        default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=147587, type=int)
+                        default=7547, type=int)
     parser.add_argument('--load_dir', dest='load_dir',
                         help='directory to load models', default="hier_output",
                         type=str)
@@ -78,13 +78,13 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg200.label_hier.obj_hier import objnet
         from lib.datasets.vg200.label_hier.pre_hier import prenet
-        img_root = os.path.join(VG_ROOT, 'JPEGImages')
+        img_root = os.path.join(PROJECT_ROOT, 'hier_det', 'images')
 
     elif args.dataset == "vrd":
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
-        img_root = os.path.join(VRD_ROOT, 'JPEGImages')
+        img_root = os.path.join(PROJECT_ROOT, 'hier_det', 'images')
 
     args.cfg_file = "../cfgs/vgg16.yml"
 
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
-    load_name = os.path.join(input_dir, 'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+    load_name = os.path.join(input_dir, 'hier_rcnn_{}_{}_{}_best.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierRCNN.load_state_dict(checkpoint['model'])
@@ -146,7 +146,7 @@ if __name__ == '__main__':
         hierRCNN.cuda()
     hierRCNN.eval()
     # load proposals
-    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_%s_04.bin' % args.dataset)
+    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_1.bin')
     with open(det_roidb_path, 'rb') as f:
         det_roidb = pickle.load(f)
 
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     N_img = len(det_roidb.keys())
     for i, img_id in enumerate(det_roidb.keys()):
         print('pred [%d/%d]' % (N_img, i+1))
-        img_path = os.path.join(img_root, '%s.jpg' % img_id)
+        img_path = os.path.join(img_root, '%s' % img_id)
         if not os.path.exists(img_path):
             continue
 
@@ -182,18 +182,23 @@ if __name__ == '__main__':
             rois_label = hierRCNN(im_data, im_info, im_boxes[:,:,:5], num_boxes, use_rpn=False)
 
         scores = cls_prob.data
+        cate_scr = []
         for ppp in range(scores.size()[1]):
             all_scores = scores[0][ppp].cpu().data.numpy()
             top2 = my_infer(objnet, all_scores)
             pred_cate = top2[0][0]
             pred_scr = top2[0][1]
+            cate_scr += [[top2[0][1]]]
             im_boxes[0][ppp][4] = pred_cate
-            im_boxes[0][ppp][5] = pred_scr
+
+            print(objnet.get_node_by_index(pred_cate).name(), pred_scr)
 
         im_boxes[:,:,:4] = im_boxes[:,:,:4] / im_scale
-        pred_roidb[img_id] = im_boxes[0].data.cpu().numpy()
+        boxes = torch.cat((im_boxes[0], torch.FloatTensor(cate_scr).cuda()), dim=1)
+        print(boxes)
+        pred_roidb[img_id] = boxes.data.cpu().numpy()
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s_04res.bin' % args.dataset)
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_vgg.bin')
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

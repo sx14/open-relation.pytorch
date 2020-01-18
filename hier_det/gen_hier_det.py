@@ -16,7 +16,7 @@ import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rcnn.resnet import resnet as res101_det
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_det.det_utils import *
 
@@ -185,10 +185,10 @@ if __name__ == '__main__':
         cate_scr = []
         for ppp in range(scores.size()[1]):
             all_scores = scores[0][ppp].cpu().data.numpy()
-            top2 = my_infer(objnet, all_scores)
-            pred_cate = top2[0][0]
-            pred_scr = top2[0][1]
-            cate_scr += [[top2[0][1]]]
+            top_1 = InferTree(objnet, all_scores).top_k(1)
+            pred_cate = top_1[0][0]
+            pred_scr = top_1[0][1]
+            cate_scr += [[top_1[0][1]]]
             im_boxes[0][ppp][4] = pred_cate
 
             print(objnet.get_node_by_index(pred_cate).name(), pred_scr)

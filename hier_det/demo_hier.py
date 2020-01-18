@@ -13,13 +13,11 @@ from torch.autograd import Variable
 from scipy.misc import imread
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 from lib.model.rpn.bbox_transform import clip_boxes
-from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
-from lib.model.utils.net_utils import save_net, load_net, vis_detections
 from lib.model.utils.blob import im_list_to_blob
 from lib.model.hier_rcnn.vgg16 import vgg16
 from lib.model.hier_rcnn.resnet import resnet
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 from global_config import HierLabelConfig
 import pdb
 
@@ -336,10 +334,9 @@ if __name__ == '__main__':
         # cv2.imwrite(result_path, im2show)
         for ppp in range(scores.size()[1]):
             all_scores = scores[0][ppp].cpu().data.numpy()
-            top2 = my_infer(objnet, all_scores)
-            pred_cate = top2[0][0]
-            pred_scr = top2[0][1]
-            # pred_boxes[ppp][4] = pred_cate
-            # pred_boxes[ppp][5] = pred_scr
+            tree = InferTree(objnet, all_scores)
+            top_1 = tree.top_k(1)
+            pred_cate = top_1[0][0]
+            pred_scr = top_1[0][1]
 
             print(pred_cate, pred_scr)

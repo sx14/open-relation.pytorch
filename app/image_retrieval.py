@@ -58,8 +58,7 @@ for img_id in pred_roidb:
     _,uni_idx  = np.unique(pr_curr[:, [4,9,14]], axis=0, return_index=True)
     pred_roidb[img_id] = pr_curr[uni_idx]
 
-print objnet.get_node_by_index(1).is_partial_order(objnet.get_node_by_index(9))
-gt_img_id = pred_roidb.keys()[79]
+gt_img_id = pred_roidb.keys()[0]
 print(gt_img_id)
 img_path = os.path.join(VRD_ROOT, 'JPEGImages', '%s.jpg' % gt_img_id)
 img = cv2.imread(img_path, 1)
@@ -80,7 +79,10 @@ def score(a,b):
     obj_weight = max(obj_a.is_partial_order(obj_b),obj_b.is_partial_order(obj_a))
     sbj_weight = max(sbj_a.is_partial_order(sbj_b),sbj_b.is_partial_order(sbj_a))
     pre_weight = max(pre_a.is_partial_order(pre_b),pre_b.is_partial_order(pre_a))
-    return obj_weight * sbj_weight * pre_weight * a[15] * b[15]
+    if obj_weight * sbj_weight * pre_weight == 0:
+        return 0
+    else:
+        return 1/3 * (obj_weight + sbj_weight + pre_weight) * a[15] * b[15]
 scores = []
 for img_id in pred_roidb:
     pr_curr = pred_roidb[img_id]

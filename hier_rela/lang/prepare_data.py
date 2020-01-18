@@ -5,9 +5,13 @@ import random
 from lang_config import data_config
 from global_config import VRD_ROOT, VG_ROOT
 
+'''
+This file is used to prepare data for training Hierarchical language model.
+It's production is {train | test}_raw_rlts_{dataset}.npy
+'''
+
 
 def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
-
     # load id list
     with open(id_list_path, 'r') as id_list_file:
         anno_list = id_list_file.read().splitlines()
@@ -18,8 +22,8 @@ def collect_raw_rlts(anno_root, id_list_path, rlt_save_path):
     # collect raw
     anno_num = len(anno_list)
     for i in range(anno_num):
-        print('processsing [%d/%d]' % (anno_num, i+1))
-        anno_path = os.path.join(anno_root, anno_list[i]+'.json')
+        print('processsing [%d/%d]' % (anno_num, i + 1))
+        anno_path = os.path.join(anno_root, anno_list[i] + '.json')
         anno = json.load(open(anno_path, 'r'))
         anno_rlts = anno['relationships']
         for rlt in anno_rlts:
@@ -47,7 +51,7 @@ def extend_rlts(raw_rlts, rlt_save_path):
     new_rlts = []
     raw_rlt_num = len(raw_rlts)
     for i, raw_rlt in enumerate(raw_rlts):
-        print('processing [%d/%d]' % (raw_rlt_num, i+1))
+        print('processing [%d/%d]' % (raw_rlt_num, i + 1))
         pre_ind = raw_rlt[1]
         pre_node = prenet.get_node_by_index(pre_ind)
         pre_hyper_inds = pre_node.trans_hyper_inds()
@@ -89,10 +93,13 @@ if __name__ == '__main__':
     anno_root = os.path.join(dataset_root, 'anno')
     split = ['train', 'test']
     for d in split:
+        # filename of pictures for training or testing
         list_path = os.path.join(dataset_root, 'ImageSets', 'Main', d + '.txt')
-        rlt_save_path = data_config[d]['raw_rlt_path']+dataset
+
+        rlt_save_path = data_config[d]['raw_rlt_path'] + dataset
         raw_rlts = collect_raw_rlts(anno_root, list_path, rlt_save_path)
         print('raw relationship tuple num: %d' % len(raw_rlts))
+
         # rlt_save_path = data_config[d]['ext_rlt_path']+dataset
         # ext_rlts = extend_rlts(raw_rlts, rlt_save_path)
         # print('extended relationship tuple num: %d' % len(ext_rlts))

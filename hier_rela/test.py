@@ -18,7 +18,7 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer4 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -53,7 +53,13 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='rela')
+                        default='pre')
+    parser.add_argument('--use_vis', dest='use_vis',
+                        action='store_true',
+                        default=True)
+    parser.add_argument('--use_lan', dest='use_lan',
+                        action='store_true',
+                        default=True)
 
 
     args = parser.parse_args()
@@ -94,39 +100,46 @@ if __name__ == '__main__':
     pprint.pprint(cfg)
 
     # initilize the network here.
-    # Load Detector
-    objconf = HierLabelConfig(args.dataset, 'object')
-    obj_vec_path = objconf.label_vec_path()
-    hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
-    hierRCNN.create_architecture()
-
-    preconf = HierLabelConfig(args.dataset, 'predicate')
-    pre_vec_path = preconf.label_vec_path()
-    hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
-    hierVis.create_architecture()
+    obj_conf = HierLabelConfig(args.dataset, 'object')
+    obj_vec_path = obj_conf.label_vec_path()
+    pre_conf = HierLabelConfig(args.dataset, 'predicate')
+    pre_vec_path = pre_conf.label_vec_path()
 
     # Load HierVis
-    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
-    print("load checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-    hierVis.load_state_dict(checkpoint['model'])
-    if 'pooling_mode' in checkpoint.keys():
-        cfg.POOLING_MODE = checkpoint['pooling_mode']
+    if args.use_vis:
+        # Load Detector
+        hierRCNN = vgg16_det(objnet, obj_conf.label_vec_path(), class_agnostic=True)
+        hierRCNN.create_architecture()
 
+        hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
+        hierVis.create_architecture()
+        load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
+        print("load checkpoint %s" % (load_name))
+        checkpoint = torch.load(load_name)
+        hierVis.load_state_dict(checkpoint['model'])
+        if 'pooling_mode' in checkpoint.keys():
+           cfg.POOLING_MODE = checkpoint['pooling_mode']
+        hierVis.eval()
+    else:
+        hierVis = None
 
     # Load HierLan
-    hierLan = HierLang(600 * 2, preconf.label_vec_path())
-    load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
-    print("load checkpoint %s" % (load_name))
-    checkpoint = torch.load(load_name)
-    hierLan.load_state_dict(checkpoint)
+    if args.use_lan:
+        hierLan = HierLang(600 * 2, pre_conf.label_vec_path())
+        load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
+        print("load checkpoint %s" % (load_name))
+        checkpoint = torch.load(load_name)
+        hierLan.load_state_dict(checkpoint)
+        hierLan.eval()
+    else:
+        hierLan = None
+
+    assert hierLan is not None or hierVis is not None
 
     # get HierRela
-    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, hierLan, obj_conf.label_vec_path())
     if args.cuda:
         hierRela.cuda()
-    hierVis.eval()
-    hierLan.eval()
     hierRela.eval()
     print('load model successfully!')
 
@@ -159,7 +172,7 @@ if __name__ == '__main__':
             gt_roidb = pickle.load(f)
             rela_roidb_use = gt_roidb
     else:
-        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_vgg.bin')
+        det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -237,16 +250,59 @@ if __name__ == '__main__':
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
 
-            top4 = my_infer(prenet, all_scores)
+            top4 = InferTree(prenet, all_scores).top_k(4)
             for t in range(4):
                 pred_cate = top4[t][0]
                 pred_scr = top4[t][1]
 
-                # raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t + 1)
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds, t+1)
 
                 pred_cates[ppp, t] = pred_cate
                 pred_scores[ppp, t] = float(pred_scr)
                 pred_node = prenet.get_node_by_index(pred_cate)
+
+            if args.mode == 'aaa':
+                # print('=== %s ===' % gt_node.name())
+                raw_cate, raw_score = get_raw_pred(all_scores, raw_label_inds)
+                vis_cate, _ = get_raw_pred(v_scores, raw_label_inds)
+                lan_cate, _ = get_raw_pred(l_scores, raw_label_inds)
+
+                if vis_cate == gt_cate or lan_cate == gt_cate:
+                    raw_score_sum_u += 1
+
+                raw_node = prenet.get_node_by_index(raw_cate)
+                vis_node = prenet.get_node_by_index(vis_cate)
+                lan_node = prenet.get_node_by_index(lan_cate)
+
+                if raw_cate == gt_cate:
+                    raw_score_sum += 1
+
+                inf_scr = gt_node.score(pred_cate)
+                infer_score_sum += inf_scr
+
+                hier_scr = gt_node.score(raw_cate)
+                hier_score_sum += hier_scr
+
+                if relas_zero[ppp] == 1:
+                    if raw_cate == gt_cate:
+                        zero_raw_score_sum += 1
+                    zero_hier_score_sum += hier_scr
+                    zero_infer_score_sum += inf_scr
+
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), inf_scr))
+                # info = ('%s -> %s | %s' % (gt_node.name(), vis_node.name(), lan_node.name()))
+
+                # if hier_src > 0:
+                if inf_scr > 0:
+                    hit[ppp, 0] = inf_scr
+                    flat_count += 1
+                    if relas_zero[ppp] == 1:
+                        zero_flat_count += 1
+                    info = 'T: ' + info
+                else:
+                    info = 'F: ' + info
+                    pass
+                print(info)
 
         img_pred_rois = None
         for t in range(4):
@@ -255,7 +311,7 @@ if __name__ == '__main__':
             obj_scores = pred_rois[:, 17]
 
             rela_scores = pred_scores[:, t] * sbj_scores * obj_scores
-            rela_scores = rela_scores
+            rela_scores = rela_scores + (3-t)*10
             rela_indexes = np.argsort(rela_scores.numpy())[::-1]
             rela_scores = rela_scores.unsqueeze(1)
 
@@ -288,7 +344,6 @@ if __name__ == '__main__':
     print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours_hier_01.bin' % (args.mode, args.dataset))
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_hier_02.bin' % (args.mode, args.dataset))
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
-

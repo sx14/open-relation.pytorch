@@ -8,7 +8,7 @@ from proposal_dataset import ProposalDataset
 from lang_config import train_params, data_config
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 from lib.datasets.vrd.label_hier.pre_hier import prenet
 from global_config import HierLabelConfig
 
@@ -87,7 +87,7 @@ for batch in test_dl:
     with torch.no_grad():
         pre_scores1 = model(v_sbj1, v_obj1)
 
-    top2 = my_infer(prenet, pre_scores1)
+    top2 = InferTree(prenet, pre_scores1).top_k(1)
     batch_ranks = rank_test(pre_scores1, gt_vecs)
 
     gt_node = prenet.get_node_by_index(pos_neg_inds[0][0])

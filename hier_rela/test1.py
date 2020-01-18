@@ -18,7 +18,7 @@ from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.tree_infer4 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_rela.test_utils import *
 
@@ -39,7 +39,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg', type=str)
+                        default='vrd', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre')
+                        default='rela')
 
 
     args = parser.parse_args()
@@ -236,7 +236,7 @@ if __name__ == '__main__':
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()
             gt_node = prenet.get_node_by_index(int(gt_cate))
 
-            top4 = my_infer(prenet, all_scores)
+            top4 = InferTree(prenet, all_scores).top_k(4)
             for t in range(4):
                 pred_cate = top4[t][0]
                 pred_scr = top4[t][1]
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
         # mix sort
         k = img_pred_rois.shape[0]/4
-        for kk in range(k-1):
+        for kk in range(int(k)-1):
             last2batch = img_pred_rois[kk * k: (kk+2) * k, :]
             last2batch_scrs = last2batch[:, 15]
             ranked_inds = np.argsort(last2batch_scrs)[::-1]
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     print("Rec infer Acc: %.4f" % (zero_infer_score_sum / N_count))
     print("Rec flat Acc: %.4f" % (zero_flat_count / zero_N_count))
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours.bin' % (args.mode, args.dataset))
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', '%s_box_label_%s_ours_hier_02.bin' % (args.mode, args.dataset))
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

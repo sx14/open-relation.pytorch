@@ -16,8 +16,9 @@ from lib.model.faster_rcnn.resnet import resnet
 from lib.model.hier_rcnn.resnet import resnet as res101_det
 from global_config import HierLabelConfig, PROJECT_ROOT
 from hier_det.det_utils import *
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 import pdb
+import torch
 
 try:
     xrange  # Python 2
@@ -27,6 +28,7 @@ fasterRCNN = None
 hierRCNN = None
 fatser_args = None
 hier_args = None
+
 
 def parse_faster_args():
     """
@@ -82,6 +84,7 @@ def parse_faster_args():
 
     args = parser.parse_args()
     return args
+
 
 def parse_hier_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
@@ -217,6 +220,7 @@ def load_faster_model():
 
     print("load checkpoint %s" % (load_name))
 
+
 def load_hier_model():
     global hier_args
     global hierRCNN
@@ -268,227 +272,231 @@ def load_hier_model():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
     print('load model successfully!')
 
-def infer(batch, scale = True):
-    if faster_args.dataset == "vg":
-        faster_args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg200.label_hier.obj_hier import objnet
-        from lib.datasets.vg200.label_hier.pre_hier import prenet
 
-
-    elif faster_args.dataset == "vrd":
-        faster_args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-        from lib.datasets.vrd.label_hier.obj_hier import objnet
-        from lib.datasets.vrd.label_hier.pre_hier import prenet
-
-    # initilize the tensor holder here.
-    im_data = torch.FloatTensor(1)
-    im_info = torch.FloatTensor(1)
-    num_boxes = torch.LongTensor(1)
-    gt_boxes = torch.FloatTensor(1)
-
-    # ship to cuda
-    if faster_args.cuda:
-        im_data = im_data.cuda()
-        im_info = im_info.cuda()
-        num_boxes = num_boxes.cuda()
-        gt_boxes = gt_boxes.cuda()
-
-    # make variable
+def infer(batch, scale=True):
     with torch.no_grad():
-        im_data = Variable(im_data)
-        im_info = Variable(im_info)
-        num_boxes = Variable(num_boxes)
-        gt_boxes = Variable(gt_boxes)
-
-    if faster_args.cuda:
-        cfg.CUDA = True
-
-    if faster_args.cuda:
-        fasterRCNN.cuda()
-
-    fasterRCNN.eval()
-
-    thresh = 0.4
-
-    num_images = len(batch.keys())
-
-    print('Loaded Photo: {} images.'.format(num_images))
-
-    det_roidb = {}
-    while (num_images > 0):
-        num_images -= 1
-        im_in = batch[batch.keys()[num_images]]
-        if len(im_in.shape) == 2:
-            im_in = im_in[:, :, np.newaxis]
-            im_in = np.concatenate((im_in, im_in, im_in), axis=2)
-        # rgb -> bgr
-        im_in = im_in[:, :, ::-1]
-        im = im_in
-
-        blobs, im_scales = _get_image_blob(im)
-        assert len(im_scales) == 1, "Only single-image batch implemented"
-        im_blob = blobs
-        im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
-
-        im_data_pt = torch.from_numpy(im_blob)
-        im_data_pt = im_data_pt.permute(0, 3, 1, 2)
-        im_info_pt = torch.from_numpy(im_info_np)
-
-        im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
-        im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
-        gt_boxes.data.resize_(1, 1, 5).zero_()
-        num_boxes.data.resize_(1).zero_()
-
-        # pdb.set_trace()
-
-        rois, cls_prob, bbox_pred, \
-        rpn_loss_cls, rpn_loss_box, \
-        RCNN_loss_cls, RCNN_loss_bbox, \
-        rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
-
-        scores = cls_prob.data
-        boxes = rois.data[:, :, 1:5]
-
-        if cfg.TEST.BBOX_REG:
-            # Apply bounding-box regression deltas
-            box_deltas = bbox_pred.data
-            if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
-                # Optionally normalize targets by a precomputed mean and stdev
-                if faster_args.class_agnostic:
-                    if faster_args.cuda:
-                        box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                                     + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    else:
-                        box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
-                                     + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
-
-                    box_deltas = box_deltas.view(1, -1, 4)
-                else:
-                    if faster_args.cuda:
-                        box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                                     + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    else:
-                        box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
-                                     + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
-                    box_deltas = box_deltas.view(1, -1, 4 * len(objnet.get_raw_labels()))
-
-            pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
-            pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
-        else:
-            # Simply repeat the boxes, once for each class
-            _ = torch.from_numpy(np.tile(boxes, (1, scores.shape[1])))
-            pred_boxes = _.cuda() if faster_args.cuda > 0 else _
-
-        pred_boxes /= im_scales[0]
-
-        scores = scores.squeeze()
-        pred_boxes = pred_boxes.squeeze()
-
-        img_dets = []
-        for j in xrange(1, len(objnet.get_raw_labels())):
-            inds = torch.nonzero(scores[:, j] > thresh).view(-1)
-            # if there is det
-            if inds.numel() > 0:
-                cls_scores = scores[:, j][inds]
-                _, order = torch.sort(cls_scores, 0, True)
-                if faster_args.class_agnostic:
-                    cls_boxes = pred_boxes[inds, :]
-                else:
-                    cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
-
-                cls_cate = torch.FloatTensor(len(cls_scores))
-                cls_cate.fill_(j)
-                cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
-                cls_dets = cls_dets[order]
-                keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
-                cls_dets = cls_dets[keep.view(-1).long()]
-                cls_dets_np_arr = cls_dets.cpu().data.numpy()
-                img_dets += cls_dets_np_arr.tolist()
-        img_dets = np.array(img_dets)
-        det_roidb[num_images] = img_dets
-
-    if hier_args.dataset == "vg":
-        faster_args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg200.label_hier.obj_hier import objnet
-        from lib.datasets.vg200.label_hier.pre_hier import prenet
+        if faster_args.dataset == "vg":
+            faster_args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES',
+                                    '50']
+            from lib.datasets.vg200.label_hier.obj_hier import objnet
+            from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 
-    elif hier_args.dataset == "vrd":
-        faster_args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-        from lib.datasets.vrd.label_hier.obj_hier import objnet
-        from lib.datasets.vrd.label_hier.pre_hier import prenet
+        elif faster_args.dataset == "vrd":
+            faster_args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+            from lib.datasets.vrd.label_hier.obj_hier import objnet
+            from lib.datasets.vrd.label_hier.pre_hier import prenet
 
-    # init tensor holder here.
-    im_data = torch.FloatTensor(1)
-    im_info = torch.FloatTensor(1)
-    num_boxes = torch.LongTensor(1)
-    im_boxes = torch.FloatTensor(1)
+        # initilize the tensor holder here.
+        im_data = torch.FloatTensor(1)
+        im_info = torch.FloatTensor(1)
+        num_boxes = torch.LongTensor(1)
+        gt_boxes = torch.FloatTensor(1)
 
-    # shift to cuda
-    if hier_args.cuda:
-        im_data = im_data.cuda()
-        im_info = im_info.cuda()
-        num_boxes = num_boxes.cuda()
-        im_boxes = im_boxes.cuda()
+        # ship to cuda
+        if faster_args.cuda:
+            im_data = im_data.cuda()
+            im_info = im_info.cuda()
+            num_boxes = num_boxes.cuda()
+            gt_boxes = gt_boxes.cuda()
 
-    # make variable
-    im_data = Variable(im_data)
-    im_info = Variable(im_info)
-    num_boxes = Variable(num_boxes)
-    im_boxes = Variable(im_boxes)
-
-    if hier_args.cuda:
-        cfg.CUDA = True
-
-    if hier_args.cuda:
-        hierRCNN.cuda()
-    hierRCNN.eval()
-    # load proposals
-
-    pred_roidb = {}
-    N_img = len(det_roidb.keys())
-    for i, img_id in enumerate(det_roidb.keys()):
-        print('pred [%d/%d]' % (N_img, i + 1))
-        img = batch[batch.keys()[i]]
-        rois_use = det_roidb[img_id]
-
-        if rois_use.shape[0] == 0:
-            continue
-
-        # Attention: resized image data
-        data = get_input_data(img, rois_use)
-
-        im_data.data.resize_(data[0].size()).copy_(data[0])
-        im_info.data.resize_(data[1].size()).copy_(data[1])
-        im_boxes.data.resize_(data[2].size()).copy_(data[2])
-        num_boxes.data.resize_(data[3].size()).copy_(data[3])
-        im_scale = data[4]
-
+        # make variable
         with torch.no_grad():
+            im_data = Variable(im_data)
+            im_info = Variable(im_info)
+            num_boxes = Variable(num_boxes)
+            gt_boxes = Variable(gt_boxes)
+
+        if faster_args.cuda:
+            cfg.CUDA = True
+
+        if faster_args.cuda:
+            fasterRCNN.cuda()
+
+        fasterRCNN.eval()
+
+        thresh = 0.4
+
+        num_images = len(batch.keys())
+
+        print('Loaded Photo: {} images.'.format(num_images))
+
+        det_roidb = {}
+        while (num_images > 0):
+            num_images -= 1
+            im_in = batch[batch.keys()[num_images]]
+            if len(im_in.shape) == 2:
+                im_in = im_in[:, :, np.newaxis]
+                im_in = np.concatenate((im_in, im_in, im_in), axis=2)
+            # rgb -> bgr
+            im_in = im_in[:, :, ::-1]
+            im = im_in
+
+            blobs, im_scales = _get_image_blob(im)
+            assert len(im_scales) == 1, "Only single-image batch implemented"
+            im_blob = blobs
+            im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
+
+            im_data_pt = torch.from_numpy(im_blob)
+            im_data_pt = im_data_pt.permute(0, 3, 1, 2)
+            im_info_pt = torch.from_numpy(im_info_np)
+
+            im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
+            im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
+            gt_boxes.data.resize_(1, 1, 5).zero_()
+            num_boxes.data.resize_(1).zero_()
+
+            # pdb.set_trace()
+
             rois, cls_prob, bbox_pred, \
             rpn_loss_cls, rpn_loss_box, \
             RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = hierRCNN(im_data, im_info, im_boxes[:, :, :5], num_boxes, use_rpn=False)
+            rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
 
-        scores = cls_prob.data
-        cate_scr = []
-        for ppp in range(scores.size()[1]):
-            all_scores = scores[0][ppp].cpu().data.numpy()
-            top2 = my_infer(objnet, all_scores)
-            pred_cate = top2[0][0]
-            pred_scr = top2[0][1]
-            cate_scr += [[top2[0][1]]]
-            im_boxes[0][ppp][4] = pred_cate
+            scores = cls_prob.data
+            boxes = rois.data[:, :, 1:5]
 
-            print(objnet.get_node_by_index(pred_cate).name(), pred_scr)
+            if cfg.TEST.BBOX_REG:
+                # Apply bounding-box regression deltas
+                box_deltas = bbox_pred.data
+                if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
+                    # Optionally normalize targets by a precomputed mean and stdev
+                    if faster_args.class_agnostic:
+                        if faster_args.cuda:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                        else:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
 
-        im_boxes[:, :, :4] = im_boxes[:, :, :4] / im_scale
-        boxes = torch.cat((im_boxes[0], torch.FloatTensor(cate_scr).cuda()), dim=1)
-        boxes = boxes.data.cpu().numpy()
-        if scale:
-            boxes[:, 0] = boxes[:,0] / img.shape[1]
-            boxes[: ,1] = boxes[:,1] / img.shape[0]
-            boxes[:, 2] = boxes[:,2] / img.shape[1]
-            boxes[:, 3] = boxes[:,3] / img.shape[0]
-        pred_roidb[batch.keys()[i]] = boxes
-    return pred_roidb
+                        box_deltas = box_deltas.view(1, -1, 4)
+                    else:
+                        if faster_args.cuda:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                        else:
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
+                                         + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
+                        box_deltas = box_deltas.view(1, -1, 4 * len(objnet.get_raw_labels()))
+
+                pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
+                pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
+            else:
+                # Simply repeat the boxes, once for each class
+                _ = torch.from_numpy(np.tile(boxes, (1, scores.shape[1])))
+                pred_boxes = _.cuda() if faster_args.cuda > 0 else _
+
+            pred_boxes /= im_scales[0]
+
+            scores = scores.squeeze()
+            pred_boxes = pred_boxes.squeeze()
+
+            img_dets = []
+            for j in xrange(1, len(objnet.get_raw_labels())):
+                inds = torch.nonzero(scores[:, j] > thresh).view(-1)
+                # if there is det
+                if inds.numel() > 0:
+                    cls_scores = scores[:, j][inds]
+                    _, order = torch.sort(cls_scores, 0, True)
+                    if faster_args.class_agnostic:
+                        cls_boxes = pred_boxes[inds, :]
+                    else:
+                        cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
+
+                    cls_cate = torch.FloatTensor(len(cls_scores))
+                    cls_cate.fill_(j)
+                    cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
+                    cls_dets = cls_dets[order]
+                    keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
+                    cls_dets = cls_dets[keep.view(-1).long()]
+                    cls_dets_np_arr = cls_dets.cpu().data.numpy()
+                    img_dets += cls_dets_np_arr.tolist()
+            img_dets = np.array(img_dets)
+            det_roidb[num_images] = img_dets
+
+        if hier_args.dataset == "vg":
+            faster_args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES',
+                                    '50']
+            from lib.datasets.vg200.label_hier.obj_hier import objnet
+            from lib.datasets.vg200.label_hier.pre_hier import prenet
+
+
+        elif hier_args.dataset == "vrd":
+            faster_args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+            from lib.datasets.vrd.label_hier.obj_hier import objnet
+            from lib.datasets.vrd.label_hier.pre_hier import prenet
+
+        # init tensor holder here.
+        im_data = torch.FloatTensor(1)
+        im_info = torch.FloatTensor(1)
+        num_boxes = torch.LongTensor(1)
+        im_boxes = torch.FloatTensor(1)
+
+        # shift to cuda
+        if hier_args.cuda:
+            im_data = im_data.cuda()
+            im_info = im_info.cuda()
+            num_boxes = num_boxes.cuda()
+            im_boxes = im_boxes.cuda()
+
+        # make variable
+        im_data = Variable(im_data)
+        im_info = Variable(im_info)
+        num_boxes = Variable(num_boxes)
+        im_boxes = Variable(im_boxes)
+
+        if hier_args.cuda:
+            cfg.CUDA = True
+
+        if hier_args.cuda:
+            hierRCNN.cuda()
+        hierRCNN.eval()
+        # load proposals
+
+        pred_roidb = {}
+        N_img = len(det_roidb.keys())
+        for i, img_id in enumerate(det_roidb.keys()):
+            print('pred [%d/%d]' % (N_img, i + 1))
+            img = batch[batch.keys()[i]]
+            rois_use = det_roidb[img_id]
+
+            if rois_use.shape[0] == 0:
+                continue
+
+            # Attention: resized image data
+            data = get_input_data(img, rois_use)
+
+            im_data.data.resize_(data[0].size()).copy_(data[0])
+            im_info.data.resize_(data[1].size()).copy_(data[1])
+            im_boxes.data.resize_(data[2].size()).copy_(data[2])
+            num_boxes.data.resize_(data[3].size()).copy_(data[3])
+            im_scale = data[4]
+
+            with torch.no_grad():
+                rois, cls_prob, bbox_pred, \
+                rpn_loss_cls, rpn_loss_box, \
+                RCNN_loss_cls, RCNN_loss_bbox, \
+                rois_label = hierRCNN(im_data, im_info, im_boxes[:, :, :5], num_boxes, use_rpn=False)
+
+            scores = cls_prob.data
+            cate_scr = []
+            for ppp in range(scores.size()[1]):
+                all_scores = scores[0][ppp].cpu().data.numpy()
+                top_1 = InferTree(objnet, all_scores).top_k(1)
+                pred_cate = top_1[0][0]
+                pred_scr = top_1[0][1]
+                cate_scr += [[top_1[0][1]]]
+                im_boxes[0][ppp][4] = pred_cate
+
+                print(objnet.get_node_by_index(pred_cate).name(), pred_scr)
+
+            im_boxes[:, :, :4] = im_boxes[:, :, :4] / im_scale
+            boxes = torch.cat((im_boxes[0], torch.FloatTensor(cate_scr).cuda()), dim=1)
+            boxes = boxes.data.cpu().numpy()
+            if scale:
+                boxes[:, 0] = boxes[:, 0] / img.shape[1]
+                boxes[:, 1] = boxes[:, 1] / img.shape[0]
+                boxes[:, 2] = boxes[:, 2] / img.shape[1]
+                boxes[:, 3] = boxes[:, 3] / img.shape[0]
+            pred_roidb[batch.keys()[i]] = boxes
+        return pred_roidb

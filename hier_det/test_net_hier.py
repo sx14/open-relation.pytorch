@@ -246,9 +246,9 @@ if __name__ == '__main__':
                 # for item in zip(ranked_inds, sorted_scrs):
                 #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
 
-                top2 = my_infer(objnet, all_scores)
-                pred_cate = top2[0][0]
-                pred_scr = top2[0][1]
+                top_1 = my_infer(objnet, all_scores)
+                pred_cate = top_1[0][0]
+                pred_scr = top_1[0][1]
 
                 eval_scr = gt_node.score(pred_cate)
                 pred_node = objnet.get_node_by_index(pred_cate)
@@ -297,8 +297,8 @@ if __name__ == '__main__':
         my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
         det_roidb[im_id] = my_dets.cpu().data.numpy()
 
-    #with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
-    #    pickle.dump(det_roidb, f)
+    with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
+        pickle.dump(det_roidb, f)
     #with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
     #    pickle.dump(gt_roidb, f)
 

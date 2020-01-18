@@ -214,4 +214,3 @@ def raw2cond_prob(labelnet, batch_scores):
             cond_probs[i][j] = tnodes[j].cond_prob()
 
     return cond_probs
-

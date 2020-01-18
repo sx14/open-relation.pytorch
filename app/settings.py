@@ -9,6 +9,6 @@ IMAGE_DTYPE = "float32"
 DET_QUEUE = "det_queue"
 RELA_QUEUE = "rela_queue"
 
-BATCH_SIZE = 32
+BATCH_SIZE = 4
 SERVER_SLEEP = 0.25
 CLIENT_SLEEP = 0.25

@@ -5,7 +5,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from global_config import HierLabelConfig
-from lang_config import train_params, data_config
+from lang_config import train_params, data_config, DATASET_ROOT
 from lang_dataset import LangDataset
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.lang.hier_lang import order_rank_test as rank_test
@@ -23,7 +23,7 @@ pre_label_vec_path = pre_config.label_vec_path()
 obj_label_vec_path = obj_config.label_vec_path()
 
 # load test dataset
-rlt_path = data_config['test']['raw_rlt_path'] + dataset
+rlt_path = os.path.join(DATASET_ROOT, data_config['test']['raw_rlt_path'] + dataset)
 test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
 test_dl = DataLoader(test_set, batch_size=1, shuffle=True)
 

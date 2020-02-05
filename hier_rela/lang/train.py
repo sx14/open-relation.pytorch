@@ -4,14 +4,13 @@ import shutil
 import torch
 from tensorboardX import SummaryWriter
 from torch.autograd import Variable
-from torch.nn.functional import cross_entropy as loss_func
 from torch.utils.data import DataLoader
 
 from global_config import HierLabelConfig
 from lang_config import train_params, data_config, DATASET_ROOT
 from lang_dataset import LangDataset
 from lib.model.hier_rela.lang.hier_lang import HierLang
-from lib.model.hier_rela.lang.hier_lang import order_softmax_test as rank_test
+from lib.model.hier_rela.lang.hier_lang import loss_func
 
 '''
 This file is used to train Hierarchical Language Model.
@@ -37,9 +36,7 @@ def eval(model, test_dl):
         with torch.no_grad():
             pre_scores = model(v_sbj, v_obj)
 
-        acc, loss_scores = rank_test(pre_scores, pos_neg_inds)
-        y = Variable(torch.zeros(len(pre_scores))).long().cuda()
-        loss = loss_func(loss_scores, y)
+        acc, loss = loss_func(pre_scores, pos_neg_inds)
         acc_sum += acc
         loss_sum += loss
     avg_acc = acc_sum / batch_num
@@ -119,10 +116,7 @@ if __name__ == '__main__':
             v_obj = Variable(obj).float().cuda()
 
             pre_scores = model(v_sbj, v_obj) # scores should be zero or negative numbers
-
-            acc, loss_scores = rank_test(pre_scores, pos_neg_inds)
-            y = Variable(torch.zeros(len(pre_scores))).long().cuda() # target index list, [0, 0, ..., 0],  as we put positive label at first
-            loss = loss_func(loss_scores, y) # cross_entropy, refer to section 3.2
+            acc, loss = loss_func(pre_scores, pos_neg_inds)
             sw.add_scalars('acc', {'train': acc}, batch_num)
             sw.add_scalars('loss', {'train': loss}, batch_num)
 

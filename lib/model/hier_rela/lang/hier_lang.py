@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 from torch.nn.functional import cosine_similarity as cos
-from torch.nn.functional import margin_ranking_loss as rank_loss
+from torch.nn.functional import cross_entropy
 
 
 def order_sim(hypers, hypos):
@@ -49,6 +49,7 @@ class HierLang(nn.Module):
             score_stack[i] = order_sims
         return score_stack
 
+
 '''
 def relation_embedding_loss(sbj_vec1, pre_vec1, obj_vec1, pre_emb1,
                             sbj_vec2, pre_vec2, obj_vec2, pre_emb2):
@@ -82,6 +83,14 @@ def order_softmax_test(batch_scores, pos_neg_inds):
     acc = acc / len(batch_scores)
     return acc, loss_scores
 
+
+def loss_func(batch_scores, pos_neg_inds):
+    acc, loss_scores = order_softmax_test(batch_scores, pos_neg_inds)
+    y = Variable(torch.zeros(len(batch_scores))).long().cuda()
+    loss = cross_entropy(loss_scores, y)
+    return acc, loss
+
+
 '''
 def order_rank_eval(pos_vecs, neg_vecs, gt_vecs):
     pos_sim = order_sim(gt_vecs, pos_vecs)
@@ -92,6 +101,8 @@ def order_rank_eval(pos_vecs, neg_vecs, gt_vecs):
     return acc, pos_sim, neg_sim
 
 '''
+
+
 def order_rank_test(pred_scores):
     ranks = []
     for scores in pred_scores:

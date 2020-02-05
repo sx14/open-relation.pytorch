@@ -4,12 +4,15 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 from torch.nn.functional import cosine_similarity as cos
-from torch.nn.functional import pairwise_distance as euc
-from torch.nn.functional import cross_entropy
 from torch.nn.functional import margin_ranking_loss as rank_loss
 
 
 def order_sim(hypers, hypos):
+    '''
+    calculate order distance, refer to formula 1 in section 3.1
+    :param hypers: vectors
+    :param hypos: target vector
+    '''
     sub = hypers - hypos
     act = nn.functional.relu(sub)
     partial_order_dis = act.norm(p=2, dim=1)
@@ -46,7 +49,7 @@ class HierLang(nn.Module):
             score_stack[i] = order_sims
         return score_stack
 
-
+'''
 def relation_embedding_loss(sbj_vec1, pre_vec1, obj_vec1, pre_emb1,
                             sbj_vec2, pre_vec2, obj_vec2, pre_emb2):
     emb_sim = order_sim(pre_emb1, pre_emb2)
@@ -55,20 +58,21 @@ def relation_embedding_loss(sbj_vec1, pre_vec1, obj_vec1, pre_emb1,
     pre_sim = order_sim(pre_vec1, pre_vec2)
     target = emb_sim / (sbj_sim + pre_sim + obj_sim)
     return torch.var(target)
+'''
 
-
+'''
 def order_rank_loss(pos_sim, neg_sim):
     y = Variable(torch.ones(len(pos_sim))).cuda()
     # expect: positive sample get higher score, min margin = 1
     loss = rank_loss(pos_sim, neg_sim, y, margin=1)
     return loss
+'''
 
 
 def order_softmax_test(batch_scores, pos_neg_inds):
     loss_scores = Variable(torch.zeros(len(batch_scores), len(pos_neg_inds[0]))).float().cuda()
     for i in range(len(batch_scores)):
         loss_scores[i] = batch_scores[i, pos_neg_inds[i]]
-    y = Variable(torch.zeros(len(batch_scores))).long().cuda()
     acc = 0.0
     for scores in loss_scores:
         p_score = scores[0]
@@ -76,9 +80,9 @@ def order_softmax_test(batch_scores, pos_neg_inds):
         if p_score > n_score_max:
             acc += 1
     acc = acc / len(batch_scores)
-    return acc, loss_scores, y
+    return acc, loss_scores
 
-
+'''
 def order_rank_eval(pos_vecs, neg_vecs, gt_vecs):
     pos_sim = order_sim(gt_vecs, pos_vecs)
     neg_sim = order_sim(gt_vecs, neg_vecs)
@@ -87,8 +91,8 @@ def order_rank_eval(pos_vecs, neg_vecs, gt_vecs):
     acc = true_count / pos_sim.shape[0]
     return acc, pos_sim, neg_sim
 
-
-def order_rank_test(pred_scores, gt_label_vecs):
+'''
+def order_rank_test(pred_scores):
     ranks = []
     for scores in pred_scores:
         ranked_inds = np.argsort(scores).tolist()

@@ -1,4 +1,5 @@
 import os
+from global_config import PROJECT_ROOT
 
 data_config = {
     'train': {
@@ -17,3 +18,5 @@ train_params = {
     'latest_model_path': 'hier_rela_lan_new_',
     'best_model_path': 'hier_rela_lan_best_',
 }
+
+DATASET_ROOT = os.path.join(PROJECT_ROOT, 'hier_rela', 'lang', 'dataset')

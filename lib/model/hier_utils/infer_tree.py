@@ -100,9 +100,8 @@ class TreeNode:
 
 
 class InferTree:
-    __ind2node = []
-
     def __init__(self, labelnet, scores):
+        self.__ind2node = []
 
         # node meta info
         for ind in range(labelnet.label_sum()):

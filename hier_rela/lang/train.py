@@ -2,21 +2,25 @@ import os
 import shutil
 
 import torch
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from torch.nn.functional import cross_entropy as loss_func
 from tensorboardX import SummaryWriter
+from torch.autograd import Variable
+from torch.nn.functional import cross_entropy as loss_func
+from torch.utils.data import DataLoader
 
+from global_config import HierLabelConfig
+from lang_config import train_params, data_config, DATASET_ROOT
 from lang_dataset import LangDataset
-from lang_config import train_params, data_config
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.lang.hier_lang import order_softmax_test as rank_test
-from global_config import HierLabelConfig
 
 '''
 This file is used to train Hierarchical Language Model.
+
 It uses label vectors and you can find those files under hier_label directory, 
 eg. label_vec_{dataset}_{object | predict}.h5
+
+Before train this model, you need to make sure that {train | test}_raw_rlts_{dataset}.npy are under this directory.
+You can run prepare_data.py to get them.
 '''
 
 
@@ -27,19 +31,19 @@ def eval(model, test_dl):
     batch_num = 0
     for batch in test_dl:
         batch_num += 1
-        sbj1, pre1, obj1, pos_neg_inds = batch
-        v_sbj1 = Variable(sbj1).float().cuda()
-        v_obj1 = Variable(obj1).float().cuda()
+        sbj, pre, obj, pos_neg_inds = batch
+        v_sbj = Variable(sbj).float().cuda()
+        v_obj = Variable(obj).float().cuda()
         with torch.no_grad():
-            pre_scores1 = model(v_sbj1, v_obj1)
+            pre_scores = model(v_sbj, v_obj)
 
-        acc, loss_scores, y = rank_test(pre_scores1, pos_neg_inds)
+        acc, loss_scores = rank_test(pre_scores, pos_neg_inds)
+        y = Variable(torch.zeros(len(pre_scores))).long().cuda()
         loss = loss_func(loss_scores, y)
         acc_sum += acc
         loss_sum += loss
     avg_acc = acc_sum / batch_num
     avg_loss = loss_sum / batch_num
-    model.train()
     return avg_acc, avg_loss
 
 
@@ -62,12 +66,12 @@ if __name__ == '__main__':
     pre_label_vec_path = pre_config.label_vec_path()
 
     # load train dataset
-    rlt_path = data_config['train']['raw_rlt_path'] + dataset
+    rlt_path = os.path.join(DATASET_ROOT, data_config['train']['raw_rlt_path'] + dataset)
     train_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
     train_dl = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 
     # load test dataset
-    rlt_path = data_config['test']['raw_rlt_path'] + dataset
+    rlt_path = os.path.join(DATASET_ROOT, data_config['test']['raw_rlt_path'] + dataset)
     test_set = LangDataset(rlt_path, obj_label_vec_path, pre_label_vec_path, prenet)
     test_dl = DataLoader(test_set, batch_size=batch_size, shuffle=True)
 
@@ -75,16 +79,14 @@ if __name__ == '__main__':
     save_model_root = 'output/%s/' % dataset
     if not os.path.isdir(save_model_root):
         os.makedirs(save_model_root)
-
     new_model_path = os.path.join(save_model_root, train_params['latest_model_path'] + dataset + '.pth')
     best_model_path = os.path.join(save_model_root, train_params['best_model_path'] + dataset + '.pth')
-
     input_length = train_set.obj_vec_length() * 2
     gt_label_vec_path = pre_label_vec_path
     model = HierLang(input_length, gt_label_vec_path)
     if os.path.exists(new_model_path):
         model.load_state_dict(torch.load(new_model_path))
-        print('Loading weights success.')
+        print('Loading pretrained weights success.')
     else:
         print('No pretrained weights.')
     model.cuda()
@@ -103,21 +105,24 @@ if __name__ == '__main__':
     if os.path.exists('logs'):
         shutil.rmtree('logs')
     sw = SummaryWriter('logs')
+
+    # train
     batch_num = 0
     best_acc = 0
-
     for epoch in range(epoch_num):
+        model.train()
         for batch in train_dl:
             batch_num += 1
-            sbj1, pre1, obj1, pos_neg_inds = batch
-            v_sbj1 = Variable(sbj1).float().cuda()
-            v_pre1 = Variable(pre1).float().cuda()
-            v_obj1 = Variable(obj1).float().cuda()
+            sbj, pre, obj, pos_neg_inds = batch
+            v_sbj = Variable(sbj).float().cuda()
+            v_pre = Variable(pre).float().cuda()
+            v_obj = Variable(obj).float().cuda()
 
-            pre_scores1 = model(v_sbj1, v_obj1)
+            pre_scores = model(v_sbj, v_obj) # scores should be zero or negative numbers
 
-            acc, loss_scores, y = rank_test(pre_scores1, pos_neg_inds)
-            loss = loss_func(loss_scores, y)
+            acc, loss_scores = rank_test(pre_scores, pos_neg_inds)
+            y = Variable(torch.zeros(len(pre_scores))).long().cuda() # target index list, [0, 0, ..., 0],  as we put positive label at first
+            loss = loss_func(loss_scores, y) # cross_entropy, refer to section 3.2
             sw.add_scalars('acc', {'train': acc}, batch_num)
             sw.add_scalars('loss', {'train': loss}, batch_num)
 
@@ -127,7 +132,7 @@ if __name__ == '__main__':
             loss.backward()
             optim.step()
 
-        print('\nevaluating ......')
+        print('evaluating ......')
         avg_acc, avg_loss = eval(model, test_dl)
         sw.add_scalars('acc', {'eval': avg_acc}, batch_num)
         sw.add_scalars('loss', {'eval': avg_loss}, batch_num)

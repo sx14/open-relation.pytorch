@@ -68,7 +68,7 @@ class LabelNode(object):
 
     def score(self, pred_ind):
         if not self._is_raw:
-            print('[sunx] ATTENTION: class index error !!!')
+            print('ATTENTION: class index error !!!')
             return -1
         best_score = 0
         gt_paths = self.hyper_paths()
@@ -205,6 +205,9 @@ class LabelHier:
         return raw_inds
 
     def raw2path(self):
+        '''
+        :return: a dict, key is raw label index, value is hyper path
+        '''
         if self._raw2path is None:
             r2p = {}
             for r in self.get_raw_indexes():

@@ -1,8 +1,6 @@
 # coding=utf-8
 
-import os
 import numpy as np
-import cv2
 
 
 def compute_iou_each(box1, box2):
@@ -30,16 +28,12 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
     N_obj_box_good = 0.0
     N_obj_det_good = 0.0
 
-    N_zero_rela_right = 0.0
-    N_zero_pre_right = 0.0
-    N_zero_rela_total = 0.0
-
     N_img = len(gt_roidb.keys())
     results = {}
     gt_eval = {}
 
     for i, image_id in enumerate(gt_roidb):
-        print('pred [%d/%d] %s' % (N_img, i + 1, image_id))
+        print('eval [%d/%d] %s' % (N_img, i + 1, image_id))
         results[image_id] = {
             'N_rlt': 0,
             'N_rlt_right': 0,
@@ -82,18 +76,17 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
             count_gt[:] = 1
 
         N_rela = len(rela_gt)
-        N_rela_total = N_rela_total + N_rela
+        N_rela_total += N_rela
 
         N_obj = len(box_gt)
-        N_obj_total = N_obj_total + N_obj
+        N_obj_total += N_obj
 
         results[image_id]['N_rlt_gt'] = N_rela
         results[image_id]['N_obj_gt'] = N_obj
 
-        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, rlt_score
         if image_id not in pred_roidb:
             continue
-
+        # px1, py1, px2, py2, pname, sx1, sy1, sx2, sy2, sname, ox1, oy1, ox2, oy2, oname, rlt_score
         curr_pred_roidb = np.array(pred_roidb[image_id])
         if len(curr_pred_roidb) == 0:
             continue
@@ -102,38 +95,16 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
         curr_pred_roidb = curr_pred_roidb[top_inds[:N_recall], :]
         N_pred = len(curr_pred_roidb)
 
-        # [Attention] make hier
-        # for d in range(len(curr_pred_roidb)):
-        #     if d >= 50:
-        #         pre_ind = curr_pred_roidb[d, 4].astype(np.int).tolist()
-        #         sbj_ind = curr_pred_roidb[d, 9].astype(np.int).tolist()
-        #         obj_ind = curr_pred_roidb[d, 14].astype(np.int).tolist()
-        #
-        #         pre_node = prenet.get_node_by_index(pre_ind)
-        #         sbj_node = objnet.get_node_by_index(sbj_ind)
-        #         obj_node = objnet.get_node_by_index(obj_ind)
-        #
-        #         if len(pre_node.hypers()) > 0:
-        #             pre_hyper = pre_node.hypers()[0]
-        #             curr_pred_roidb[d, 4] = pre_hyper.index()
-        #         if len(sbj_node.hypers()) > 0:
-        #             sbj_hyper = sbj_node.hypers()[0]
-        #             curr_pred_roidb[d, 9] = sbj_hyper.index()
-        #         if len(obj_node.hypers()) > 0:
-        #             obj_hyper = obj_node.hypers()[0]
-        #             curr_pred_roidb[d, 14] = obj_hyper.index()
-        # =====================
-
-        results[image_id]['N_rlt'] = N_pred
-
         rela_pred = curr_pred_roidb[:, 4].astype(np.int).tolist()
-        sub_box_dete = curr_pred_roidb[:, 5:10]
-        obj_box_dete = curr_pred_roidb[:, 10:15]
         sub_dete = curr_pred_roidb[:, 9].astype(np.int).tolist()
         obj_dete = curr_pred_roidb[:, 14].astype(np.int).tolist()
+
+        sub_box_dete = curr_pred_roidb[:, 5:10]
+        obj_box_dete = curr_pred_roidb[:, 10:15]
         box_det = np.concatenate((sub_box_dete, obj_box_dete))
         box_det = np.unique(box_det, axis=0)
 
+        results[image_id]['N_rlt'] = N_pred
         results[image_id]['N_obj'] = len(box_gt)
 
         # cal object proposal/detection recall
@@ -205,20 +176,14 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                         obj_gt_node = objnet.get_node_by_index(obj_gt[k])
                         pre_gt_node = prenet.get_node_by_index(rela_gt[k])
 
-                        sub_det_node = objnet.get_node_by_index(sub_dete[j])
-                        obj_det_node = objnet.get_node_by_index(obj_dete[j])
-                        pre_det_node = prenet.get_node_by_index(rela_pred[j])
-
                         sub_score = sub_gt_node.score(sub_dete[j])
                         obj_score = obj_gt_node.score(obj_dete[j])
                         pre_score = pre_gt_node.score(rela_pred[j])
 
-                        # rela_score = min([sub_score, obj_score, pre_score])
                         if sub_score > 0 and obj_score > 0 and pre_score > 0:
                             rela_score = (sub_score + obj_score + pre_score) / 3.0
                         else:
                             rela_score = 0
-
 
                         if sub_score > 0 and obj_score > 0:
                             img_rlt_pair_rights[j] = 1
@@ -232,6 +197,7 @@ def rela_recall(mode, gt_roidb, pred_roidb, N_recall, objnet, prenet, box_thr=0.
                                 pre_scores[k] = max(pre_scores[k], pre_score)
 
                         if rela_score >= curr_gt_eval[k, -1]:
+                            # store best pred
                             curr_gt_eval[k, 0] = rela_pred[j]
                             curr_gt_eval[k, 1] = sub_dete[j]
                             curr_gt_eval[k, 2] = obj_dete[j]

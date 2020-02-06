@@ -22,7 +22,7 @@ from lib.model.rpn.bbox_transform import bbox_transform_inv
 from lib.model.utils.net_utils import vis_detections
 from lib.model.hier_rcnn.vgg16 import vgg16
 from lib.model.hier_rcnn.resnet import resnet
-from lib.model.hier_utils.tree_infer1 import my_infer
+from lib.model.hier_utils.infer_tree import InferTree
 from global_config import HierLabelConfig, PROJECT_ROOT
 from hier_det.test_utils import det_recall, load_vrd_det_boxes
 
@@ -246,7 +246,8 @@ if __name__ == '__main__':
                 # for item in zip(ranked_inds, sorted_scrs):
                 #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
 
-                top_1 = my_infer(objnet, all_scores)
+                tree = InferTree(objnet, all_scores)
+                top_1 = tree.top_k(1)
                 pred_cate = top_1[0][0]
                 pred_scr = top_1[0][1]
 

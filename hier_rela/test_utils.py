@@ -7,22 +7,16 @@ from scipy.misc import imread
 from math import log, exp
 
 
-def get_raw_pred(all_scores, raw_inds, N):
+def get_raw_pred(all_scores, raw_inds):
     ranked_inds = np.argsort(all_scores)[::-1]
     pred_raw_ind = -1
 
     for ind in ranked_inds:
         if ind in raw_inds:
             pred_raw_ind = ind
-            N -= 1
-            if N == 0:
-                break
+            break
     assert pred_raw_ind > -1
-    score = all_scores[pred_raw_ind]
-    pred_score = -log(-min(score, -0.0001))
-
-    pred_score = 1 / (1 + exp(-pred_score))
-    return pred_raw_ind, pred_score
+    return pred_raw_ind
 
 
 def im_list_to_blob(ims):

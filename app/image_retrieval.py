@@ -6,11 +6,6 @@ import cv2
 
 # vrd - vg
 dataset = 'vrd'
-# rela - pre
-target = 'rela'
-# lu - dsr - vts - ours - dr
-method = 'ours'
-
 
 if dataset == 'vrd':
     ds_root = VRD_ROOT
@@ -21,7 +16,7 @@ else:
     from lib.datasets.vg200.label_hier.obj_hier import objnet
     from lib.datasets.vg200.label_hier.pre_hier import prenet
 
-pred_roidb_path = '../hier_rela/%s_box_label_%s_%s_hier_01.bin' % (target, dataset, method)
+pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_01.bin' % (dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
 def show_rela(pr_curr):
@@ -58,7 +53,8 @@ for img_id in pred_roidb:
     _,uni_idx  = np.unique(pr_curr[:, [4,9,14]], axis=0, return_index=True)
     pred_roidb[img_id] = pr_curr[uni_idx]
 
-gt_img_id = pred_roidb.keys()[0]
+gt_img_index = 1
+gt_img_id = pred_roidb.keys()[gt_img_index]
 print(gt_img_id)
 img_path = os.path.join(VRD_ROOT, 'JPEGImages', '%s.jpg' % gt_img_id)
 img = cv2.imread(img_path, 1)
@@ -82,7 +78,7 @@ def score(a,b):
     if obj_weight * sbj_weight * pre_weight == 0:
         return 0
     else:
-        return 1/3 * (obj_weight + sbj_weight + pre_weight) * a[15] * b[15]
+        return 1.0/3 * (obj_weight + sbj_weight + pre_weight) * a[15] * b[15]
 scores = []
 for img_id in pred_roidb:
     pr_curr = pred_roidb[img_id]

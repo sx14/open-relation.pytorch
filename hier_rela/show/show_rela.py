@@ -1,21 +1,22 @@
+import os
 import pickle
+
+import cv2
 from matplotlib import pyplot as plt
-from ass_fun import *
-from hier_det.show_box import show_boxes, draw_boxes
+
+from hier_rela.eval.eval_utils import *
 from global_config import VRD_ROOT, VG_ROOT
-from nms import py_cpu_nms
+from hier_det.show_box import show_boxes, draw_boxes
+from hier_rela.show.nms import py_cpu_nms
 
 # vrd - vg
 dataset = 'vrd'
 # rela - pre
 target = 'rela'
-# lu - dsr - vts - ours - dr
-method = 'ours'
 
 
 def show_img_relas(gt_roidb, pred_roidb, img, objnet, prenet, thr):
-
-    keep = pred_roidb[:, -1] > 0
+    keep = pred_roidb[:, -2] > 0
     hit_roidb = pred_roidb[keep, :]
     sbj_dets = hit_roidb[:, 5:10]
     obj_dets = hit_roidb[:, 10:15]
@@ -23,7 +24,7 @@ def show_img_relas(gt_roidb, pred_roidb, img, objnet, prenet, thr):
     dets = np.concatenate((sbj_dets, obj_dets), axis=0)
 
     uni_dets = np.unique(dets, axis=0)
-    keep = py_cpu_nms(uni_dets, 0.7)
+    keep = py_cpu_nms(uni_dets, thr)
     uni_dets = uni_dets[keep]
 
     uni_det_boxes = uni_dets[:, :4]
@@ -32,7 +33,6 @@ def show_img_relas(gt_roidb, pred_roidb, img, objnet, prenet, thr):
     for i in range(uni_dets.shape[0]):
         uni_det_cls = uni_dets[i, 4]
         label = objnet.get_node_by_index(int(uni_det_cls)).name()
-        # uni_det_labels.append(label.split('.')[0])
         uni_det_labels.append(label)
 
     gt_print = np.ones(gt_roidb.shape[0])
@@ -54,14 +54,14 @@ def show_img_relas(gt_roidb, pred_roidb, img, objnet, prenet, thr):
             sbj_gt_label = objnet.get_node_by_index(int(sbj_gt))
             obj_gt_label = objnet.get_node_by_index(int(obj_gt))
 
-            if pred_roidb[i, -1] > 0: # rela hit
+            if pred_roidb[i, -1] > 0:  # rela hit
                 k = pred_roidb[i, -5]
                 gt_print[int(k)] = 0
 
-                print('%.2f <%s, %s, %s>|<%s, %s, %s>' % (pred_roidb[i, -1], sbj_gt_label, pre_gt_label, obj_gt_label,
-                                                            sbj_label, pre_label, obj_label))
+                print('%.2f <%s, %s, %s>|<%s, %s, %s>' % (pred_roidb[i, -2], sbj_gt_label, pre_gt_label, obj_gt_label,
+                                                          sbj_label, pre_label, obj_label))
             else:
-                print('%.2f             |<%s, %s, %s>' % (pred_roidb[i, -1], sbj_label, pre_label, obj_label))
+                print('%.2f             |<%s, %s, %s>' % (pred_roidb[i, -2], sbj_label, pre_label, obj_label))
 
     for i in range(gt_print.shape[0]):
         if gt_print[i] == 1:
@@ -81,7 +81,7 @@ def show_img_relas(gt_roidb, pred_roidb, img, objnet, prenet, thr):
     show_boxes(img, dets_temp, uni_det_labels, uni_det_confs, 'all')
 
     # --- save ----
-    img_bgr = np.stack((img[:,:,2], img[:,:,1], img[:,:,0]), axis=2)
+    img_bgr = np.stack((img[:, :, 2], img[:, :, 1], img[:, :, 0]), axis=2)
     im_sav = draw_boxes(img_bgr, dets_temp)
     cv2.imwrite('temp.jpg', im_sav)
 
@@ -103,30 +103,21 @@ else:
 gt_roidb_path = '../gt_rela_roidb_%s.bin' % dataset
 gt_roidb = pickle.load(open(gt_roidb_path))
 
-pred_roidb_path = '%s_box_label_%s_%s.bin' % (target, dataset, method)
+pred_roidb_path = '../%s_box_label_%s_hier.bin' % (target, dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
-
-results_path = 'eval_results_%s_%s.bin' % (dataset, method)
-results = pickle.load(open(results_path))
 
 img_root = os.path.join(ds_root, 'JPEGImages')
 
 for img_id in gt_roidb:
-
-    # img_id = '6093897610_9cd5e8b05a_b'
-
     curr_gt = gt_roidb[img_id]
     curr_gt = np.array(curr_gt)
     if img_id not in pred_roidb:
         continue
 
     curr_pr = pred_roidb[img_id]
-    curr_rs = results[img_id]
-    img_path = os.path.join(img_root, img_id+'.jpg')
+    img_path = os.path.join(img_root, img_id + '.jpg')
     im = plt.imread(img_path)
     if im is None or curr_gt is None or curr_pr is None or curr_gt.shape[0] == 0 or curr_pr.shape[0] == 0:
         continue
 
     show_img_relas(curr_gt, curr_pr, im, objnet, prenet, 0.3)
-
-

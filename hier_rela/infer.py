@@ -2,20 +2,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import torch
 import argparse
 import pprint
 
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
-from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
-from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
-from lib.model.hier_rela.lang.hier_lang import HierLang
-from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_utils.infer_tree import InferTree
+from global_config import HierLabelConfig
 from hier_det import demo_hier2
 from hier_rela.test_utils import *
-
-from global_config import HierLabelConfig
+from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_rela.hier_rela import HierRela
+from lib.model.hier_rela.lang.hier_lang import HierLang
+from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
+from lib.model.hier_utils.infer_tree import InferTree
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 
 try:
     xrange  # Python 2
@@ -24,6 +22,7 @@ except NameError:
 
 args = None
 hierRela = None
+
 
 def parse_args():
     """
@@ -47,7 +46,6 @@ def parse_args():
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
                         default='rela')
-
 
     args = parser.parse_args()
     return args
@@ -73,7 +71,6 @@ def load_model():
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
-
 
     if args.cuda:
         cfg.CUDA = True
@@ -107,7 +104,6 @@ def load_model():
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
-
     # Load HierLan
     hierLan = HierLang(600 * 2, preconf.label_vec_path())
     load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
@@ -124,7 +120,8 @@ def load_model():
     hierRela.eval()
     print('load model successfully!')
 
-def infer(batch, scale = True):
+
+def infer(batch, scale=True):
     with torch.no_grad():
         if args.dataset == "vg":
             from lib.datasets.vg200.label_hier.obj_hier import objnet
@@ -152,9 +149,6 @@ def infer(batch, scale = True):
         im_info = Variable(im_info)
         relas_num = Variable(relas_num)
         relas_box = Variable(relas_box)
-        # det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_vgg.bin')
-        # with open(det_roidb_path, 'rb') as f:
-            # det_roidb = pickle.load(f)
         det_roidb = demo_hier2.infer(batch, scale=False)
         cond_roidb = gen_rela_conds(det_roidb)
         rela_roidb_use = cond_roidb
@@ -183,8 +177,6 @@ def infer(batch, scale = True):
             relas_num.data.resize_(data[3].size()).copy_(data[3])
             relas_zero = np.array(rois_use)[:, -1]
 
-            im_scale = data[4]
-
             with torch.no_grad():
                 rois, cls_score, \
                 _, rois_label, vis_score, lan_score = hierRela(im_data, im_info, relas_box, relas_num)
@@ -193,7 +185,6 @@ def infer(batch, scale = True):
 
             pred_cates = torch.zeros(rois[0].shape[0], 4)
             pred_scores = torch.zeros(rois[0].shape[0], 4)
-
 
             hit = torch.zeros(scores.size()[1], 1)
             for ppp in range(scores.size()[1]):
@@ -225,7 +216,6 @@ def infer(batch, scale = True):
                 rela_indexes = np.argsort(rela_scores.numpy())[::-1]
                 rela_scores = rela_scores.unsqueeze(1)
 
-
                 pred_rois[:, 4] = pred_cates[:, t]
                 # remove [pconf, sconf, oconf], cat rela_conf, hit
                 pred_rois = torch.cat((pred_rois[:, :15], rela_scores, hit), dim=1)
@@ -237,8 +227,8 @@ def infer(batch, scale = True):
                 else:
                     img_pred_rois = np.concatenate((img_pred_rois, pred_rois), axis=0)
             if scale:
-                img_pred_rois[:, [0,2,5,7,10,12]] = img_pred_rois[:, [0,2,5,7,10,12]] / img.shape[1]
+                img_pred_rois[:, [0, 2, 5, 7, 10, 12]] = img_pred_rois[:, [0, 2, 5, 7, 10, 12]] / img.shape[1]
                 img_pred_rois[:, [1, 3, 6, 8, 11, 13]] = img_pred_rois[:, [1, 3, 6, 8, 11, 13]] / img.shape[0]
             pred_roidb[img_id] = img_pred_rois.tolist()
-                # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
+            # px1, py1, px2, py2, pcls, sx1, sy1, sx2, sy2, scls, ox1, oy1, ox2, oy2, ocls, rela_conf, hit
         return pred_roidb

@@ -1,22 +1,21 @@
-import random
 import time
 
+import h5py
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import torchvision.models as models
-from torch.autograd import Variable
-import numpy as np
-import h5py
-from lib.model.utils.config import cfg
-from lib.model.rpn.rpn import _RPN
-from lib.model.roi_pooling.modules.roi_pool import _RoIPooling
-from lib.model.roi_crop.modules.roi_crop import _RoICrop
+
+from lib.model.hier_utils.order_similarity import OrderSimilarity
 from lib.model.roi_align.modules.roi_align import RoIAlignAvg
+from lib.model.roi_crop.modules.roi_crop import _RoICrop
+from lib.model.roi_pooling.modules.roi_pool import _RoIPooling
 from lib.model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
-from lib.model.utils.net_utils import _smooth_l1_loss, _crop_pool_layer, _affine_grid_gen, _affine_theta
-from lib.model.hier_utils.hier_utils import OrderSimilarity, OrderLoss
+from lib.model.rpn.rpn import _RPN
+from lib.model.utils.config import cfg
+from lib.model.utils.net_utils import _smooth_l1_loss, _affine_grid_gen
+
 
 class _HierRCNN(nn.Module):
     """ Hier RCNN """

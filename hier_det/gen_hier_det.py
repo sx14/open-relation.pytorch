@@ -15,7 +15,6 @@ import time
 import pickle
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
-from lib.model.hier_rcnn.resnet import resnet as res101_det
 from lib.model.hier_utils.infer_tree import InferTree
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
 from hier_det.det_utils import *
@@ -78,13 +77,13 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg200.label_hier.obj_hier import objnet
         from lib.datasets.vg200.label_hier.pre_hier import prenet
-        img_root = os.path.join(PROJECT_ROOT, 'hier_det', 'images')
+        img_root = os.path.join(VG_ROOT, 'JPEGImages')
 
     elif args.dataset == "vrd":
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
-        img_root = os.path.join(PROJECT_ROOT, 'hier_det', 'images')
+        img_root = os.path.join(VRD_ROOT, 'JPEGImages')
 
     args.cfg_file = "../cfgs/vgg16.yml"
 
@@ -100,19 +99,14 @@ if __name__ == '__main__':
     # load detector
     objconf = HierLabelConfig(args.dataset, 'object')
     obj_vec_path = objconf.label_vec_path()
-
-    if args.net == 'vgg16':
-        hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
-        hierRCNN.create_architecture()
-    elif args.net == 'res101':
-        hierRCNN = res101_det(objnet, objconf.label_vec_path(), class_agnostic=True)
-        hierRCNN.create_architecture()
+    hierRCNN = vgg16_det(objnet, objconf.label_vec_path(), class_agnostic=True)
+    hierRCNN.create_architecture()
 
     # load weights
     input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
-    load_name = os.path.join(input_dir, 'hier_rcnn_{}_{}_{}_best.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+    load_name = os.path.join(input_dir, 'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierRCNN.load_state_dict(checkpoint['model'])
@@ -146,7 +140,7 @@ if __name__ == '__main__':
         hierRCNN.cuda()
     hierRCNN.eval()
     # load proposals
-    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_1.bin')
+    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_%s.bin' % args.dataset)
     with open(det_roidb_path, 'rb') as f:
         det_roidb = pickle.load(f)
 
@@ -155,7 +149,7 @@ if __name__ == '__main__':
     N_img = len(det_roidb.keys())
     for i, img_id in enumerate(det_roidb.keys()):
         print('pred [%d/%d]' % (N_img, i+1))
-        img_path = os.path.join(img_root, '%s' % img_id)
+        img_path = os.path.join(img_root, '%s.jpg' % img_id)
         if not os.path.exists(img_path):
             continue
 
@@ -182,23 +176,18 @@ if __name__ == '__main__':
             rois_label = hierRCNN(im_data, im_info, im_boxes[:,:,:5], num_boxes, use_rpn=False)
 
         scores = cls_prob.data
-        cate_scr = []
         for ppp in range(scores.size()[1]):
             all_scores = scores[0][ppp].cpu().data.numpy()
-            top_1 = InferTree(objnet, all_scores).top_k(1)
-            pred_cate = top_1[0][0]
-            pred_scr = top_1[0][1]
-            cate_scr += [[top_1[0][1]]]
+            top1 = InferTree(objnet, all_scores).top_k(1)
+            pred_cate = top1[0][0]
+            pred_scr = top1[0][1]
             im_boxes[0][ppp][4] = pred_cate
-
-            print(objnet.get_node_by_index(pred_cate).name(), pred_scr)
+            im_boxes[0][ppp][5] = pred_scr
 
         im_boxes[:,:,:4] = im_boxes[:,:,:4] / im_scale
-        boxes = torch.cat((im_boxes[0], torch.FloatTensor(cate_scr).cuda()), dim=1)
-        print(boxes)
-        pred_roidb[img_id] = boxes.data.cpu().numpy()
+        pred_roidb[img_id] = im_boxes[0].data.cpu().numpy()
 
-    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_vgg.bin')
+    pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
 

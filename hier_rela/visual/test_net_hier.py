@@ -1,8 +1,3 @@
-# --------------------------------------------------------
-# Tensorflow Faster R-CNN
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Jiasen Lu, Jianwei Yang, based on code from Ross Girshick
-# --------------------------------------------------------
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -110,6 +105,7 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg1000.label_hier.obj_hier import objnet
         from lib.datasets.vg1000.label_hier.pre_hier import prenet
+
         args.class_agnostic = True
 
     elif args.dataset == "vrd":
@@ -118,9 +114,11 @@ if __name__ == '__main__':
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
+
         args.class_agnostic = True
 
-    args.cfg_file = "../../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../../cfgs/{}.yml".format(args.net)
+    args.cfg_file = "../../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../../cfgs/{}.yml".format(
+        args.net)
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
@@ -184,12 +182,12 @@ if __name__ == '__main__':
         cfg.CUDA = True
 
     if args.cuda:
+        hierRCNN.cuda()
         hierVis.cuda()
 
     start = time.time()
 
     max_per_image = 100
-    # max_per_image = 20
 
     vis = args.vis
 
@@ -243,13 +241,9 @@ if __name__ == '__main__':
                 N_count += 1
                 gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
                 gt_node = prenet.get_node_by_index(int(gt_cate))
-                # print('==== %s ====' % gt_node.name())
                 all_scores = scores[0][ppp].cpu().data.numpy()
                 ranked_inds = np.argsort(all_scores)[::-1][:20]
                 sorted_scrs = np.sort(all_scores)[::-1][:20]
-                # for item in zip(ranked_inds, sorted_scrs):
-                #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
-
                 raw_scores = all_scores[raw_label_inds]
                 pred_raw_ind = np.argmax(raw_scores[1:]) + 1
                 pred_cate = raw_label_inds[pred_raw_ind]
@@ -262,11 +256,9 @@ if __name__ == '__main__':
                     TP_count += 1
                     info = 'T: ' + info
                 else:
-                    # TOOD: hier recalla
                     info = 'F: ' + info
                     pass
                 print(info)
-
 
         pred_boxes = np.tile(boxes, (1, scores.shape[1]))
 
@@ -316,7 +308,6 @@ if __name__ == '__main__':
 
         misc_toc = time.time()
         nms_time = misc_toc - misc_tic
-
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

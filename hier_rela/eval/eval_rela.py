@@ -1,13 +1,13 @@
 import pickle
-from ass_fun import *
+
+from eval_utils import rela_recall
 
 # vrd - vg
 dataset = 'vrd'
 # rela - pre
-target = 'rela'
-# lu - dsr - vts - ours - dr
-method = 'ours'
+target = 'pre'
 
+save_result = False
 
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.obj_hier import objnet
@@ -17,36 +17,23 @@ else:
     from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 if target == 'pre':
-    box_thr = 1.0
+    box_thr = 1.0  # pre use gt boxes, so iou == 1
 else:
     box_thr = 0.5
 
 gt_roidb_path = '../gt_rela_roidb_%s.bin' % dataset
 gt_roidb = pickle.load(open(gt_roidb_path))
 
-pred_roidb_path = '../%s_box_label_%s_%s.bin' % (target, dataset, method)
+pred_roidb_path = '../%s_box_label_%s_hier.bin' % (target, dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
-
-rela_R50, pre_R50, results_R50, _ = rela_recall('hier', gt_roidb, pred_roidb, 50, objnet, prenet, alpha=2, box_thr=box_thr)
-rela_R100, pre_R100, results_R100, gt_eval = rela_recall('hier', gt_roidb, pred_roidb, 100, objnet, prenet, alpha=2, box_thr=box_thr)
-
-# pickle.dump(gt_eval, open('eval_results_%s_%s.bin' % (dataset, method), 'wb'))
 
 # analysis
 recall_Ns = [50, 100]
-all_results = [results_R50, results_R100]
-for i, results in enumerate(all_results):
-    N_obj_gt_all = 0.0
+for recall_N in recall_Ns:
+    rela_acc, pre_acc, results, gt_eval = rela_recall('hier', gt_roidb, pred_roidb, recall_N, objnet, prenet, alpha=2,
+                                                      box_thr=box_thr)
     N_rlt_gt_all = 0.0
-
-    N_obj_pred_all = 0.0
     N_rlt_pred_all = 0.0
-
-    N_obj_box_right_all = 0.0
-    N_obj_det_right_all = 0.0
-
-    N_obj_box_gt_right_all = 0.0
-    N_obj_det_gt_right_all = 0.0
 
     N_rlt_box_right_all = 0.0
     N_rlt_pair_right_all = 0.0
@@ -57,17 +44,9 @@ for i, results in enumerate(all_results):
     N_rlt_gt_right_all = 0.0
 
     for img in results:
-        N_obj_gt_all += results[img]['N_obj_gt']
         N_rlt_gt_all += results[img]['N_rlt_gt']
 
-        N_obj_pred_all += results[img]['N_obj']
         N_rlt_pred_all += results[img]['N_rlt']
-
-        N_obj_box_right_all += results[img]['N_obj_box_right']
-        N_obj_det_right_all += results[img]['N_obj_det_right']
-
-        N_obj_box_gt_right_all += results[img]['N_obj_box_gt_right']
-        N_obj_det_gt_right_all += results[img]['N_obj_det_gt_right']
 
         N_rlt_box_right_all += results[img]['N_rlt_box_right']
         N_rlt_pair_right_all += results[img]['N_rlt_pair_right']
@@ -77,13 +56,7 @@ for i, results in enumerate(all_results):
         N_rlt_pair_gt_right_all += results[img]['N_rlt_pair_gt_right']
         N_rlt_gt_right_all += results[img]['N_rlt_gt_right']
 
-    # print('==== object(%d) ====' % recall_Ns[i])
-    # print('proposal recall: \t%.5f' % (N_obj_box_gt_right_all / N_obj_gt_all))
-    # print('proposal precision: \t%.5f' % (N_obj_box_right_all / N_obj_pred_all))
-    # print('detection recall: \t%.5f' % (N_obj_det_gt_right_all / N_obj_gt_all))
-    # print('detection precision: \t%.5f\n' % (N_obj_det_right_all / N_obj_pred_all))
-
-    print('==== relationship(%d) ====' % recall_Ns[i])
+    print('==== relationship(%d) ====' % recall_N)
     print('proposal recall: \t%.5f' % (N_rlt_box_gt_right_all / N_rlt_gt_all))
     print('proposal precision: \t%.5f' % (N_rlt_box_right_all / N_rlt_pred_all))
     print('detection recall: \t%.5f' % (N_rlt_pair_gt_right_all / N_rlt_gt_all))
@@ -91,6 +64,8 @@ for i, results in enumerate(all_results):
     print('relationship B-Recall: \t%.5f' % (N_rlt_gt_right_all / N_rlt_gt_all))
     print('relationship precision: \t%.5f\n' % (N_rlt_right_all / N_rlt_pred_all))
 
+    print('rela HR%s: %.5f' % (recall_N, rela_acc))
+    print('pre HR%s: %.5f' % (recall_N, pre_acc))
 
-print('rela HR50: %.5f, rela HR100: %.5f' % (rela_R50, rela_R100))
-print('pre HR50: %.5f, pre HR100: %.5f' % (pre_R50, pre_R100))
+    if save_result:
+        pickle.dump(gt_eval, open('eval_results_%s_recall%s.bin' % (dataset, recall_N), 'wb'))

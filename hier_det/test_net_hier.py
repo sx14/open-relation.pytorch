@@ -3,30 +3,26 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import sys
-import numpy as np
 import argparse
+import os
+import pdb
+import pickle
 import pprint
 import time
-import cv2
+
+import numpy as np
 import torch
 from torch.autograd import Variable
-import pickle
-from lib.roi_data_layer.roidb import combined_roidb
-from lib.roi_data_layer.roibatchLoader import roibatchLoader
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from lib.model.rpn.bbox_transform import clip_boxes
-from lib.model.nms.nms_wrapper import nms
-from lib.model.rpn.bbox_transform import bbox_transform_inv
-from lib.model.utils.net_utils import vis_detections
-from lib.model.hier_rcnn.vgg16 import vgg16
-from lib.model.hier_rcnn.resnet import resnet
-from lib.model.hier_utils.infer_tree import InferTree
-from global_config import HierLabelConfig, PROJECT_ROOT
-from hier_det.test_utils import det_recall, load_vrd_det_boxes
 
-import pdb
+from global_config import HierLabelConfig
+from lib.model.hier_rcnn.resnet import resnet
+from lib.model.hier_rcnn.vgg16 import vgg16
+from lib.model.hier_utils.infer_tree import InferTree
+from lib.model.rpn.bbox_transform import bbox_transform_inv
+from lib.model.rpn.bbox_transform import clip_boxes
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
+from lib.roi_data_layer.roibatchLoader import roibatchLoader
+from lib.roi_data_layer.roidb import combined_roidb
 
 try:
     xrange  # Python 2
@@ -107,6 +103,7 @@ if __name__ == '__main__':
         args.imdbval_name = "vg_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg200.label_hier.obj_hier import objnet
+
         args.class_agnostic = True
 
     elif args.dataset == "vrd":
@@ -114,6 +111,7 @@ if __name__ == '__main__':
         args.imdbval_name = "vrd_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
+
         args.class_agnostic = True
 
     args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
@@ -207,8 +205,9 @@ if __name__ == '__main__':
 
     det_roidb = {}
     gt_roidb = {}
+
     for i in range(num_images):
-        print('test [%d/%d]' % (num_images, i+1))
+        print('test [%d/%d]' % (num_images, i + 1))
         data = next(data_iter)
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
@@ -240,20 +239,13 @@ if __name__ == '__main__':
                 gt_node = objnet.get_node_by_index(int(gt_cate))
                 all_scores = scores[0][ppp].cpu().data.numpy()
 
-                # print('==== %s ====' % gt_node.name())
-                #ranked_inds = np.argsort(all_scores)[::-1][:20]
-                #sorted_scrs = np.sort(all_scores)[::-1][:20]
-                # for item in zip(ranked_inds, sorted_scrs):
-                #     print('%s (%.2f)' % (objnet.get_node_by_index(item[0]).name(), item[1]))
-
-                tree = InferTree(objnet, all_scores)
-                top_1 = tree.top_k(1)
+                top_1 = InferTree(objnet, all_scores).top_k(1)
                 pred_cate = top_1[0][0]
                 pred_scr = top_1[0][1]
 
                 eval_scr = gt_node.score(pred_cate)
                 pred_node = objnet.get_node_by_index(pred_cate)
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(),eval_scr))
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), eval_scr))
                 if eval_scr > 0:
                     TP_score += eval_scr
                     TP_count += 1
@@ -298,9 +290,9 @@ if __name__ == '__main__':
         my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
         det_roidb[im_id] = my_dets.cpu().data.numpy()
 
-    with open('det_roidb_%s.bin' % args.dataset, 'wb') as f:
+    with open('det_roidb_hier_%s.bin' % args.dataset, 'wb') as f:
         pickle.dump(det_roidb, f)
-    #with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
+    # with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
     #    pickle.dump(gt_roidb, f)
 
     end = time.time()

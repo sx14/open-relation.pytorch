@@ -5,7 +5,7 @@ from eval_utils import rela_recall
 # vrd - vg
 dataset = 'vrd'
 # rela - pre
-target = 'pre'
+target = 'rela'
 
 save_result = False
 

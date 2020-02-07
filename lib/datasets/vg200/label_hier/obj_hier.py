@@ -1,8 +1,10 @@
 import os
+
 from nltk.corpus import wordnet as wn
+
+from global_config import PROJECT_ROOT
 from lib.datasets.label_hier import LabelHier
 from lib.datasets.label_hier import LabelNode
-from global_config import PROJECT_ROOT
 
 
 class ObjNet(LabelHier):
@@ -22,7 +24,7 @@ class ObjNet(LabelHier):
     def _import_split(self):
         file_path = os.path.join(os.path.dirname(__file__), 'splits1.txt')
         if not os.path.exists(file_path):
-            print(file_path+' not exists.')
+            print(file_path + ' not exists.')
             exit(-1)
 
         with open(file_path, 'r') as f:

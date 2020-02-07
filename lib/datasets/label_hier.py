@@ -42,8 +42,6 @@ class LabelNode(object):
             c2d = curr2bottom(self)
             return 1.0 * t2c / max(t2c + c2d, 0.01)
 
-
-
     def info_ratio(self, leaf_sum):
 
         def leaf_num(start):
@@ -75,7 +73,7 @@ class LabelNode(object):
         for h_path in gt_paths:
             for i, h_node in enumerate(h_path):
                 if h_node.index() == pred_ind:
-                    best_score = max((i+1.0) / (len(h_path)), best_score)
+                    best_score = max((i + 1.0) / (len(h_path)), best_score)
                     break
         return best_score
 
@@ -156,15 +154,17 @@ class LabelNode(object):
     def weight(self):
         return self._weight
 
-    def is_partial_order(self, node):
-        hyper_path_indexes = node.trans_hyper_inds()
-        has_order = self._index in hyper_path_indexes
+    def similarity(self, node):
+        hyper_path_inds = node.trans_hyper_inds()
+        self_hyper_path_inds = self.trans_hyper_inds()
+        has_order = self._index in hyper_path_inds or node.index() in self_hyper_path_inds
         if has_order:
-            return (hyper_path_indexes.index(self._index)+1) / float(len(hyper_path_indexes))
+            score = node.depth_ratio() / self.depth_ratio()
+            if score > 1:
+                score = 1 / score
+            return score
         else:
             return 0
-
-
 
     def set_weight(self, w):
         self._weight = w
@@ -360,5 +360,3 @@ class LabelHier:
         self.max_depth = 0
         for n in self._index2node:
             self.max_depth = max(self.max_depth, n.depth())
-
-

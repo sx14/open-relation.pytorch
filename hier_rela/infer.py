@@ -5,13 +5,15 @@ from __future__ import print_function
 import argparse
 import pprint
 
+from torch.autograd import Variable
+
 from global_config import HierLabelConfig
-from hier_det import demo_hier2
-from hier_rela.test_utils import *
+from hier_det import infer
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.hier_rela import HierRela
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
+from lib.model.hier_utils.helpers import *
 from lib.model.hier_utils.infer_tree import InferTree
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 
@@ -149,7 +151,7 @@ def infer(batch, scale=True):
         im_info = Variable(im_info)
         relas_num = Variable(relas_num)
         relas_box = Variable(relas_box)
-        det_roidb = demo_hier2.infer(batch, scale=False)
+        det_roidb = infer.infer(batch, scale=False)
         cond_roidb = gen_rela_conds(det_roidb)
         rela_roidb_use = cond_roidb
 

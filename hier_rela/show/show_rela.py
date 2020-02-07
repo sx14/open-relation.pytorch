@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 
 from hier_rela.eval.eval_utils import *
 from global_config import VRD_ROOT, VG_ROOT
-from hier_det.show_box import show_boxes, draw_boxes
-from hier_rela.show.nms import py_cpu_nms
+from hier_det.tools.show_box import show_boxes, draw_boxes
+from lib.model.nms.nms_cpu import nms_cpu as py_cpu_nms
 
 # vrd - vg
 dataset = 'vrd'

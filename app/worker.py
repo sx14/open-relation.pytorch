@@ -5,7 +5,7 @@ import time
 import numpy as np
 import redis
 
-from hier_det.demo_hier2 import load_faster_model, load_hier_model, infer
+from hier_det.infer import load_faster_model, load_hier_model, infer
 import settings
 import json
 import helpers

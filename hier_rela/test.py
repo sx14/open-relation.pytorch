@@ -8,13 +8,15 @@ import pickle
 import pprint
 import time
 
+from torch.autograd import Variable
+
 from global_config import HierLabelConfig
 from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
-from hier_rela.test_utils import *
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.hier_rela import HierRela
 from lib.model.hier_rela.lang.hier_lang import HierLang
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
+from lib.model.hier_utils.helpers import *
 from lib.model.hier_utils.infer_tree import InferTree
 from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 
@@ -208,7 +210,7 @@ if __name__ == '__main__':
         rois_use = rois_use_uni.tolist()
 
         # Attention: resized image data
-        data = get_input_data(img, rois_use)
+        data = get_input_data(img, rois_use, mode='rela')
 
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])

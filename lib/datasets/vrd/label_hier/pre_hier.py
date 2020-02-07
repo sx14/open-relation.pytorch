@@ -52,10 +52,6 @@ class PreNet(LabelHier):
         freq_sum = dfs_fill_freq(self.root())
         assert 1.001 > freq_sum > 0.999
 
-
-
-
-
     def _construct_hier(self):
         # root node
         # 0 is background
@@ -71,7 +67,6 @@ class PreNet(LabelHier):
                      'spatial.a': 'relation.r.01',
                      'possess.a': 'relation.r.01',
                      'compare.a': 'relation.r.01'}
-
 
         # basic level
         basic_level = {
@@ -220,8 +215,8 @@ prenet = PreNet(label_path, pre_freq_path)
 #     n.show_hyper_paths()
 #
 # for i in range(prenet.label_sum()):
-    # n = prenet.get_node_by_index(i)
-    # cs = ''
-    # for c in n.children():
-    #     cs = cs + ' | ' + c.name()
-    # print(n.name()+ ':' + cs)
+# n = prenet.get_node_by_index(i)
+# cs = ''
+# for c in n.children():
+#     cs = cs + ' | ' + c.name()
+# print(n.name()+ ':' + cs)

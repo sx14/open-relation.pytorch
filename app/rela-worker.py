@@ -8,7 +8,7 @@ import settings
 import json
 import helpers
 from hier_rela.infer import load_model, infer
-from hier_det.demo_hier2 import load_hier_model, load_faster_model
+from hier_det.infer import load_hier_model, load_faster_model
 
 model = None
 class_name = None

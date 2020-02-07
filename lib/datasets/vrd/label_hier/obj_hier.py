@@ -18,6 +18,7 @@ class ObjNet(LabelHier):
 
             else:
                 raw2wn[vrd_label] = ['']
+
         # fix auto annotation
         raw2wn['shoes'] = ['shoe.n.01']
         raw2wn['bike'] = ['bicycle.n.01']
@@ -83,7 +84,7 @@ class ObjNet(LabelHier):
         for raw_label in self._raw_labels[1:]:
             wn_label = raw2wn[raw_label][0]
             wn_node = wn.synset(wn_label)
-            hypernym_paths = wn_node.hypernym_paths()   # including wn_node self
+            hypernym_paths = wn_node.hypernym_paths()  # including wn_node self
             if len(hypernym_paths) > 1:
                 hypernym_path = hypernym_paths[path_choice[raw_label]]
             else:
@@ -130,14 +131,15 @@ class ObjNet(LabelHier):
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VRDdevkit2007', 'VOC2007', 'object_labels.txt')
 objnet = ObjNet(label_path, '')
 
-# node = objnet.get_node_by_name('dog')
-# while node is not None:
-#     print('%s: %.2f' % (node.name(), node.depth_ratio()))
-#     if len(node.hypers()) > 0:
-#         node = node.hypers()[0]
-#     else:
-#         node = None
-# raw_inds = objnet.get_raw_indexes()
-# for ind in raw_inds:
-#     n = objnet.get_node_by_index(ind)
-#     n.show_hyper_paths()
+if __name__ == '__main__':
+    node = objnet.get_node_by_name('dog')
+    while node is not None:
+        print('%s: %.2f' % (node.name(), node.depth_ratio()))
+        if len(node.hypers()) > 0:
+            node = node.hypers()[0]
+        else:
+            node = None
+    raw_inds = objnet.get_raw_indexes()
+    for ind in raw_inds:
+        n = objnet.get_node_by_index(ind)
+        n.show_hyper_paths()

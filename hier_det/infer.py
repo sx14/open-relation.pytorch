@@ -2,28 +2,29 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import argparse
+import os
+import pdb
 import pprint
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
-from lib.model.rpn.bbox_transform import clip_boxes
+
+from global_config import HierLabelConfig
+from lib.model.faster_rcnn.resnet import resnet
+from lib.model.faster_rcnn.vgg16 import vgg16
+from lib.model.hier_rcnn.resnet import resnet as res101_det
+from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_utils.helpers import *
+from lib.model.hier_utils.infer_tree import InferTree
 from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
+from lib.model.rpn.bbox_transform import clip_boxes
 from lib.model.utils.blob import im_list_to_blob
-from lib.model.faster_rcnn.vgg16 import vgg16
-from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
-from lib.model.faster_rcnn.resnet import resnet
-from lib.model.hier_rcnn.resnet import resnet as res101_det
-from global_config import HierLabelConfig, PROJECT_ROOT
-from hier_det.det_utils import *
-from lib.model.hier_utils.infer_tree import InferTree
-import pdb
-import torch
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 
 try:
     xrange  # Python 2
 except NameError:
     xrange = range  # Python 3
+
 fasterRCNN = None
 hierRCNN = None
 fatser_args = None
@@ -171,11 +172,9 @@ def load_faster_model():
     if args.dataset == "vg":
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg200.label_hier.obj_hier import objnet
-        from lib.datasets.vg200.label_hier.pre_hier import prenet
     elif args.dataset == "vrd":
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
-        from lib.datasets.vrd.label_hier.pre_hier import prenet
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
@@ -279,13 +278,11 @@ def infer(batch, scale=True):
             faster_args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES',
                                     '50']
             from lib.datasets.vg200.label_hier.obj_hier import objnet
-            from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 
         elif faster_args.dataset == "vrd":
             faster_args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
             from lib.datasets.vrd.label_hier.obj_hier import objnet
-            from lib.datasets.vrd.label_hier.pre_hier import prenet
 
         # initilize the tensor holder here.
         im_data = torch.FloatTensor(1)
@@ -363,7 +360,8 @@ def infer(batch, scale=True):
                     # Optionally normalize targets by a precomputed mean and stdev
                     if faster_args.class_agnostic:
                         if faster_args.cuda:
-                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(
+                                cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
                                          + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
                         else:
                             box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
@@ -372,7 +370,8 @@ def infer(batch, scale=True):
                         box_deltas = box_deltas.view(1, -1, 4)
                     else:
                         if faster_args.cuda:
-                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                            box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(
+                                cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
                                          + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
                         else:
                             box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
@@ -418,13 +417,11 @@ def infer(batch, scale=True):
             faster_args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES',
                                     '50']
             from lib.datasets.vg200.label_hier.obj_hier import objnet
-            from lib.datasets.vg200.label_hier.pre_hier import prenet
 
 
         elif hier_args.dataset == "vrd":
             faster_args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
             from lib.datasets.vrd.label_hier.obj_hier import objnet
-            from lib.datasets.vrd.label_hier.pre_hier import prenet
 
         # init tensor holder here.
         im_data = torch.FloatTensor(1)

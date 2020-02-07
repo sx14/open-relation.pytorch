@@ -19,7 +19,7 @@ from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 from lib.model.utils.net_utils import adjust_learning_rate, save_checkpoint, clip_gradient
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
-from hier_rela.visual.visual_sampler import sampler
+from lib.model.hier_utils.sampler import sampler
 
 from global_config import HierLabelConfig
 

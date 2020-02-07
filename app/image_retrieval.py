@@ -16,7 +16,7 @@ else:
     from lib.datasets.vg200.label_hier.obj_hier import objnet
     from lib.datasets.vg200.label_hier.pre_hier import prenet
 
-pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_01.bin' % (dataset)
+pred_roidb_path = '../hier_rela/rela_box_label_%s_hier.bin' % (dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
 
 def show_rela(pr_curr):
@@ -72,9 +72,9 @@ def score(a,b):
     sbj_b = objnet.get_node_by_index(int(b[14]))
     pre_b = prenet.get_node_by_index(int(b[4]))
 
-    obj_weight = max(obj_a.is_partial_order(obj_b),obj_b.is_partial_order(obj_a))
-    sbj_weight = max(sbj_a.is_partial_order(sbj_b),sbj_b.is_partial_order(sbj_a))
-    pre_weight = max(pre_a.is_partial_order(pre_b),pre_b.is_partial_order(pre_a))
+    obj_weight = obj_a.similarity(obj_b)
+    sbj_weight = sbj_a.similarity(sbj_b)
+    pre_weight = pre_a.similarity(pre_b)
     if obj_weight * sbj_weight * pre_weight == 0:
         return 0
     else:
@@ -93,7 +93,6 @@ res = np.argsort(np.array(scores))[::-1]
 print('-------')
 print(np.sort(np.array(scores))[::-1][:30])
 predict_img_id = pred_roidb.keys()[res[0]]
-# show_rela(pred_roidb[predict_img_id])
 
 def show_preidct(img_indexes):
     for idx in img_indexes:

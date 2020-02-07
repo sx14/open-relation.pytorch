@@ -1,7 +1,8 @@
 import os
+
+from global_config import PROJECT_ROOT
 from lib.datasets.label_hier import LabelHier
 from lib.datasets.label_hier import LabelNode
-from global_config import PROJECT_ROOT
 
 
 class PreNet(LabelHier):
@@ -70,7 +71,6 @@ class PreNet(LabelHier):
 
             'tall than.c': 'compare.c',
             'small than.c': 'compare.c',
-
 
         }
 

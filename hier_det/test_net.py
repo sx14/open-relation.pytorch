@@ -1,35 +1,27 @@
-# --------------------------------------------------------
-# Tensorflow Faster R-CNN
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Jiasen Lu, Jianwei Yang, based on code from Ross Girshick
-# --------------------------------------------------------
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import sys
-import numpy as np
 import argparse
+import os
+import pdb
+import pickle
 import pprint
 import time
-import cv2
+
+import numpy as np
 import torch
 from torch.autograd import Variable
-import pickle
-from lib.roi_data_layer.roidb import combined_roidb
-from lib.roi_data_layer.roibatchLoader import roibatchLoader
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from lib.model.rpn.bbox_transform import clip_boxes
+
+from global_config import PROJECT_ROOT
+from lib.model.faster_rcnn.resnet import resnet
+from lib.model.faster_rcnn.vgg16 import vgg16
 from lib.model.nms.nms_wrapper import nms
 from lib.model.rpn.bbox_transform import bbox_transform_inv
-from lib.model.utils.net_utils import vis_detections
-from lib.model.faster_rcnn.vgg16 import vgg16
-from lib.model.faster_rcnn.resnet import resnet
-from global_config import PROJECT_ROOT
-
-
-import pdb
+from lib.model.rpn.bbox_transform import clip_boxes
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
+from lib.roi_data_layer.roibatchLoader import roibatchLoader
+from lib.roi_data_layer.roidb import combined_roidb
 
 try:
     xrange  # Python 2
@@ -44,7 +36,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vg_voc', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -104,12 +96,12 @@ if __name__ == '__main__':
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
     np.random.seed(cfg.RNG_SEED)
-    if args.dataset == "vrd_voc":
+    if args.dataset == "vrd":
         args.imdb_name = "vrd_voc_2007_trainval"
         args.imdbval_name = "vrd_voc_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
-    elif args.dataset == "vg_voc":
+    elif args.dataset == "vg":
         args.imdb_name = "vg_voc_2007_trainval"
         args.imdbval_name = "vg_voc_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
@@ -209,9 +201,6 @@ if __name__ == '__main__':
                                              pin_memory=True)
 
     data_iter = iter(dataloader)
-
-    _t = {'im_detect': time.time(), 'misc': time.time()}
-    det_file = os.path.join(output_dir, 'detections.pkl')
 
     fasterRCNN.eval()
     empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
@@ -345,6 +334,6 @@ if __name__ == '__main__':
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
 
-    save_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_vg_100.bin')
+    save_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_flat_%s.bin' % args.dataset)
     with open(save_path, 'wb') as f:
         pickle.dump(obj_det_roidbs, f)

@@ -1,27 +1,21 @@
-# --------------------------------------------------------
-# Tensorflow Faster R-CNN
-# Licensed under The MIT License [see LICENSE for details]
-# Written by Jiasen Lu, Jianwei Yang, based on code from Ross Girshick
-# --------------------------------------------------------
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import argparse
+import os
+import pickle
 import pprint
 import time
 
-import pickle
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
-from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
-from lib.model.hier_utils.infer_tree import InferTree
-from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
-from hier_det.det_utils import *
+from torch.autograd import Variable
 
 from global_config import HierLabelConfig
-
-import pdb
+from global_config import PROJECT_ROOT, VG_ROOT, VRD_ROOT
+from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
+from lib.model.hier_utils.helpers import *
+from lib.model.hier_utils.infer_tree import InferTree
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
 
 try:
     xrange  # Python 2
@@ -76,13 +70,13 @@ if __name__ == '__main__':
     if args.dataset == "vg":
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vg200.label_hier.obj_hier import objnet
-        from lib.datasets.vg200.label_hier.pre_hier import prenet
+
         img_root = os.path.join(VG_ROOT, 'JPEGImages')
 
     elif args.dataset == "vrd":
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
         from lib.datasets.vrd.label_hier.obj_hier import objnet
-        from lib.datasets.vrd.label_hier.pre_hier import prenet
+
         img_root = os.path.join(VRD_ROOT, 'JPEGImages')
 
     args.cfg_file = "../cfgs/vgg16.yml"
@@ -106,7 +100,8 @@ if __name__ == '__main__':
     input_dir = args.load_dir + "/" + args.net + "/" + args.dataset
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
-    load_name = os.path.join(input_dir, 'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+    load_name = os.path.join(input_dir,
+                             'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierRCNN.load_state_dict(checkpoint['model'])
@@ -140,7 +135,7 @@ if __name__ == '__main__':
         hierRCNN.cuda()
     hierRCNN.eval()
     # load proposals
-    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_%s.bin' % args.dataset)
+    det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_det', 'det_roidb_hier_%s.bin' % args.dataset)
     with open(det_roidb_path, 'rb') as f:
         det_roidb = pickle.load(f)
 
@@ -148,7 +143,7 @@ if __name__ == '__main__':
     start = time.time()
     N_img = len(det_roidb.keys())
     for i, img_id in enumerate(det_roidb.keys()):
-        print('pred [%d/%d]' % (N_img, i+1))
+        print('pred [%d/%d]' % (N_img, i + 1))
         img_path = os.path.join(img_root, '%s.jpg' % img_id)
         if not os.path.exists(img_path):
             continue
@@ -160,7 +155,7 @@ if __name__ == '__main__':
             continue
 
         # Attention: resized image data
-        data = get_input_data(img, rois_use)
+        data = get_input_data(img, rois_use, mode = 'det')
 
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
@@ -173,9 +168,10 @@ if __name__ == '__main__':
             rois, cls_prob, bbox_pred, \
             rpn_loss_cls, rpn_loss_box, \
             RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = hierRCNN(im_data, im_info, im_boxes[:,:,:5], num_boxes, use_rpn=False)
+            rois_label = hierRCNN(im_data, im_info, im_boxes[:, :, :5], num_boxes, use_rpn=False)
 
         scores = cls_prob.data
+
         for ppp in range(scores.size()[1]):
             all_scores = scores[0][ppp].cpu().data.numpy()
             top1 = InferTree(objnet, all_scores).top_k(1)
@@ -184,10 +180,9 @@ if __name__ == '__main__':
             im_boxes[0][ppp][4] = pred_cate
             im_boxes[0][ppp][5] = pred_scr
 
-        im_boxes[:,:,:4] = im_boxes[:,:,:4] / im_scale
+        im_boxes[:, :, :4] = im_boxes[:, :, :4] / im_scale
         pred_roidb[img_id] = im_boxes[0].data.cpu().numpy()
 
     pred_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
     with open(pred_roidb_path, 'wb') as f:
         pickle.dump(pred_roidb, f)
-

@@ -7,6 +7,8 @@ import os
 import pdb
 import pprint
 
+from torch.autograd import Variable
+
 from global_config import HierLabelConfig
 from lib.model.faster_rcnn.resnet import resnet
 from lib.model.faster_rcnn.vgg16 import vgg16

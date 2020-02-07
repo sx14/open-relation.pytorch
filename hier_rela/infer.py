@@ -8,7 +8,7 @@ import pprint
 from torch.autograd import Variable
 
 from global_config import HierLabelConfig
-from hier_det import infer
+from hier_det.infer import infer as det_infer
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.hier_rela import HierRela
 from lib.model.hier_rela.lang.hier_lang import HierLang
@@ -151,7 +151,8 @@ def infer(batch, scale=True):
         im_info = Variable(im_info)
         relas_num = Variable(relas_num)
         relas_box = Variable(relas_box)
-        det_roidb = infer.infer(batch, scale=False)
+
+        det_roidb = det_infer(batch, scale=False)
         cond_roidb = gen_rela_conds(det_roidb)
         rela_roidb_use = cond_roidb
 

@@ -9,6 +9,7 @@ import json
 import helpers
 from hier_rela.infer import load_model, infer
 from hier_det.infer import load_hier_model, load_faster_model
+from show_rela_det import show
 
 model = None
 class_name = None

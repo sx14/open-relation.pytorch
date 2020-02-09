@@ -14,6 +14,7 @@ class LabelNode(object):
         self._info_ratio = -1
         self._depth_ratio = -1
         self._freq = -1
+        self._trans_hyper_inds = None
 
     def __str__(self):
         return self._name
@@ -118,15 +119,15 @@ class LabelNode(object):
         return self._index
 
     def trans_hyper_inds(self):
-        hyper_inds = []
-        unique_hyper_inds = set()
-        h_paths = self.hyper_paths()
-        for p in h_paths:
-            for w in p:
-                if w.index() not in unique_hyper_inds:
-                    unique_hyper_inds.add(w.index())
-                    hyper_inds.append(w.index())
-        return hyper_inds
+        if self._trans_hyper_inds is None:
+            unique_hyper_inds = set()
+            h_paths = self.hyper_paths()
+            for p in h_paths:
+                for w in p:
+                    if w.index() not in unique_hyper_inds:
+                        unique_hyper_inds.add(w.index())
+            self._trans_hyper_inds = unique_hyper_inds
+        return self._trans_hyper_inds
 
     def hyper_paths(self):
         if len(self._hypers) == 0:

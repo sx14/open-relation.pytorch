@@ -30,7 +30,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -52,7 +52,7 @@ def parse_args():
                         default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=7547, type=int)
+                        default=73793, type=int)
     parser.add_argument('--load_dir', dest='load_dir',
                         help='directory to load models', default="hier_output",
                         type=str)

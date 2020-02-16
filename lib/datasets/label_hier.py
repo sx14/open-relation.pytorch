@@ -157,12 +157,9 @@ class LabelNode(object):
 
     def similarity(self, node):
         hyper_path_inds = node.trans_hyper_inds()
-        self_hyper_path_inds = self.trans_hyper_inds()
-        has_order = self._index in hyper_path_inds or node.index() in self_hyper_path_inds
+        has_order = self._index in hyper_path_inds
         if has_order:
-            score = node.depth_ratio() / self.depth_ratio()
-            if score > 1:
-                score = 1 / score
+            score = self.depth_ratio() / node.depth_ratio()
             return score
         else:
             return 0
@@ -235,6 +232,16 @@ class LabelHier:
             return self._label2node[name]
         else:
             return None
+
+    def get_node_by_name_prefix(self, name_prefix):
+        names = self._label2node.keys()
+        res = None
+        for name in names:
+            if name.split('.')[0] == name_prefix:
+                node = self._label2node[name]
+                if res is None or node.depth_ratio() < res.depth_ratio():
+                    res = node
+        return res
 
     def get_node_by_index(self, index):
         if index < len(self._index2node):

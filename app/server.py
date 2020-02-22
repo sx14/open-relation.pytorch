@@ -7,9 +7,9 @@ import redis
 import settings
 import json
 import helpers
-from hier_rela.demo import load_model, infer as infer_rela
+from hier_rela.infer import load_model, infer as infer_rela
 from hier_det.infer import load_hier_model, load_faster_model, infer as infer_det
-from hier_rela.eval.temp_dsr import show as show_rela
+from show_rela_det import show as show_rela
 from show_det import show as show_det
 import threading
 import time

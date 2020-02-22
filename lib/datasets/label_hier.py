@@ -107,6 +107,12 @@ class LabelNode(object):
     def children(self):
         return list(self._children)
 
+    def descendants(self):
+        descendants = [self]
+        for child in self._children:
+            descendants += child.descendants()
+        return descendants
+
     def add_child(self, child):
         if child not in self._children:
             self._children.add(child)

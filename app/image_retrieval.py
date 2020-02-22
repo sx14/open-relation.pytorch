@@ -2,9 +2,11 @@ import multiprocessing
 import os
 import pickle
 import time
-
+import string
 import cv2
 import numpy as np
+import random
+from datasketch import MinHash, MinHashLSH
 
 from global_config import VG_ROOT, VRD_ROOT
 
@@ -13,26 +15,42 @@ print('CPU core count: %d' % multiprocessing.cpu_count())
 # vrd - vg
 dataset = 'vg'
 top_k = 100
-search_relas = [('person', 'on', 'board'), ('board', 'on', 'way')]
+search_rela = ('machine', 'on', 'furniture')
 
 if dataset == 'vrd':
     ds_root = VRD_ROOT
     from lib.datasets.vrd.label_hier.obj_hier import objnet
-    from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
     ds_root = VG_ROOT
     from lib.datasets.vg200.label_hier.obj_hier import objnet
     from lib.datasets.vg200.label_hier.pre_hier import prenet
-print('objects: ', objnet.get_all_labels())
-print('preds: ', prenet.get_all_labels())
+
 pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_mini.bin' % (dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
 print('pred_roidb loaded')
 
+mHash_query = MinHash()
+
+s_sbj = objnet.get_node_by_name_prefix(search_rela[0])
+s_obj = objnet.get_node_by_name_prefix(search_rela[2])
+s_pre = prenet.get_node_by_name_prefix(search_rela[1])
+
+
+sbj_set = s_sbj.descendants()
+obj_set = s_obj.descendants()
+pre_set =  s_pre.descendants()
+for sbj in sbj_set:
+    for obj in obj_set:
+        for pre in pre_set:
+            s = string.join([sbj.name().split('.')[0], pre.name().split('.')[0], obj.name().split('.')[0]], ' ')
+            print(s)
+            mHash_query.update(s)
+'''
 N_obj = objnet.label_sum()
 N_pre = prenet.label_sum()
 obj_sim_mat = np.zeros((N_obj, N_obj), dtype='float32')
 pre_sim_mat = np.zeros((N_pre, N_pre), dtype='float32')
+
 
 for i in range(2, N_obj):
     for j in range(2, N_obj):
@@ -55,6 +73,7 @@ def score(a, b):
         return 1.0 / 3 * (obj_weight + sbj_weight + pre_weight) * a[15] * b[15]
 
 '''
+'''
 if dataset == 'vg':
     pred_roidb_keys = pred_roidb.keys()[:4000]
     pred_roidb = {key: pred_roidb[key] for key in pred_roidb_keys}
@@ -62,7 +81,10 @@ if dataset == 'vg':
         pickle.dump(pred_roidb, f)
 '''
 
+
+
 def show_rela(pr_curr):
+    print('=====')
     for i in range(pr_curr.shape[0]):
         pr_cls = pr_curr[i, 4]
         obj_cls = pr_curr[i, 9]
@@ -93,15 +115,29 @@ for img_id in pred_roidb:
     pr_curr = pr_curr[pr_curr[:, 15].argsort()[::-1]]
     pred_roidb[img_id] = pr_curr[:top_k]
 
+# construct index
+lsh = MinHashLSH(threshold=0)
+
+for img_id in pred_roidb:
+    mHash = MinHash()
+    pr_curr = pred_roidb[img_id]
+    for rela in pr_curr:
+        sbj = objnet.get_node_by_index(int(rela[9])).name().split('.')[0]
+        obj = objnet.get_node_by_index(int(rela[14])).name().split('.')[0]
+        pre = prenet.get_node_by_index(int(rela[4])).name().split('.')[0]
+        mHash.update('%s %s %s' % (sbj, pre, obj))
+    lsh.insert(img_id, mHash)
 
 start_tic = time.time()
 
+'''
 gt = np.zeros((len(search_relas), 17))
 for i in range(len(search_relas)):
     gt[i][4] = prenet.get_node_by_name_prefix(search_relas[i][1]).index()
     gt[i][9] = objnet.get_node_by_name_prefix(search_relas[i][0]).index()
     gt[i][14] = objnet.get_node_by_name_prefix(search_relas[i][2]).index()
     gt[i][15] = 1
+
 
 def func(part_pred_roidb):
     scores = {}
@@ -132,19 +168,21 @@ pool.join()
 scores = {key: p.get()[key] for p in jobs for key in p.get()}
 score_vals = scores.values()
 res = np.argsort(np.array(score_vals))[::-1]
+'''
+res = lsh.query(mHash_query)
 end_tic = time.time()
 print('-------')
 print('time: %s', end_tic - start_tic)
-print(np.sort(np.array(score_vals))[::-1][:30])
-print(res[:30])
 
 
-def show_preidct(img_indexes):
-    for idx in img_indexes:
-        if score_vals[idx] == 0:
-            print("End")
-            break
-        img_id = scores.keys()[idx]
+# print(np.sort(np.array(score_vals))[::-1][:30])
+# print(res[:30])
+
+
+
+
+def show_predict(img_ids):
+    for img_id in img_ids:
         show_rela(pred_roidb[img_id])
         img_path = os.path.join(ds_root, 'JPEGImages', '%s.jpg' % img_id)
         img = cv2.imread(img_path, 1)
@@ -155,4 +193,14 @@ def show_preidct(img_indexes):
             break
 
 
-show_preidct(res[:30])
+show_predict(res[:30])
+'''
+random_img_id = random.choice(pred_roidb.keys())
+show_rela(pred_roidb[random_img_id])
+img_path = os.path.join(ds_root, 'JPEGImages', '%s.jpg' % random_img_id)
+img = cv2.imread(img_path, 1)
+cv2.imshow('pred_image', img)
+k = cv2.waitKey(0)
+if k == ord('e'):
+    cv2.destroyAllWindows()
+'''

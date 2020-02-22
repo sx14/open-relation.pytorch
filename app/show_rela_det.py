@@ -28,11 +28,7 @@ def show(pred_roidb):
         obj_labels = []
         sbj_labels = []
         pr_curr = pr_curr[pr_curr[:,15].argsort()[::-1]]
-        if len(pr_curr) > 0:
-            if pr_curr[0][15] < 0.5:
-                pr_curr = pr_curr[:2]
-            else:
-                pr_curr = pr_curr[pr_curr[:,15] >= 0.5]
+
         for i in range(pr_curr.shape[0]):
             pr_cls = pr_curr[i, 4]
             obj_cls = pr_curr[i, 9]

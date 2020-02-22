@@ -90,7 +90,7 @@ def parse_faster_args():
 
 
 def parse_hier_args():
-    parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
+    parser = argparse.ArgumentParser(description='Train a Hier R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
                         default='vrd', type=str)

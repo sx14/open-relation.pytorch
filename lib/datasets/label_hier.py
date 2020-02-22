@@ -107,12 +107,6 @@ class LabelNode(object):
     def children(self):
         return list(self._children)
 
-    def descendants(self):
-        descendants = [self]
-        for child in self._children:
-            descendants += child.descendants()
-        return descendants
-
     def add_child(self, child):
         if child not in self._children:
             self._children.add(child)
@@ -160,15 +154,6 @@ class LabelNode(object):
 
     def weight(self):
         return self._weight
-
-    def similarity(self, node):
-        hyper_path_inds = node.trans_hyper_inds()
-        has_order = self._index in hyper_path_inds
-        if has_order:
-            score = self.depth_ratio() / node.depth_ratio()
-            return score
-        else:
-            return 0
 
     def set_weight(self, w):
         self._weight = w

@@ -6,6 +6,11 @@ from lib.datasets.label_hier import LabelNode
 
 
 class PreNet(LabelHier):
+    def opposite(self, pre):
+        if self._opposite.has_key(pre):
+            return self._opposite[pre]
+        else:
+            return None
 
     def _construct_hier(self):
         # STUB IMPLEMENTATION
@@ -201,6 +206,19 @@ class PreNet(LabelHier):
 
     def __init__(self, raw_label_path):
         LabelHier.__init__(self, raw_label_path)
+        opposite_pairs = [('have', 'belong to'),
+                          ('cover', 'covered by'),
+                          ('hold', 'hold by'),
+                          ('wear', 'wear by'),
+                          ('in front of', 'behind'),
+                          ('in', 'contain'),
+                          ('on top of', 'on bottom of'),
+                          ('on', 'under'),
+                          ('above', 'below')]
+        self._opposite = {}
+        for pair in opposite_pairs:
+            self._opposite[pair[0]] = pair[1]
+            self._opposite[pair[1]] = pair[0]
 
 
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VGdevkit2007', 'VOC2007', 'predicate_labels.txt')

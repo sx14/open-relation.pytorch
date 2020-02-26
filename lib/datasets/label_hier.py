@@ -8,6 +8,7 @@ class LabelNode(object):
         self._weight = 0
         self._index = index
         self._name = name
+        self._name_prefix = name.split('.')[0]
         self._hypers = set()
         self._children = set()
         self._is_raw = is_raw
@@ -94,6 +95,9 @@ class LabelNode(object):
     def name(self):
         return self._name
 
+    def name_prefix(self):
+        return self._name_prefix
+
     def hypers(self):
         return list(self._hypers)
 
@@ -179,7 +183,6 @@ class LabelNode(object):
     def freq(self):
         return self._freq
 
-
 class LabelHier:
 
     def background(self):
@@ -240,14 +243,7 @@ class LabelHier:
             return None
 
     def get_node_by_name_prefix(self, name_prefix):
-        names = self._label2node.keys()
-        res = None
-        for name in names:
-            if name.split('.')[0] == name_prefix:
-                node = self._label2node[name]
-                if res is None or node.depth_ratio() < res.depth_ratio():
-                    res = node
-        return res
+        return self._name_prefix2node[name_prefix]
 
     def get_node_by_index(self, index):
         if index < len(self._index2node):
@@ -362,6 +358,7 @@ class LabelHier:
         bk = LabelNode('__background__', 0, True)
         self._label2node = {'__background__': bk}
         self._index2node = [bk]
+        self._name_prefix2node = {'__background__': bk}
         self._construct_hier()
         self._compress()
         self._check_dead_node()
@@ -370,6 +367,9 @@ class LabelHier:
         for node in self._index2node:
             node.info_ratio(self.pos_leaf_sum())
             node.depth_ratio()
+            if not self._name_prefix2node.has_key(node._name_prefix) or not node.is_raw():
+                self._name_prefix2node[node._name_prefix] = node
+
 
         self.max_depth = 0
         for n in self._index2node:

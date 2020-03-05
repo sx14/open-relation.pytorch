@@ -15,6 +15,7 @@ import uuid
 import json
 import io
 import time
+from image_retrieval import search
 
 app = flask.Flask(__name__)
 db = redis.StrictRedis(host=settings.REDIS_HOST,
@@ -88,6 +89,15 @@ def predict_rela():
                     time.sleep(settings.CLIENT_SLEEP)
                 data["success"] = True
     return flask.jsonify(data)
+
+@app.route("/search-by-rela", methods=["GET"])
+def search_image():
+    text = flask.request.args.get('text')
+    res = search(text)
+    return flask.jsonify({
+        'result': res,
+        'success': True
+    })
 
 @app.route("/", methods=["GET"])
 @cross_origin()

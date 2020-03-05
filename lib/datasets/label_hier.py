@@ -243,7 +243,10 @@ class LabelHier:
             return None
 
     def get_node_by_name_prefix(self, name_prefix):
-        return self._name_prefix2node[name_prefix]
+        if name_prefix in self._name_prefix2node:
+            return self._name_prefix2node[name_prefix]
+        else:
+            return None
 
     def get_node_by_index(self, index):
         if index < len(self._index2node):

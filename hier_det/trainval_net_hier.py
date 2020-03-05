@@ -32,10 +32,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Hierarchical Faster R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--net', dest='net',
                         help='vgg16, res101',
-                        default='res101', type=str)
+                        default='vgg16', type=str)
     parser.add_argument('--start_epoch', dest='start_epoch',
                         help='starting epoch',
                         default=1, type=int)
@@ -50,7 +50,7 @@ def parse_args():
                         default=10000, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
-                        help='directory to save models', default="hier_output",
+                        help='directory to save models', default="hier_output_new",
                         type=str)
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
@@ -127,10 +127,10 @@ if __name__ == '__main__':
     print(args)
 
     if args.dataset == "vg":
-        args.imdb_name = "vg_2007_trainval"
-        args.imdbval_name = "vg_2007_test"
+        args.imdb_name = "vg_lsj_2007_trainval"
+        args.imdbval_name = "vg_lsj_2007_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg200.label_hier.obj_hier import objnet
+        from lib.datasets.vglsj.label_hier.obj_hier import objnet
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2007_trainval"
         args.imdbval_name = "vrd_2007_test"
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     # train set
     # -- Note: Use validation set and disable the flipped to enable faster loading.
     if args.dataset == 'vg':
-        cfg.TRAIN.USE_FLIPPED = True
+        cfg.TRAIN.USE_FLIPPED = False
     else:
         cfg.TRAIN.USE_FLIPPED = True
 
@@ -201,19 +201,12 @@ if __name__ == '__main__':
     # initilize the network here.
     labelconf = HierLabelConfig(args.dataset, 'object')
     label_vec_path = labelconf.label_vec_path()
-    if args.net == 'vgg16':
-        hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
-    if args.net == 'res101':
-        hierRCNN = resnet(objnet, label_vec_path, pretrained=False, class_agnostic=True)
-    else:
-        print("network is not defined")
-        pdb.set_trace()
-        exit(-1)
+    hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
 
     hierRCNN.create_architecture()
 
     # load pretrained model
-    load_name = '../data/pretrained_model/pretrained_%s_%s.pth' % (args.dataset, args.net)
+    load_name = '../data/pretrained_model/pretrained_%s.pth' % (args.dataset)
     print("load pretrained model: %s" % (load_name))
     checkpoint = torch.load(load_name)
     pre_state_dict = checkpoint['model']

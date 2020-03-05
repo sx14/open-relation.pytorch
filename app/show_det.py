@@ -4,7 +4,7 @@ from global_config import VRD_ROOT, PROJECT_ROOT, VG_ROOT
 
 
 
-dataset = 'vrd'
+dataset = 'vg'
 
 if dataset == 'vg':
     DS_ROOT = VG_ROOT

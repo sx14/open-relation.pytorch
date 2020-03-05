@@ -16,9 +16,6 @@ from utils.diversity import rerank
 dataset = 'vg'
 top_k = 100
 
-search_rela = extract_triplet('vessel on table')
-print(search_rela)
-
 if dataset == 'vrd':
     ds_root = VRD_ROOT
     from lib.datasets.vrd.label_hier.obj_hier import objnet
@@ -29,12 +26,14 @@ else:
 
 pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_mini.bin' % (dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
-print('pred_roidb loaded')
+print('image db loaded')
 
-mHash_query = MinHash()
-expanded_query = expand_query([search_rela])
-for q in expanded_query:
-    mHash_query.update(q)
+# construct index
+lsh = MinHashLSH(threshold=0, storage_config={
+    'type': 'redis',
+    'basename': b'lsh_20200227',
+    'redis': {'host': 'localhost', 'port': 6379}
+})
 
 '''
 if dataset == 'vg':
@@ -42,19 +41,7 @@ if dataset == 'vg':
     pred_roidb = {key: pred_roidb[key] for key in pred_roidb_keys}
     with open('../hier_rela/rela_box_label_%s_hier_mini.bin' % (dataset), 'wb') as f:
         pickle.dump(pred_roidb, f)
-'''
-
-
-def show_rela(pr_curr):
-    print('=====')
-    for i in range(pr_curr.shape[0]):
-        pr_cls = pr_curr[i, 4]
-        obj_cls = pr_curr[i, 9]
-        sbj_cls = pr_curr[i, 14]
-        print((objnet.get_node_by_index(int(obj_cls)).name(), prenet.get_node_by_index(int(pr_cls)).name(),
-               objnet.get_node_by_index(int(sbj_cls)).name()), pr_curr[i, 15])
-
-
+        
 # filter and sort
 for img_id in pred_roidb:
     pr_curr = pred_roidb[img_id]
@@ -76,9 +63,25 @@ for img_id in pred_roidb:
 
     pr_curr = pr_curr[pr_curr[:, 15].argsort()[::-1]]
     pred_roidb[img_id] = pr_curr[:top_k]
+    
+with lsh.insertion_session() as session:
+    for img_id in pred_roidb:
+        mHash = MinHash()
+        pr_curr = pred_roidb[img_id]
+        for rela in pr_curr:
+            mHash.update(triplet_name(rela))
+        session.insert(img_id, mHash)
+'''
 
-# construct index
-lsh = MinHashLSH(threshold=0)
+
+def show_rela(pr_curr):
+    print('=====')
+    for i in range(pr_curr.shape[0]):
+        pr_cls = pr_curr[i, 4]
+        obj_cls = pr_curr[i, 9]
+        sbj_cls = pr_curr[i, 14]
+        print((objnet.get_node_by_index(int(obj_cls)).name(), prenet.get_node_by_index(int(pr_cls)).name(),
+               objnet.get_node_by_index(int(sbj_cls)).name()), pr_curr[i, 15])
 
 
 def triplet_name(rela):
@@ -88,32 +91,41 @@ def triplet_name(rela):
     return '%s %s %s' % (sbj, pre, obj)
 
 
-for img_id in pred_roidb:
-    mHash = MinHash()
-    pr_curr = pred_roidb[img_id]
-    for rela in pr_curr:
-        mHash.update(triplet_name(rela))
-    lsh.insert(img_id, mHash)
+def search(text):
+    search_rela = extract_triplet(text)
+    print(search_rela)
 
-expanded_query_set = set(expanded_query)
+    if objnet.get_node_by_name_prefix(search_rela[0]) is None or objnet.get_node_by_name_prefix(
+            search_rela[2]) is None or prenet.get_node_by_name_prefix(search_rela[1]) is None:
+        return []
 
-start_tic = time.time()
-res = lsh.query(mHash_query)  # image_ids
-hash_tic = time.time()
-filtered_roidb = {}
-for img_id in res:
-    filtered_roidb[img_id] = set([triplet_name(rela) for rela in pred_roidb[img_id]]).intersection(expanded_query_set)
-filter_tic = time.time()
-values = np.array(filtered_roidb.values())
-sorted_idxs = np.argsort(np.array([len(relas) for relas in values]))[::-1]  # first rerank by semantic similarity
-res = rerank(values[sorted_idxs])
+    mHash_query = MinHash()
+    expanded_query = expand_query([search_rela])
+    for q in expanded_query:
+        mHash_query.update(q)
 
-end_tic = time.time()
-print('-------')
-print('found %d images, hash time: %s, filter time: %s, rerank time: %s' % (
-    len(res), hash_tic - start_tic, filter_tic - hash_tic, end_tic - filter_tic))
+    expanded_query_set = set(expanded_query)
+
+    start_tic = time.time()
+    res = lsh.query(mHash_query)  # image_ids
+    hash_tic = time.time()
+    filtered_roidb = {}
+    for img_id in res:
+        filtered_roidb[img_id] = set([triplet_name(rela) for rela in pred_roidb[img_id]]).intersection(
+            expanded_query_set)
+    filter_tic = time.time()
+    values = np.array(filtered_roidb.values())
+    sorted_idxs = np.argsort(np.array([len(relas) for relas in values]))[::-1]  # first rerank by semantic similarity
+    res = rerank(values[sorted_idxs])
+
+    end_tic = time.time()
+    print('-------')
+    print('found %d images, hash time: %s, filter time: %s, rerank time: %s' % (
+        len(res), hash_tic - start_tic, filter_tic - hash_tic, end_tic - filter_tic))
+    return [filtered_roidb.keys()[sorted_idxs[image_idx]] for image_idx in res[:100]]
 
 
+'''
 def show_predict(img_idxs):
     for img_idx in img_idxs:
         img_id = filtered_roidb.keys()[sorted_idxs[img_idx]]
@@ -128,6 +140,7 @@ def show_predict(img_idxs):
 
 
 show_predict(res[:30])
+'''
 
 
 def show_next_random_image():
@@ -140,4 +153,6 @@ def show_next_random_image():
     if k == ord('e'):
         cv2.destroyAllWindows()
 
+
 # show_next_random_image()
+print(search('person ride horse'))

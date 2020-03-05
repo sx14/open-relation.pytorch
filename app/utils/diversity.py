@@ -2,7 +2,7 @@ import numpy as np
 
 
 def sim(relas_a, relas_b):
-    total = max(len(relas_a), len(relas_b))
+    total = len(relas_a.union(relas_b))
     sim_count = len(relas_a.intersection(relas_b))
     return 1.0 * sim_count / total
 

@@ -1,15 +1,15 @@
 # coding: utf-8
 from graphviz import Graph
 
-dataset = 'vrd'
+dataset = 'vg'
 target = 'obj'
 
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.obj_hier import objnet
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
-    from lib.datasets.vg200.label_hier.obj_hier import objnet
-    from lib.datasets.vg200.label_hier.pre_hier import prenet
+    from lib.datasets.vglsj.label_hier.obj_hier import objnet
+    from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
 def hill_sort(all_nodes):
     # curr = all_nodes[objnet.root().index()]

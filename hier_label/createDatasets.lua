@@ -36,7 +36,7 @@ local graph = require 'Graph'
 
         local N_hypernyms = hypernyms:size(1)
         
-        if dataset_name == 'vg' then
+        if dataset_name == 'vglsj' then
           splitSize = 50
         elseif dataset_name == 'vrd' then
           splitSize = 50

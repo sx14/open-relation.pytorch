@@ -16,6 +16,7 @@ from lib.datasets.coco import coco
 from lib.datasets.imagenet import imagenet
 from lib.datasets.vg200.vg import vg
 from lib.datasets.vg200.vg_rela import vg_rela
+from lib.datasets.vglsj.vg import vg_lsj
 from lib.datasets.vrd.vrd import vrd
 from lib.datasets.vrd.vrd_rela import vrd_rela
 from lib.datasets.vrd_voc import vrd_voc
@@ -52,6 +53,11 @@ for year in ['2007']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'vg_voc_{}_{}'.format(year, split)
     __sets[name] = (lambda split=split, year=year: vg_voc(split, year))
+
+for year in ['2007']:
+  for split in ['train', 'val', 'trainval', 'test']:
+    name = 'vg_lsj_{}_{}'.format(year, split)
+    __sets[name] = (lambda split=split, year=year: vg_lsj(split, year))
 
 
 # Set up voc_<year>_<split>

@@ -36,8 +36,8 @@ if __name__ == '__main__':
         from lib.datasets.vrd.label_hier.obj_hier import objnet
         from lib.datasets.vrd.label_hier.pre_hier import prenet
     else:
-        from lib.datasets.vglsj.label_hier.obj_hier import objnet
-        from lib.datasets.vglsj.label_hier.pre_hier import prenet
+        from lib.datasets.vg200.label_hier.obj_hier import objnet
+        from lib.datasets.vg200.label_hier.pre_hier import prenet
 
     if target == 'object':
         labelnet = objnet

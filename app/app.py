@@ -17,6 +17,20 @@ import io
 import time
 from image_retrieval import search
 
+
+class MyEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        """
+        只要检查到了是bytes类型的数据就把它转为str类型
+        :param obj:
+        :return:
+        """
+        if isinstance(obj, bytes):
+            return str(obj, encoding='utf-8')
+        return json.JSONEncoder.default(self, obj)
+
+
 app = flask.Flask(__name__)
 db = redis.StrictRedis(host=settings.REDIS_HOST,
                        port=settings.REDIS_PORT, db=settings.REDIS_DB)
@@ -59,6 +73,7 @@ def predict():
                 data["success"] = True
     return flask.jsonify(data)
 
+
 @app.route("/predict-rela", methods=["POST"])
 @cross_origin()
 def predict_rela():
@@ -90,14 +105,17 @@ def predict_rela():
                 data["success"] = True
     return flask.jsonify(data)
 
+
 @app.route("/search-by-rela", methods=["GET"])
+@cross_origin()
 def search_image():
     text = flask.request.args.get('text')
     res = search(text)
     return flask.jsonify({
         'result': res,
         'success': True
-    })
+    }, )
+
 
 @app.route("/", methods=["GET"])
 @cross_origin()

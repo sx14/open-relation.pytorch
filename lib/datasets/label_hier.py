@@ -185,6 +185,7 @@ class LabelNode(object):
     def freq(self):
         return self._freq
 
+
 class LabelHier:
 
     def background(self):
@@ -372,9 +373,8 @@ class LabelHier:
         for node in self._index2node:
             node.info_ratio(self.pos_leaf_sum())
             node.depth_ratio()
-            if not self._name_prefix2node.has_key(node._name_prefix) or not node.is_raw():
+            if not node._name_prefix in self._name_prefix2node or not node.is_raw():
                 self._name_prefix2node[node._name_prefix] = node
-
 
         self.max_depth = 0
         for n in self._index2node:

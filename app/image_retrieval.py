@@ -4,25 +4,31 @@ import random
 import time
 
 import cv2
-import numpy as np
-from datasketch import MinHash, MinHashLSH
 
-from global_config import VG_ROOT, VRD_ROOT
+from database.rela_db import RelaDB
+from rela_retrieval import search_by_concept
 from utils.extractor import extract_triplet
 from utils.query_expansion import expand_query
-from utils.diversity import rerank
 
 # vrd - vg
 dataset = 'vg'
 top_k = 100
+rela_db = RelaDB('./database/scripts/rela_db.db')
 
-if dataset == 'vrd':
-    ds_root = VRD_ROOT
-    from lib.datasets.vrd.label_hier.obj_hier import objnet
-else:
-    ds_root = VG_ROOT
-    from lib.datasets.vg200.label_hier.obj_hier import objnet
-    from lib.datasets.vg200.label_hier.pre_hier import prenet
+image_root = '/Users/lioder/Downloads/VG_100K_2'
+from lib.datasets.vg200.label_hier.obj_hier import objnet
+from lib.datasets.vg200.label_hier.pre_hier import prenet
+
+
+class StrToBytes:
+    def __init__(self, fileobj):
+        self.fileobj = fileobj
+
+    def read(self, size):
+        return self.fileobj.read(size).encode()
+
+    def readline(self, size=-1):
+        return self.fileobj.readline(size).encode()
 
 
 def triplet_name(rela):
@@ -33,16 +39,8 @@ def triplet_name(rela):
 
 
 pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_pure.bin' % (dataset)
-pred_roidb = pickle.load(open(pred_roidb_path))
+pred_roidb = pickle.load(StrToBytes(open(pred_roidb_path)), encoding='bytes')
 print('image db loaded')
-print prenet.index2label()
-
-# construct index
-lsh = MinHashLSH(threshold=0, storage_config={
-    'type': 'redis',
-    'basename': b'lsh_20200311',
-    'redis': {'host': 'localhost', 'port': 6379}
-})
 
 '''
 if dataset == 'vg':
@@ -84,7 +82,28 @@ with lsh.insertion_session() as session:
         for rela in pr_curr:
             mHash.update(triplet_name(rela))
         session.insert(img_id, mHash)
+# lsh = MinHashLSH(threshold=0, storage_config={
+#     'type': 'redis',
+#     'basename': b'lsh_20200311_6',
+#     'redis': {'host': 'localhost', 'port': 6379}
+# })
+
 '''
+
+
+# with lsh.insertion_session() as session:
+#     for img_id in pred_roidb:
+#         mHash = MinHash()
+#         pr_curr = pred_roidb[img_id]
+#         for rela in pr_curr:
+#             if objnet.get_node_by_index(int(rela[1])) is not None and objnet.get_node_by_index(
+#                     int(rela[2])) is not None and prenet.get_node_by_index(int(rela[0])) is not None:
+#                 rela_str = triplet_name(rela)
+#                 mHash.update(rela_str.encode())
+#             else:
+#                 print('wrong rela %f %f %F' %(rela[0], rela[1], rela[2]))
+#         session.insert(img_id, mHash)
+
 
 def show_rela(pr_curr):
     print('=====')
@@ -97,39 +116,27 @@ def show_rela(pr_curr):
 
 
 def search(text):
-    if text is None:
-        return []
+    if text.strip() == "":
+        return {"imageIds": [], "image2rela": {}}
     search_rela = extract_triplet(text)
     print(search_rela)
 
+    if search_rela[0] != '' and search_rela[1] == '' and search_rela[2] == '':
+        return search_by_concept(search_rela[0])
+
     if objnet.get_node_by_name_prefix(search_rela[0]) is None or objnet.get_node_by_name_prefix(
             search_rela[2]) is None or prenet.get_node_by_name_prefix(search_rela[1]) is None:
-        return []
+        return {"imageIds": [], "image2rela": {}}
 
-    mHash_query = MinHash()
-    expanded_query = expand_query([search_rela])
-    for q in expanded_query:
-        mHash_query.update(q)
+    sbjs, pres, objs = expand_query([search_rela])
 
-    expanded_query_set = set(expanded_query)
+    res = [tuple[0].decode() for tuple in rela_db.find_images_by_rela(sbjs, pres, objs)]  # [(image_id),...]
+    image_ids = list(set(res))
+    return {
+        "imageIds": image_ids[:30],
+        "image2rela": {}
+    }
 
-    start_tic = time.time()
-    res = lsh.query(mHash_query)  # image_ids
-    hash_tic = time.time()
-    filtered_roidb = {}
-    for img_id in res:
-        filtered_roidb[img_id] = set([triplet_name(rela) for rela in pred_roidb[img_id]]).intersection(
-            expanded_query_set)
-    filter_tic = time.time()
-    values = np.array(filtered_roidb.values())
-    sorted_idxs = np.argsort(np.array([len(relas) for relas in values]))[::-1]  # first rerank by semantic similarity
-    res = rerank(values[sorted_idxs])
-
-    end_tic = time.time()
-    print('-------')
-    print('found %d images, hash time: %s, filter time: %s, rerank time: %s' % (
-        len(res), hash_tic - start_tic, filter_tic - hash_tic, end_tic - filter_tic))
-    return [filtered_roidb.keys()[sorted_idxs[image_idx]] for image_idx in res[:100]]
 
 '''
 def show_predict(img_idxs):
@@ -137,21 +144,35 @@ def show_predict(img_idxs):
         img_id = filtered_roidb.keys()[sorted_idxs[img_idx]]
         print(filtered_roidb[img_id])
         img_path = os.path.join(ds_root, 'JPEGImages', '%s.jpg' % img_id)
+    # print('found %d images, hash time: %s, filter time: %s, rerank time: %s' % (
+    #     len(res), hash_tic - start_tic))
+    # image_ids = [str(list(filtered_roidb.keys())[sorted_idxs[image_idx]], encoding='utf-8') for image_idx in res[:100]]
+    image_ids = list(set(res))
+    return {
+        "imageIds": image_ids[:30],
+        "image2rela": {}
+    }
+'''
+
+
+def show_search_result(img_ids):
+    for img_id in img_ids:
+        img_path = os.path.join(image_root, '%s.jpg' % img_id)
+        if not os.path.exists(img_path):
+            print("sorry, the image should be viewed on server")
+            continue
         img = cv2.imread(img_path, 1)
-        cv2.imshow('pred_image', img)
+        cv2.imshow('image', img)
         k = cv2.waitKey(0)
         if k == ord('e'):
             cv2.destroyAllWindows()
             break
 
 
-show_predict(res[:30])
-'''
-
 def show_next_random_image():
     random_img_id = random.choice(pred_roidb.keys())
     show_rela(pred_roidb[random_img_id])
-    img_path = os.path.join(ds_root, 'JPEGImages', '%s.jpg' % random_img_id)
+    img_path = os.path.join(image_root, '%s.jpg' % random_img_id)
     img = cv2.imread(img_path, 1)
     cv2.imshow('pred_image', img)
     k = cv2.waitKey(0)
@@ -159,5 +180,6 @@ def show_next_random_image():
         cv2.destroyAllWindows()
 
 
-# show_next_random_image()
-print(search('kite at sky'))
+if __name__ == '__main__':
+    print(search('bowl on carnivore')["imageIds"])
+    rela_db.close()

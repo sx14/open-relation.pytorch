@@ -31,7 +31,7 @@ def extract_triplet(input_sent, output=['parse_tree']):
     if 'result' in output:
         print('---Result---')
         print(' '.join([subject, predicate, object]))
-    return subject, predicate, object
+    return subject.replace(' ', '_'), predicate, object.replace(' ', '_')
 
 
 def extract_subject(parse_tree):
@@ -114,11 +114,11 @@ def extract_object(parse_tree):
                 temp += (' ' + leaves[j][0])
                 j += 1
             objects.append(temp)
-    if len(objects) != 0:
+    if len(objects) >= 2:
         return [objects[-1]]
     else:
         return ['']
 
 
 if __name__ == '__main__':
-    extract_triplet('bowl is held by fruit')
+    extract_triplet('person rides horse', output=['parse_tree'])

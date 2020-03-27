@@ -7,7 +7,7 @@ from lib.datasets.label_hier import LabelNode
 
 class PreNet(LabelHier):
     def opposite(self, pre):
-        if self._opposite.has_key(pre):
+        if pre in self._opposite:
             return self._opposite[pre]
         else:
             return None
@@ -187,22 +187,61 @@ class PreNet(LabelHier):
             'with': 'have.p',
             'write on': 'on',
         }
-
+        index2node = ['interact.a', 'possess.a', 'spacial.a', 'compare.c', 'between.s', 'in.s', 'look.i',
+                      'around.s', 'belong to.p', 'show.i', 'under.s', 'contain.i', 'carry.i', 'on.s', 'covered by.i',
+                      'have.p', 'attach to.i', 'near.s', 'behind.s', 'at.s', 'touch.i', 'hit.i', 'read.i', 'walk.i',
+                      'ride.i', 'small than.c', 'outside.s', 'across.s', 'cut.i', 'wear.i', 'throw.i', 'tall than.c',
+                      'use.i', 'support.i', 'carried by.i', 'park.i', 'eat.i', 'fly.i', 'pull.i', 'wore by.i',
+                      'against.s', 'in front of.s', 'cross.i','play.i', 'cover.i', 'face.i', 'near', 'on', 'behind', 'at', 'in', 'of', 'hold', 'by', 'next to',
+                      'lay in', 'show', 'over', 'fill with', 'touch', 'grow on', 'hang in', 'to', 'on back of', 'under',
+                      'hit', 'around', 'read', 'paint on', 'watch', 'underneath', 'build into', 'walk in', 'walk',
+                      'write on', 'on bottom of', 'contain', 'beneath', 'ride', 'sit on', 'cover with', 'carry',
+                      'small than', 'mount on', 'for', 'walk on', 'outside', 'lay on', 'above', 'between', 'across',
+                      'connect to', 'cover in', 'grow in', 'cut', 'wear', 'rest on', 'along', 'throw', 'stand behind',
+                      'surround', 'reflect in', 'swing', 'standing in', 'sit in', 'tall than', 'print on', 'lean on',
+                      'on side of', 'use', 'from', 'support', 'sit at', 'fly in', 'hold by', 'park', 'attach to',
+                      'catch', 'with', 'eat', 'fly', 'pull', 'inside', 'standing next to', 'wear by', 'cast', 'below',
+                      'adorn', 'say', 'against', 'have', 'stand on', 'in front of', 'belong to', 'cross', 'beside',
+                      'on top of', 'hang on', 'play', 'in middle of', 'look at', 'standing by', 'drive on', 'part of',
+                      'cover', 'face']
         levels = [abstract_level, basic_level, supply_level, supply1_level, concrete_level]
-        for level in levels:
-            for label in level:
-                parent_label = level[label]
-                parent_node = self._label2node[parent_label]
-                assert parent_node is not None
-                if label in concrete_level.keys() or label in supply1_level.keys() or label in supply_level.keys():
-                    node = LabelNode(label, next_label_ind, True)
-                else:
-                    node = LabelNode(label, next_label_ind, False)
-                self._index2node.append(node)
-                self._label2node[label] = node
-                node.add_hyper(parent_node)
-                parent_node.add_child(node)
-                next_label_ind += 1
+        for label in index2node:
+            parent_label = None
+            if label in abstract_level:
+                parent_label = abstract_level[label]
+            elif label in basic_level:
+                parent_label = basic_level[label]
+            elif label in supply_level:
+                parent_label = supply_level[label]
+            elif label in supply1_level:
+                parent_label = supply1_level[label]
+            elif label in concrete_level:
+                parent_label = concrete_level[label]
+            parent_node = self._label2node[parent_label]
+            assert parent_node is not None
+            if label in concrete_level.keys() or label in supply1_level.keys() or label in supply_level.keys():
+                node = LabelNode(label, next_label_ind, True)
+            else:
+                node = LabelNode(label, next_label_ind, False)
+            self._index2node.append(node)
+            self._label2node[label] = node
+            node.add_hyper(parent_node)
+            parent_node.add_child(node)
+            next_label_ind += 1
+        # for level in levels:
+        #     for label in level:
+        #         parent_label = level[label]
+        #         parent_node = self._label2node[parent_label]
+        #         assert parent_node is not None
+        #         if label in concrete_level.keys() or label in supply1_level.keys() or label in supply_level.keys():
+        #             node = LabelNode(label, next_label_ind, True)
+        #         else:
+        #             node = LabelNode(label, next_label_ind, False)
+        #         self._index2node.append(node)
+        #         self._label2node[label] = node
+        #         node.add_hyper(parent_node)
+        #         parent_node.add_child(node)
+        #         next_label_ind += 1
 
     def __init__(self, raw_label_path):
         LabelHier.__init__(self, raw_label_path)

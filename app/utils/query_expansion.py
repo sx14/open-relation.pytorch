@@ -21,21 +21,10 @@ def expand_query(raw_query):
     expand the query by permuting and combining the hyponymy.
     exchange sbj and obj if predicate has antonym.
     """
-    expanded_query = []
     for q in raw_query:
         sbj, pre, obj = q
-
         sbj_set = hier_expand(sbj, objnet)  # he, his children and his children's children, ...
         obj_set = hier_expand(obj, objnet)
         pre_set = hier_expand(pre, prenet)
 
-        for pre in pre_set:
-            opposite_pre = prenet.opposite(pre.name_prefix())
-            for sbj in sbj_set:
-                for obj in obj_set:
-                    s = ' '.join([sbj.name_prefix(), pre.name_prefix(), obj.name_prefix()])
-                    expanded_query.append(s)
-                    if opposite_pre is not None:
-                        s = ' '.join([obj.name_prefix(), opposite_pre, sbj.name_prefix()])
-                        expanded_query.append(s)
-    return expanded_query
+    return [s.index() for s in sbj_set], [p.index() for p in pre_set], [o.index() for o in obj_set]

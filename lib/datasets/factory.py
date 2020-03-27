@@ -55,7 +55,7 @@ for year in ['2007']:
     name = 'vg_voc_{}_{}'.format(year, split)
     __sets[name] = (lambda split=split, year=year: vg_voc(split, year))
 
-for year in ['2007']:
+for year in ['2007', '2016']:
   for split in ['train', 'val', 'trainval', 'test']:
     name = 'vg_lsj_{}_{}'.format(year, split)
     if year == '2007':

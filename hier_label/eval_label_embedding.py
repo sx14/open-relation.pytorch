@@ -4,16 +4,16 @@ import numpy as np
 from global_config import HierLabelConfig
 
 dataset_name = 'vg'
-target = 'object'
+target = 'predicate'
 
 if dataset_name == 'vrd' and target == 'object':
     from lib.datasets.vrd.label_hier.obj_hier import objnet as classnet
 elif dataset_name == 'vrd' and target == 'predicate':
     from lib.datasets.vrd.label_hier.pre_hier import prenet as classnet
 elif dataset_name == 'vg' and target == 'object':
-    from lib.datasets.vg200.label_hier.obj_hier import objnet as classnet
+    from lib.datasets.vglsj.label_hier.obj_hier import objnet as classnet
 else:
-    from lib.datasets.vg200.label_hier.pre_hier import prenet as classnet
+    from lib.datasets.vglsj.label_hier.pre_hier import prenet as classnet
 
 
 def eval2(label_vecs, labelnet):

@@ -7,7 +7,7 @@ pos_tagger = CoreNLPParser(url='http://0.0.0.0:9000', tagtype='pos')
 lemmatizer = WordNetLemmatizer()
 
 
-def extract_triplet(input_sent, output=[]):
+def extract_triplet(input_sent, output=['parse_tree']):
     # Parse the input sentence with Stanford CoreNLP Parser
     parse_tree, = ParentedTree.convert(list(pos_tagger.parse(input_sent.split()))[0])
     # Extract subject, predicate and object

@@ -41,7 +41,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=20, type=int)
+                        default=6, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=100, type=int)
@@ -81,7 +81,7 @@ def parse_args():
                         default=0.001, type=float)
     parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                         help='step to do learning rate decay, unit is epoch',
-                        default=3, type=int)
+                        default=5, type=int)
     parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                         help='learning rate decay ratio',
                         default=0.1, type=float)
@@ -100,10 +100,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load model',
-                        default=1, type=int)
+                        default=16, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load model',
-                        default=0, type=int)
+                        default=28022, type=int)
     # log and diaplay
     parser.add_argument('--use_tfb', dest='use_tfboard',
                         help='whether use tensorboard',
@@ -286,6 +286,8 @@ if __name__ == '__main__':
             im_info.data.resize_(data[1].size()).copy_(data[1])
             gt_boxes.data.resize_(data[2].size()).copy_(data[2])
             num_boxes.data.resize_(data[3].size()).copy_(data[3])
+            if num_boxes[0] == 0:
+                continue
 
             hierRCNN.zero_grad()
             rois, cls_score, bbox_pred, \

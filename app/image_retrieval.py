@@ -24,14 +24,23 @@ else:
     from lib.datasets.vg200.label_hier.obj_hier import objnet
     from lib.datasets.vg200.label_hier.pre_hier import prenet
 
-pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_mini.bin' % (dataset)
+
+def triplet_name(rela):
+    sbj = objnet.get_node_by_index(int(rela[1])).name_prefix()
+    obj = objnet.get_node_by_index(int(rela[2])).name_prefix()
+    pre = prenet.get_node_by_index(int(rela[0])).name_prefix()
+    return '%s %s %s' % (sbj, pre, obj)
+
+
+pred_roidb_path = '../hier_rela/rela_box_label_%s_hier_pure.bin' % (dataset)
 pred_roidb = pickle.load(open(pred_roidb_path))
 print('image db loaded')
+print prenet.index2label()
 
 # construct index
 lsh = MinHashLSH(threshold=0, storage_config={
     'type': 'redis',
-    'basename': b'lsh_20200227',
+    'basename': b'lsh_20200311',
     'redis': {'host': 'localhost', 'port': 6379}
 })
 
@@ -41,7 +50,7 @@ if dataset == 'vg':
     pred_roidb = {key: pred_roidb[key] for key in pred_roidb_keys}
     with open('../hier_rela/rela_box_label_%s_hier_mini.bin' % (dataset), 'wb') as f:
         pickle.dump(pred_roidb, f)
-        
+
 # filter and sort
 for img_id in pred_roidb:
     pr_curr = pred_roidb[img_id]
@@ -62,8 +71,12 @@ for img_id in pred_roidb:
         pr_curr[i, 15] = pred_score
 
     pr_curr = pr_curr[pr_curr[:, 15].argsort()[::-1]]
-    pred_roidb[img_id] = pr_curr[:top_k]
-    
+    pred_roidb[img_id] = pr_curr[:top_k, [4,9,14,15]]
+
+with open('../hier_rela/rela_box_label_%s_hier_pure.bin' % (dataset), 'wb') as f:
+    pickle.dump(pred_roidb, f)
+
+
 with lsh.insertion_session() as session:
     for img_id in pred_roidb:
         mHash = MinHash()
@@ -73,25 +86,19 @@ with lsh.insertion_session() as session:
         session.insert(img_id, mHash)
 '''
 
-
 def show_rela(pr_curr):
     print('=====')
     for i in range(pr_curr.shape[0]):
-        pr_cls = pr_curr[i, 4]
-        obj_cls = pr_curr[i, 9]
-        sbj_cls = pr_curr[i, 14]
+        pr_cls = pr_curr[i, 0]
+        obj_cls = pr_curr[i, 2]
+        sbj_cls = pr_curr[i, 1]
         print((objnet.get_node_by_index(int(obj_cls)).name(), prenet.get_node_by_index(int(pr_cls)).name(),
-               objnet.get_node_by_index(int(sbj_cls)).name()), pr_curr[i, 15])
-
-
-def triplet_name(rela):
-    sbj = objnet.get_node_by_index(int(rela[9])).name_prefix()
-    obj = objnet.get_node_by_index(int(rela[14])).name_prefix()
-    pre = prenet.get_node_by_index(int(rela[4])).name_prefix()
-    return '%s %s %s' % (sbj, pre, obj)
+               objnet.get_node_by_index(int(sbj_cls)).name()), pr_curr[i, 3])
 
 
 def search(text):
+    if text is None:
+        return []
     search_rela = extract_triplet(text)
     print(search_rela)
 
@@ -124,7 +131,6 @@ def search(text):
         len(res), hash_tic - start_tic, filter_tic - hash_tic, end_tic - filter_tic))
     return [filtered_roidb.keys()[sorted_idxs[image_idx]] for image_idx in res[:100]]
 
-
 '''
 def show_predict(img_idxs):
     for img_idx in img_idxs:
@@ -142,7 +148,6 @@ def show_predict(img_idxs):
 show_predict(res[:30])
 '''
 
-
 def show_next_random_image():
     random_img_id = random.choice(pred_roidb.keys())
     show_rela(pred_roidb[random_img_id])
@@ -155,4 +160,4 @@ def show_next_random_image():
 
 
 # show_next_random_image()
-print(search('person ride horse'))
+print(search('kite at sky'))

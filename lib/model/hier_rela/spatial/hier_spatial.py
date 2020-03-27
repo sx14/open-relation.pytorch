@@ -42,6 +42,7 @@ class HierSpatial(nn.Module):
         self.order_score = OrderSimilarity(norm=2)
 
     def forward(self, spa_maps, pre_labels):
+        batch_size = 1
         conv1 = self.conv1(spa_maps)
         pool1 = self.pool1(conv1)
         conv2 = self.conv2(pool1)
@@ -61,4 +62,6 @@ class HierSpatial(nn.Module):
         if self.training:
             RCNN_loss_cls = self._loss.forward(cls_score_use, pre_labels)
 
-        return RCNN_loss_cls
+        cls_score = cls_score_use.view(batch_size, spa_maps.size()[0], -1)
+
+        return cls_score, RCNN_loss_cls

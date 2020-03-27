@@ -132,7 +132,6 @@ class ObjNet(LabelHier):
         raw2wn = dict()
         raw_labels = []
         for vg_label in vg_labels:
-            print vg_label
             raw_label, wn_labels = vg_label.split('|')
             raw_labels.append(raw_label)
             wn_labels = wn_labels.split(' ')

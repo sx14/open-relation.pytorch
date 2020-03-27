@@ -24,13 +24,13 @@ class LabelNode(object):
 
         def top2curr(node):
             if len(node.hypers()) == 0:
-                return 0
+                return 1
             else:
                 return 1 + top2curr(node.hypers()[0])
 
         def curr2bottom(node):
             if len(node.children()) == 0:
-                return 0
+                return 1
 
             max_d = 0
             for child in node.children():
@@ -42,7 +42,7 @@ class LabelNode(object):
         else:
             t2c = top2curr(self)
             c2d = curr2bottom(self)
-            return 1.0 * t2c / max(t2c + c2d, 0.01)
+            return 1.0 * t2c / (t2c + c2d - 1)
 
     def info_ratio(self, leaf_sum):
 
@@ -60,6 +60,8 @@ class LabelNode(object):
         else:
             n_leaf_child = leaf_num(self)
             info_ratio = log(leaf_sum, leaf_sum) - log(n_leaf_child, leaf_sum)
+            if info_ratio < 0:
+                pass
             self._info_ratio = info_ratio ** 0.5
         return info_ratio
 

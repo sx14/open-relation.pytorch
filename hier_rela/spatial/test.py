@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import argparse
 import os
-import pdb
-import pickle
 import pprint
 import time
 
@@ -15,14 +12,10 @@ import torch
 from torch.autograd import Variable
 
 from global_config import HierLabelConfig
-from lib.model.hier_rcnn.resnet import resnet
-from lib.model.hier_rcnn.vgg16 import vgg16
-from lib.model.hier_utils.infer_tree import InferTree
-from lib.model.rpn.bbox_transform import bbox_transform_inv
-from lib.model.rpn.bbox_transform import clip_boxes
-from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list
-from lib.roi_data_layer.roibatchLoader import roibatchLoader
+from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
+from lib.roi_data_layer.hierRoibatchLoader import roibatchLoader
 from lib.roi_data_layer.roidb import combined_roidb
+from model.hier_rela.spatial.hier_spatial import HierSpatial
 
 try:
     xrange  # Python 2
@@ -48,7 +41,7 @@ def parse_args():
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument('--load_dir', dest='load_dir',
-                        help='directory to load models', default="hier_output_new",
+                        help='directory to load models', default="output",
                         type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
@@ -71,7 +64,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=6, type=int)
+                        default=4, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
                         default=12959, type=int)
@@ -99,22 +92,23 @@ if __name__ == '__main__':
     np.random.seed(cfg.RNG_SEED)
 
     if args.dataset == "vg":
-        args.imdb_name = "vg_lsj_2007_trainval"
-        args.imdbval_name = "vg_lsj_2007_test"
+        args.imdb_name = "vg_lsj_2016_trainval"
+        args.imdbval_name = "vg_lsj_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vglsj.label_hier.obj_hier import objnet
+        from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
         args.class_agnostic = True
 
     elif args.dataset == "vrd":
-        args.imdb_name = "vrd_2007_trainval"
-        args.imdbval_name = "vrd_2007_test"
+        args.imdb_name = "vrd_2016_trainval"
+        args.imdbval_name = "vrd_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
-        from lib.datasets.vrd.label_hier.obj_hier import objnet
+        from lib.datasets.vrd.label_hier.pre_hier import prenet
 
         args.class_agnostic = True
 
-    args.cfg_file = "../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../cfgs/{}.yml".format(args.net)
+    args.cfg_file = "../../cfgs/{}_ls.yml".format(args.net) if args.large_scale else "../../cfgs/{}.yml".format(
+        args.net)
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
@@ -134,27 +128,16 @@ if __name__ == '__main__':
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
     load_name = os.path.join(input_dir,
-                             'hier_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+                             'hier_rela_spatial_{}_{}_{}_{}.pth'.
+                             format(args.checksession, args.checkepoch, args.checkpoint, args.dataset))
 
-    # initilize the network here.
-    if args.net == 'vgg16':
-        labelconf = HierLabelConfig(args.dataset, 'object')
-        label_vec_path = labelconf.label_vec_path()
-        hierRCNN = vgg16(objnet, label_vec_path, pretrained=False, class_agnostic=True)
-    elif args.net == 'res101':
-        labelconf = HierLabelConfig(args.dataset, 'object')
-        label_vec_path = labelconf.label_vec_path()
-        hierRCNN = resnet(objnet, label_vec_path, pretrained=False, class_agnostic=True)
-    else:
-        print("network is not defined")
-        pdb.set_trace()
-        exit(-1)
-
-    hierRCNN.create_architecture()
+    preconf = HierLabelConfig(args.dataset, 'predicate')
+    pre_vec_path = preconf.label_vec_path()
+    spaCNN = HierSpatial(prenet, pre_vec_path)
 
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
-    hierRCNN.load_state_dict(checkpoint['model'])
+    spaCNN.load_state_dict(checkpoint['model'])
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
@@ -162,32 +145,49 @@ if __name__ == '__main__':
     # initilize the tensor holder here.
     im_data = torch.FloatTensor(1)
     im_info = torch.FloatTensor(1)
-    num_boxes = torch.LongTensor(1)
-    gt_boxes = torch.FloatTensor(1)
+    gt_relas = torch.FloatTensor(1)
+    spa_maps = torch.FloatTensor(1)
+    num_relas = torch.LongTensor(1)
 
     # ship to cuda
     if args.cuda:
         im_data = im_data.cuda()
         im_info = im_info.cuda()
-        num_boxes = num_boxes.cuda()
-        gt_boxes = gt_boxes.cuda()
+        num_relas = num_relas.cuda()
+        spa_maps = spa_maps.cuda()
+        gt_relas = gt_relas.cuda()
 
     # make variable
-    im_data = Variable(im_data)
-    im_info = Variable(im_info)
-    num_boxes = Variable(num_boxes)
-    gt_boxes = Variable(gt_boxes)
+    with torch.no_grad():
+        im_data = Variable(im_data)
+        im_info = Variable(im_info)
+        num_relas = Variable(num_relas)
+        spa_maps = Variable(spa_maps)
+        gt_relas = Variable(gt_relas)
 
     if args.cuda:
         cfg.CUDA = True
 
     if args.cuda:
-        hierRCNN.cuda()
+        spaCNN.cuda()
 
     start = time.time()
 
-    num_images = len(imdb.image_index)
+    max_per_image = 100
 
+    vis = args.vis
+
+    if vis:
+        thresh = 0.05
+    else:
+        thresh = 0.0
+
+    save_name = 'hier_rela_rcnn_10'
+    num_images = len(imdb.image_index)
+    all_boxes = [[[] for _ in xrange(num_images)]
+                 for _ in xrange(imdb.num_classes)]
+
+    output_dir = get_output_dir(imdb, save_name)
     dataset = roibatchLoader(roidb, ratio_list, ratio_index, 1, \
                              imdb.num_classes, training=False, normalize=False)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1,
@@ -196,67 +196,49 @@ if __name__ == '__main__':
 
     data_iter = iter(dataloader)
 
-    hierRCNN.eval()
+    _t = {'im_detect': time.time(), 'misc': time.time()}
+    det_file = os.path.join(output_dir, 'detections.pkl')
+
+    spaCNN.eval()
+    empty_array = np.transpose(np.array([[], [], [], [], []]), (1, 0))
 
     use_rpn = False
     TP_count = 0.0
-    TP_score = 0.0
     N_count = 0.1
 
-    det_roidb = {}
-    gt_roidb = {}
-
     for i in range(num_images):
-        print('test [%d/%d]' % (num_images, i + 1))
+
         data = next(data_iter)
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
-        gt_boxes.data.resize_(data[2].size()).copy_(data[2])
-        num_boxes.data.resize_(data[3].size()).copy_(data[3])
-        im_id = data[4][0]
-
-        gt_roidb[im_id] = gt_boxes[0].cpu().data.numpy()
-        gt_roidb[im_id][:, :4] = gt_roidb[im_id][:, :4] / data[1][0][2].item()
+        gt_relas.data.resize_(data[2].size()).copy_(data[2])
+        spa_maps.data.resize_(data[3].size()).copy_(data[3])
+        num_relas.data.resize_(data[4].size()).copy_(data[4])
 
         det_tic = time.time()
+        pre_labels = gt_relas[0][:num_relas, 4]
+        cls_score, RCNN_loss_cls = spaCNN(spa_maps[0], pre_labels)
 
-        with torch.no_grad():
-            rois, cls_prob, bbox_pred, \
-            rpn_loss_cls, rpn_loss_box, \
-            RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = hierRCNN(im_data, im_info, gt_boxes, num_boxes, use_rpn)
-
-        scores = cls_prob.data
-        boxes = rois.data[:, :, 1:5]
+        scores = cls_score.data
 
         if not use_rpn:
-            raw_label_inds = objnet.get_raw_indexes()
-
+            raw_label_inds = prenet.get_raw_indexes()
             for ppp in range(scores.size()[1]):
                 N_count += 1
-
-                gt_cate = gt_boxes[0, ppp, 4].cpu().data.numpy()
-                gt_node = objnet.get_node_by_index(int(gt_cate))
+                gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
+                gt_node = prenet.get_node_by_index(int(gt_cate))
                 all_scores = scores[0][ppp].cpu().data.numpy()
-                temp = np.argsort(all_scores)[::-1]
-                raw_nodes = []
-                for l in temp:
-                    if l in raw_label_inds:
-                        raw_nodes.append(objnet.get_node_by_index(l).name())
-                        if len(raw_nodes) >= 4:
-                            break
-
-                top_1 = InferTree(objnet, all_scores).top_k(1)
-                # pred_cate = objnet.get_node_by_name(raw_nodes[0]).index()
-                pred_cate = top_1[0][0]
-                pred_scr = top_1[0][1]
-
-                eval_scr = gt_node.score(pred_cate)
-                pred_node = objnet.get_node_by_index(pred_cate)
-                info = ('%s -> %s(%.2f) raw: %s %s %s %s' % (
-                gt_node.name(), pred_node.name(), eval_scr, raw_nodes[0], raw_nodes[1], raw_nodes[2], raw_nodes[3]))
-                if eval_scr > 0:
-                    TP_score += eval_scr
+                ranked_inds = np.argsort(all_scores)[::-1][:20]
+                sorted_scrs = np.sort(all_scores)[::-1][:20]
+                raw_scores = all_scores[raw_label_inds]
+                pred_raw_ind = np.argmax(raw_scores[1:]) + 1
+                pred_cate = raw_label_inds[pred_raw_ind]
+                gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
+                pred_node = prenet.get_node_by_index(pred_cate)
+                gt_node = prenet.get_node_by_index(int(gt_cate))
+                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), raw_scores[pred_raw_ind]))
+                if pred_cate == gt_cate:
+                    # flat recall
                     TP_count += 1
                     info = 'T: ' + info
                 else:
@@ -264,46 +246,7 @@ if __name__ == '__main__':
                     pass
                 print(info)
 
-        if cfg.TEST.BBOX_REG:
-            # Apply bounding-box regression deltas
-            box_deltas = bbox_pred.data
-            if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
-                # Optionally normalize targets by a precomputed mean and stdev
-                if args.class_agnostic:
-                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                                 + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    box_deltas = box_deltas.view(1, -1, 4)
-                else:
-                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                                 + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    box_deltas = box_deltas.view(1, -1, 4 * len(imdb.classes))
-
-            pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
-            pred_boxes = clip_boxes(pred_boxes, im_info.data, 1)
-        else:
-            # Simply repeat the boxes, once for each class
-            pred_boxes = np.tile(boxes, (1, scores.shape[1]))
-
-        pred_boxes /= data[1][0][2].item()
-
-        pred_scores = scores[0]
-        pred_boxes = pred_boxes[0]
-
-        det_toc = time.time()
-        detect_time = det_toc - det_tic
-        misc_tic = time.time()
-
-        # x1,y1,x2,y2,s0,s1,s2,s3,...,sN
-        my_dets = torch.cat([pred_boxes[:, :4], pred_scores], 1)
-        det_roidb[im_id] = my_dets.cpu().data.numpy()
-
-    with open('det_roidb_hier_%s.bin' % args.dataset, 'wb') as f:
-        pickle.dump(det_roidb, f)
-    # with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
-    #    pickle.dump(gt_roidb, f)
-
     end = time.time()
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
-    print("Rec hier Acc: %.4f" % (TP_score / N_count))

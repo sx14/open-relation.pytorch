@@ -174,7 +174,7 @@ class roibatchLoader(data.Dataset):
 
             raw_spa_maps = np.zeros((num_box, 2, 64, 64))
             for i in range(num_box):
-                raw_spa_maps[i] = gen_spatial_map(sbj_boxes[i], obj_boxes[i])
+                raw_spa_maps[i] = gen_spatial_map(sbj_boxes[i, 0:4], obj_boxes[i][0:4])
             raw_spa_maps = np.tile(raw_spa_maps, (3, 1, 1, 1))
             gt_spa_maps = torch.from_numpy(raw_spa_maps).float()
 
@@ -338,9 +338,15 @@ class roibatchLoader(data.Dataset):
             data = data.permute(0, 3, 1, 2).contiguous().view(3, data_height, data_width)
             im_info = im_info.view(3)
             gt_boxes = torch.from_numpy(blobs['gt_boxes'])
+            sbj_boxes = blobs['gt_boxes'][:, 5:10]
+            obj_boxes = blobs['gt_boxes'][:, 10:15]
+            raw_spa_maps = np.zeros((num_box, 2, 64, 64))
+            for i in range(num_box):
+                raw_spa_maps[i] = gen_spatial_map(sbj_boxes[i, 0:4], obj_boxes[i][0:4])
+            gt_spa_maps = torch.from_numpy(raw_spa_maps).float()
             num_boxes = gt_boxes.size(0)
 
-            return data, im_info, gt_boxes, num_boxes
+            return data, im_info, gt_boxes, gt_spa_maps, num_boxes
 
     def __len__(self):
         return len(self._roidb)

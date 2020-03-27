@@ -119,6 +119,22 @@ def split_vts_pkg(vts_anno_path, dataset_root, img_root, json_root, img_list_roo
             vts_obj_boxes = np.array(vts_anno['obj_boxes'])
             vts_sbj_boxes = np.array(vts_anno['sub_boxes'])
             vts_rlt_triplets = np.array(vts_anno['rlp_labels'])
+            vts_clean_obj_boxes = []
+            vts_clean_sbj_boxes = []
+            vts_clean_rlt_triplets = []
+
+
+            for j in range(len(vts_obj_boxes)):
+                obj_box = vts_obj_boxes[j]
+                sbj_box = vts_sbj_boxes[j]
+                if obj_box[2] <= img_w and obj_box[3] <= img_h and sbj_box[2] <= img_w and sbj_box[3] <= img_h:
+                    vts_clean_obj_boxes.append(obj_box)
+                    vts_clean_sbj_boxes.append(sbj_box)
+                    vts_clean_rlt_triplets.append(vts_rlt_triplets[j])
+
+            vts_obj_boxes = np.array(vts_clean_obj_boxes)
+            vts_sbj_boxes = np.array(vts_clean_sbj_boxes)
+            vts_rlt_triplets = np.array(vts_clean_rlt_triplets)
 
             vts_all_obj_boxes = np.concatenate((vts_sbj_boxes, vts_obj_boxes), 0)
             vts_all_obj_labels = np.concatenate((vts_rlt_triplets[:, 0], vts_rlt_triplets[:, 2]))

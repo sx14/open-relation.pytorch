@@ -20,8 +20,8 @@ import pickle
 from lib.datasets.imdb import imdb
 from lib.datasets import ds_utils
 from lib.datasets.voc_eval import voc_eval
-from lib.datasets.vg200.label_hier.obj_hier import objnet
-from lib.datasets.vg200.label_hier.pre_hier import prenet
+from lib.datasets.vglsj.label_hier.obj_hier import objnet
+from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
 # TODO: make fast_rcnn irrelevant
 # >>>> obsolete, because it depends on sth outside of this project
@@ -33,7 +33,7 @@ except NameError:
     xrange = range  # Python 3
 
 
-class vg_rela(imdb):
+class vg_lsj_rela(imdb):
     def __init__(self, image_set, year, devkit_path=None):
         imdb.__init__(self, 'vg_lsj' + year + '_' + image_set)
         self._year = year

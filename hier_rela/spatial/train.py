@@ -39,7 +39,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=100, type=int)
+                        default=10, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=100, type=int)
@@ -79,7 +79,7 @@ def parse_args():
                         default=0.001, type=float)
     parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                         help='step to do learning rate decay, unit is epoch',
-                        default=30, type=int)
+                        default=4, type=int)
     parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                         help='learning rate decay ratio',
                         default=0.1, type=float)
@@ -91,16 +91,16 @@ def parse_args():
     # resume trained model
     parser.add_argument('--r', dest='resume',
                         help='resume checkpoint or not',
-                        default=False, type=bool)
+                        default=True, type=bool)
     parser.add_argument('--checksession', dest='checksession',
                         help='checksession to load model',
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load model',
-                        default=1, type=int)
+                        default=4, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load model ',
-                        default=73793, type=int)
+                        default=12959, type=int)
     # log and diaplay
     parser.add_argument('--use_tfb', dest='use_tfboard',
                         help='whether use tensorboard',
@@ -124,8 +124,8 @@ if __name__ == '__main__':
     print(args)
 
     if args.dataset == "vg":
-        args.imdb_name = "vg_2016_trainval"
-        args.imdbval_name = "vg_2016_test"
+        args.imdb_name = "vg_lsj_2016_trainval"
+        args.imdbval_name = "vg_lsj_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
         from lib.datasets.vglsj.label_hier.obj_hier import objnet
         from lib.datasets.vglsj.label_hier.pre_hier import prenet
@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
     preconf = HierLabelConfig(args.dataset, 'predicate')
     pre_vec_path = preconf.label_vec_path()
-    spaCNN = HierSpatial()
+    spaCNN = HierSpatial(prenet, pre_vec_path)
 
     lr = cfg.TRAIN.LEARNING_RATE
     lr = args.lr
@@ -277,10 +277,11 @@ if __name__ == '__main__':
             spa_maps.data.resize_(data[3].size()).copy_(data[3])
             num_relas.data.resize_(data[4].size()).copy_(data[4])
 
+            pre_labels = gt_relas[0][:num_relas,4]
             spaCNN.zero_grad()
-            cls_score = spaCNN(spa_maps)
+            cls_score, RCNN_loss_cls = spaCNN(spa_maps[0],pre_labels)
 
-            loss = cls_score.mean()
+            loss = RCNN_loss_cls.mean()
             loss_temp += loss.item()
 
             # backward
@@ -296,9 +297,9 @@ if __name__ == '__main__':
                     loss_temp /= (args.disp_interval + 1)
 
                 if args.mGPUs:
-                    loss_rcnn_cls = cls_score.mean().item()
+                    loss_rcnn_cls = RCNN_loss_cls.mean().item()
                 else:
-                    loss_rcnn_cls = cls_score.item()
+                    loss_rcnn_cls = RCNN_loss_cls.item()
 
                 print("[session %d][epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e" \
                       % (args.session, epoch, step, iters_per_epoch, loss_temp, lr))
@@ -312,7 +313,7 @@ if __name__ == '__main__':
                 loss_temp = 0
                 start = time.time()
 
-        if epoch % 5 == 0:
+        if epoch % 2 == 0:
             save_name = os.path.join(output_dir,
                                      'hier_rela_spatial_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
             save_checkpoint({

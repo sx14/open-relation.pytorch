@@ -38,7 +38,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -49,7 +49,7 @@ def parse_args():
                         help='set config keys', default=None,
                         nargs=argparse.REMAINDER)
     parser.add_argument('--load_dir', dest='load_dir',
-                        help='directory to load models', default="output",
+                        help='directory to load models', default="new_output",
                         type=str)
     parser.add_argument('--cuda', dest='cuda',
                         help='whether use CUDA',
@@ -72,10 +72,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=100, type=int)
+                        default=10, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=7547, type=int)
+                        default=12959, type=int)
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
@@ -100,11 +100,11 @@ if __name__ == '__main__':
     np.random.seed(cfg.RNG_SEED)
 
     if args.dataset == "vg":
-        args.imdb_name = "vg_2007_trainval"
-        args.imdbval_name = "vg_2007_test"
+        args.imdb_name = "vg_lsj_2016_trainval"
+        args.imdbval_name = "vg_lsj_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg1000.label_hier.obj_hier import objnet
-        from lib.datasets.vg1000.label_hier.pre_hier import prenet
+        from lib.datasets.vglsj.label_hier.obj_hier import objnet
+        from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
         args.class_agnostic = True
 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
         gt_relas.data.resize_(data[2].size()).copy_(data[2])
-        num_relas.data.resize_(data[3].size()).copy_(data[3])
+        num_relas.data.resize_(data[4].size()).copy_(data[4])
 
         det_tic = time.time()
         rois, cls_score, \

@@ -33,7 +33,7 @@ class HierRela(nn.Module):
             vis_score = vis_score[0]
 
         if self._hierSpatial is not None:
-            spa_score = self._hierSpatial(spa_maps[0], pre_label)
+            spa_score, _ = self._hierSpatial(spa_maps, pre_label)
 
         if self._hierSpatial is None:
             spa_score = vis_score

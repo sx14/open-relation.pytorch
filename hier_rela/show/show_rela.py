@@ -10,7 +10,7 @@ from hier_det.tools.show_box import show_boxes, draw_boxes
 from lib.model.nms.nms_cpu import nms_cpu as py_cpu_nms
 
 # vrd - vg
-dataset = 'vrd'
+dataset = 'vg'
 # rela - pre
 target = 'rela'
 
@@ -92,8 +92,8 @@ if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
     ds_root = VG_ROOT
-    from lib.datasets.vg200.label_hier.obj_hier import objnet
-    from lib.datasets.vg200.label_hier.pre_hier import prenet
+    from lib.datasets.vglsj.label_hier.obj_hier import objnet
+    from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
 if target == 'pre':
     box_thr = 1.0

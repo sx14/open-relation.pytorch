@@ -39,7 +39,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=10, type=int)
+                        default=20, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=100, type=int)
@@ -76,10 +76,10 @@ def parse_args():
                         default="sgd", type=str)
     parser.add_argument('--lr', dest='lr',
                         help='starting learning rate',
-                        default=0.001, type=float)
+                        default=0.0001, type=float)
     parser.add_argument('--lr_decay_step', dest='lr_decay_step',
                         help='step to do learning rate decay, unit is epoch',
-                        default=4, type=int)
+                        default=2, type=int)
     parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                         help='learning rate decay ratio',
                         default=0.1, type=float)
@@ -91,7 +91,7 @@ def parse_args():
     # resume trained model
     parser.add_argument('--r', dest='resume',
                         help='resume checkpoint or not',
-                        default=True, type=bool)
+                        default=False, type=bool)
     parser.add_argument('--checksession', dest='checksession',
                         help='checksession to load model',
                         default=1, type=int)
@@ -313,7 +313,7 @@ if __name__ == '__main__':
                 loss_temp = 0
                 start = time.time()
 
-        if epoch % 2 == 0:
+        if epoch % 4 == 0:
             save_name = os.path.join(output_dir,
                                      'hier_rela_spatial_{}_{}_{}_{}.pth'.format(args.session, epoch, step, args.dataset))
             save_checkpoint({

@@ -16,6 +16,7 @@ from lib.model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output
 from lib.roi_data_layer.hierRoibatchLoader import roibatchLoader
 from lib.roi_data_layer.roidb import combined_roidb
 from model.hier_rela.spatial.hier_spatial import HierSpatial
+from lib.model.hier_utils.infer_tree import InferTree
 
 try:
     xrange  # Python 2
@@ -64,7 +65,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=4, type=int)
+                        default=20, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
                         default=12959, type=int)
@@ -205,6 +206,7 @@ if __name__ == '__main__':
     use_rpn = False
     TP_count = 0.0
     N_count = 0.1
+    TP_score = 0.0
 
     for i in range(num_images):
 
@@ -236,9 +238,17 @@ if __name__ == '__main__':
                 gt_cate = gt_relas[0, ppp, 4].cpu().data.numpy()
                 pred_node = prenet.get_node_by_index(pred_cate)
                 gt_node = prenet.get_node_by_index(int(gt_cate))
-                info = ('%s -> %s(%.2f)' % (gt_node.name(), pred_node.name(), raw_scores[pred_raw_ind]))
-                if pred_cate == gt_cate:
-                    # flat recall
+
+                top_1 = InferTree(prenet, all_scores).top_k(1)
+                pred_cate = top_1[0][0]
+                pred_scr = top_1[0][1]
+
+                eval_scr = gt_node.score(pred_cate)
+                pred_node = prenet.get_node_by_index(pred_cate)
+                info = ('%s -> %s(%.2f)' % (
+                    gt_node.name(), pred_node.name(), eval_scr))
+                if eval_scr > 0:
+                    TP_score += eval_scr
                     TP_count += 1
                     info = 'T: ' + info
                 else:
@@ -250,3 +260,4 @@ if __name__ == '__main__':
     print("test time: %0.4fs" % (end - start))
 
     print("Rec flat Acc: %.4f" % (TP_count / N_count))
+    print("Rec hier Acc: %.4f" % (TP_score / N_count))

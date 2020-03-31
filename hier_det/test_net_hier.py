@@ -299,8 +299,8 @@ if __name__ == '__main__':
 
     with open('det_roidb_hier_%s.bin' % args.dataset, 'wb') as f:
         pickle.dump(det_roidb, f)
-    # with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
-    #    pickle.dump(gt_roidb, f)
+    with open('gt_roidb_%s.bin' % args.dataset, 'wb') as f:
+       pickle.dump(gt_roidb, f)
 
     end = time.time()
     print("test time: %0.4fs" % (end - start))

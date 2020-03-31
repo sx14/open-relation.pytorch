@@ -31,7 +31,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--net', dest='net',
                         help='vgg16, res101',
                         default='vgg16', type=str)
@@ -40,7 +40,7 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--epochs', dest='max_epochs',
                         help='number of epochs to train',
-                        default=100, type=int)
+                        default=10, type=int)
     parser.add_argument('--disp_interval', dest='disp_interval',
                         help='number of iterations to display',
                         default=100, type=int)
@@ -49,7 +49,7 @@ def parse_args():
                         default=10000, type=int)
 
     parser.add_argument('--save_dir', dest='save_dir',
-                        help='directory to save models', default="output",
+                        help='directory to save models', default="new_output",
                         type=str)
     parser.add_argument('--nw', dest='num_workers',
                         help='number of worker to load data',
@@ -125,11 +125,11 @@ if __name__ == '__main__':
     print(args)
 
     if args.dataset == "vg":
-        args.imdb_name = "vg_2016_trainval"
-        args.imdbval_name = "vg_2016_test"
+        args.imdb_name = "vg_lsj_2016_trainval"
+        args.imdbval_name = "vg_lsj_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg200.label_hier.obj_hier import objnet
-        from lib.datasets.vg200.label_hier.pre_hier import prenet
+        from lib.datasets.vglsj.label_hier.obj_hier import objnet
+        from lib.datasets.vglsj.label_hier.pre_hier import prenet
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2016_trainval"
         args.imdbval_name = "vrd_2016_test"
@@ -301,7 +301,7 @@ if __name__ == '__main__':
             im_data.data.resize_(data[0].size()).copy_(data[0])
             im_info.data.resize_(data[1].size()).copy_(data[1])
             gt_relas.data.resize_(data[2].size()).copy_(data[2])
-            num_relas.data.resize_(data[3].size()).copy_(data[3])
+            num_relas.data.resize_(data[4].size()).copy_(data[4])
 
             hierVis.zero_grad()
             rois, cls_score, \

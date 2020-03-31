@@ -47,25 +47,25 @@ def parse_args():
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
-                        default='pre')
+                        default='rela')
     parser.add_argument('--vis_checksession', dest='vis_checksession',
                         help='vis_checksession to load model',
                         default=1, type=int)
     parser.add_argument('--vis_checkepoch', dest='vis_checkepoch',
                         help='vis_checkepoch to load network',
-                        default=100, type=int)
+                        default=10, type=int)
     parser.add_argument('--vis_checkpoint', dest='vis_checkpoint',
                         help='vis_checkpoint to load network',
-                        default=7547, type=int)
+                        default=12959, type=int)
     parser.add_argument('--spa_checksession', dest='spa_checksession',
                         help='spa_checksession to load model',
                         default=1, type=int)
     parser.add_argument('--spa_checkepoch', dest='spa_checkepoch',
                         help='spa_checkepoch to load network',
-                        default=100, type=int)
+                        default=10, type=int)
     parser.add_argument('--spa_checkpoint', dest='spa_checkpoint',
                         help='spa_checkpoint to load network',
-                        default=7547, type=int)
+                        default=12959, type=int)
     parser.add_argument('--use_vis', dest='use_vis',
                         action='store_true',
                         default=True)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
         hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
         hierVis.create_architecture()
-        load_name = './visual/output/vgg16/{}/hier_rela_vis_{}_{}_{}_{}.pth'.format(args.dataset, args.vis_checksession,
+        load_name = './visual/new_output/vgg16/{}/hier_rela_vis_{}_{}_{}_{}.pth'.format(args.dataset, args.vis_checksession,
                                                                                     args.vis_checkepoch,
                                                                                     args.vis_checkpoint, args.dataset)
         print("load checkpoint %s" % (load_name))
@@ -148,7 +148,7 @@ if __name__ == '__main__':
                                                                                          args.dataset)
         print("load checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
-        spaCNN.load_state_dict(checkpoint)
+        spaCNN.load_state_dict(checkpoint['model'])
         spaCNN.eval()
     else:
         spaCNN = None

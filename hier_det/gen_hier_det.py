@@ -49,12 +49,12 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=20, type=int)
+                        default=6, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=73793, type=int)
+                        default=12959, type=int)
     parser.add_argument('--load_dir', dest='load_dir',
-                        help='directory to load models', default="hier_output",
+                        help='directory to load models', default="hier_output_new",
                         type=str)
     args = parser.parse_args()
     return args
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     if args.dataset == "vg":
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg200.label_hier.obj_hier import objnet
+        from lib.datasets.vglsj.label_hier.obj_hier import objnet
 
         img_root = os.path.join(VG_ROOT, 'JPEGImages')
 

@@ -16,6 +16,7 @@ class TreeNode:
     def __init__(self, name, index, info_ratio, is_raw):
         self._cond_prob = 0.0
         self._raw_score = None
+        self._max_descent_score = None
         self._prob = 0.0
         self._name = name
         self._index = index
@@ -98,6 +99,25 @@ class TreeNode:
     def name(self):
         return self._name
 
+    def parents(self):
+        return self._parents
+
+    def max_descent_score(self):
+        return self._max_descent_score
+
+    def set_max_descent_score(self):
+        if len(self.children()) == 0:
+            self._max_descent_score = self._raw_score
+        else:
+            children_scores = []
+            for c in self.children():
+                c.set_max_descent_score()
+                score = c.max_descent_score()
+                children_scores.append(score)
+
+            self._max_descent_score = max(np.max(np.array(children_scores)),
+                                          self._raw_score)
+
 
 class InferTree:
     def __init__(self, labelnet, scores):
@@ -124,7 +144,9 @@ class InferTree:
             score = scores[ind]
             tnode = self.__ind2node[ind]
             tnode.set_raw_score(score.tolist())
+
         self.__root = self.__ind2node[labelnet.root().index()]
+        self.__root.set_max_descent_score()
 
     def top_k(self, k, mode='hier'):
         assert k > 0, 'k should be larger than zero'
@@ -134,6 +156,23 @@ class InferTree:
             top_k.append([choice.index(), choice.score()])
         return top_k
 
+    def __top_down_search1(self, root, mode='hier'):
+        queue = [root]
+        root.set_cond_prob(1.0)
+        while len(queue) > 0:
+            node = queue.pop(0)
+            c_scores = []
+            if len(node.children()) == 0:
+                continue
+            else:
+                for c in node.children():
+                    c_scores.append(c.raw_score())
+                c_scores_v = Variable(Tensor(c_scores))
+                c_scores_s = softmax(c_scores_v, 0)
+                queue.append(node.children()[np.argmax(c_scores_s.data.numpy())])
+
+        return node
+
     def __top_down_search(self, root, mode='hier'):
         root.set_cond_prob(1.0)
         node = root
@@ -142,7 +181,7 @@ class InferTree:
         while len(node.children()) > 0:
             c_scores = []
             for c in node.children():
-                c_scores.append(c.raw_score())
+                c_scores.append(c.max_descent_score())
             c_scores_v = Variable(Tensor(c_scores))
             c_scores_s = softmax(c_scores_v, 0)
 

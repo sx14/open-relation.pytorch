@@ -7,42 +7,33 @@ from torch.autograd import Variable
 
 
 class HierRela(nn.Module):
-    def __init__(self, hierVis=None, hierLang=None, obj_vec_path=None):
+    def __init__(self, hierVis=None, hierSpatial=None):
         super(HierRela, self).__init__()
 
-        if hierVis is None and hierLang is None:
-            print('HierRela: Pass HierVis or HierLang or both.')
+        if hierVis is None and hierSpatial is None:
+            print('HierRela: Pass HierVis or HierSpatial or both.')
             exit(-1)
 
         self._hierVis = hierVis
-        self._hierLang = hierLang
+        self._hierSpatial = hierSpatial
 
-        # label vectors
-        with h5py.File(obj_vec_path, 'r') as f:
-            obj_lab_vecs = np.array(f['label_vec'])
-
-        with torch.no_grad():
-            self._obj_lab_vecs = Variable(torch.from_numpy(obj_lab_vecs).float()).cuda()
-
-    def forward(self, im_data, im_info, gt_relas, num_relas):
+    def forward(self, im_data, im_info, gt_relas, spa_maps, num_relas):
         batch_size = im_data.size(0)
 
         pre_label = gt_relas[:, :, 4][0].long()
         sbj_label = gt_relas[:, :, 9][0].long()
         obj_label = gt_relas[:, :, 14][0].long()
 
-        if self._hierVis is None and self._hierLang is None:
-            print('HierRela: no visual module, no language module.')
+        if self._hierVis is None and self._hierSpatial is None:
+            print('HierRela: no visual module, no spatial module.')
             exit(-1)
 
         if self._hierVis is not None:
             _, vis_score, _, _ = self._hierVis(im_data, im_info, gt_relas, num_relas)
             vis_score = vis_score[0]
 
-        if self._hierLang is not None:
-            sbj_lab_vecs = self._obj_lab_vecs[sbj_label]
-            obj_lab_vecs = self._obj_lab_vecs[obj_label]
-            lan_score = self._hierLang(sbj_lab_vecs, obj_lab_vecs)
+        if self._hierSpatial is not None:
+            lan_score = self._hierSpatial(spa_maps[0], pre_label)
 
         if self._hierLang is None:
             lan_score = vis_score

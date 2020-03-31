@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import torch
+from lib.roi_data_layer.hierRoibatchLoader import gen_spatial_map
 
 
 def get_raw_pred(all_scores, raw_inds):
@@ -99,9 +100,16 @@ def get_input_data(im, rois, mode='det'):
     im_data_pt = im_data_pt.permute(0, 3, 1, 2)
     im_info_pt = torch.from_numpy(im_info_np)
     im_boxes_pt = torch.from_numpy(im_boxes)
+    sbj_boxes = im_boxes_pt[0][:, 5:10]
+    obj_boxes = im_boxes_pt[0][:, 10:15]
+    num_box = im_boxes_pt.shape[1]
+    raw_spa_maps = np.zeros((num_box, 2, 64, 64))
+    for i in range(num_box):
+        raw_spa_maps[i] = gen_spatial_map(sbj_boxes[i, 0:4], obj_boxes[i][0:4])
+    gt_spa_maps = torch.from_numpy(raw_spa_maps).float()
     im_nbox_pt = torch.Tensor([im_boxes_pt.shape[1]])
 
-    data = [im_data_pt, im_info_pt, im_boxes_pt, im_nbox_pt, im_scales[0]]
+    data = [im_data_pt, im_info_pt, im_boxes_pt, gt_spa_maps, im_nbox_pt, im_scales[0]]
     return data
 
 

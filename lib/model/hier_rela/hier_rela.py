@@ -33,15 +33,15 @@ class HierRela(nn.Module):
             vis_score = vis_score[0]
 
         if self._hierSpatial is not None:
-            lan_score = self._hierSpatial(spa_maps[0], pre_label)
+            spa_score = self._hierSpatial(spa_maps[0], pre_label)
 
-        if self._hierLang is None:
-            lan_score = vis_score
+        if self._hierSpatial is None:
+            spa_score = vis_score
 
         if self._hierVis is None:
-            vis_score = lan_score
+            vis_score = spa_score
 
-        score = 0.7 * lan_score + 0.3 * vis_score
+        score = 0.7 * spa_score + 0.3 * vis_score
         score[score < -3] = -3
 
         pre_boxes = gt_relas[:, :, :5]
@@ -51,13 +51,13 @@ class HierRela(nn.Module):
 
         score = score.view(batch_size, rois.size(1), -1)
         vis_score = vis_score.view(batch_size, rois.size(1), -1)
-        lan_score = lan_score.view(batch_size, rois.size(1), -1)
+        spa_score = spa_score.view(batch_size, rois.size(1), -1)
         rois_label = torch.stack((pre_label, sbj_label, obj_label), dim=1)
         rois_label.unsqueeze(0)
 
         cls_score = 0
 
-        return rois, score, cls_score, rois_label, vis_score, lan_score
+        return rois, score, cls_score, rois_label, vis_score, spa_score
 
 
 

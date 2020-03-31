@@ -232,7 +232,8 @@ if __name__ == '__main__':
         im_data.data.resize_(data[0].size()).copy_(data[0])
         im_info.data.resize_(data[1].size()).copy_(data[1])
         relas_box.data.resize_(data[2].size()).copy_(data[2])
-        relas_num.data.resize_(data[3].size()).copy_(data[3])
+        spa_maps.data.resize_(data[3].size()).copy_(data[3])
+        relas_num.data.resize_(data[4].size()).copy_(data[4])
 
         im_scale = data[4]
 
@@ -243,7 +244,7 @@ if __name__ == '__main__':
 
         scores = cls_score.data
         vis_scores = vis_score.data
-        lan_scores = lan_score.data
+        spa_scores = spa_score.data
 
         pred_cates = torch.zeros(rois[0].shape[0], 4)
         pred_scores = torch.zeros(rois[0].shape[0], 4)
@@ -255,7 +256,7 @@ if __name__ == '__main__':
             N_count += 1
 
             all_scores = scores[0][ppp].cpu().data.numpy()
-            l_scores = lan_scores[0][ppp].cpu().data.numpy()
+            s_scores = spa_scores[0][ppp].cpu().data.numpy()
             v_scores = vis_scores[0][ppp].cpu().data.numpy()
 
             gt_cate = relas_box[0, ppp, 4].cpu().data.numpy()

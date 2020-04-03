@@ -41,7 +41,7 @@ class HierRela(nn.Module):
         if self._hierVis is None:
             vis_score = spa_score
 
-        score = 0.7 * spa_score + 0.3 * vis_score
+        score = 0.3 * spa_score + 0.7 * vis_score
         score[score < -3] = -3
 
         pre_boxes = gt_relas[:, :, :5]

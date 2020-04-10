@@ -208,7 +208,7 @@ class PreNet(LabelHier):
 
 label_path = os.path.join(PROJECT_ROOT, 'data', 'VGlsjdevkit2007', 'VOC2007', 'predicate_labels.txt')
 prenet = PreNet(label_path)
-
+print(prenet.index2label())
 # raw_inds = prenet.get_raw_indexes()
 # for ind in raw_inds:
 #     n = prenet.get_node_by_index(ind)

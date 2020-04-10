@@ -197,6 +197,7 @@ if __name__ == '__main__':
     else:
         # load object det data
         det_roidb_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'det_roidb_hier_%s.bin' % args.dataset)
+        print(det_roidb_path)
         with open(det_roidb_path, 'rb') as f:
             det_roidb = pickle.load(f)
         cond_roidb = gen_rela_conds(det_roidb)

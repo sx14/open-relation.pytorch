@@ -152,9 +152,9 @@ if __name__ == '__main__':
         'ds_root': VG_ROOT
     }
 
-    # split_anno_pkg(vg_config)
-    # vg2pascal(vg_config)
-    # raw2wn(vg_config['obj_raw_label_path'], vg_config['obj_raw2wn_path'])
+    split_anno_pkg(vg_config)
+    vg2pascal(vg_config)
+    raw2wn(vg_config['obj_raw_label_path'], vg_config['obj_raw2wn_path'])
 
     roidb_save_path = os.path.join(PROJECT_ROOT, 'hier_rela', 'gt_rela_roidb_vg_lsj.bin')
     anno_root = vg_config['clean_anno_root']

@@ -3,7 +3,7 @@ import numpy as np
 from global_config import VG_ROOT, VRD_ROOT
 
 # vrd - vg
-dataset = 'vrd'
+dataset = 'vg'
 # rela - pre
 target = 'rela'
 # lu - dsr - vts - ours - dr
@@ -16,8 +16,8 @@ if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.pre_hier import prenet
 else:
     ds_root = VG_ROOT
-    from lib.datasets.vg200.label_hier.obj_hier import objnet
-    from lib.datasets.vg200.label_hier.pre_hier import prenet
+    from lib.datasets.vglsj.label_hier.obj_hier import objnet
+    from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
 def show(pred_roidb):
     res = {}

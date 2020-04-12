@@ -8,7 +8,7 @@ from lib.datasets.vglsj.process.vg2pascal import vg2pascal
 
 if __name__ == '__main__':
     vg_config = {
-        'vts_anno_path': os.path.join(VG_ROOT, 'vg_lsj.h5'),
+        'vts_anno_path': os.path.join(VG_ROOT, 'vg_lsj_det.h5'),
         'raw_anno_root': os.path.join(VG_ROOT, 'json_dataset'),
         'dirty_anno_root': os.path.join(VG_ROOT, 'dirty_anno'),
         'clean_anno_root': os.path.join(VG_ROOT, 'anno_det'),

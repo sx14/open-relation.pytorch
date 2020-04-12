@@ -11,7 +11,7 @@ from global_config import HierLabelConfig
 from hier_det.infer import infer as det_infer
 from lib.model.hier_rcnn.vgg16 import vgg16 as vgg16_det
 from lib.model.hier_rela.hier_rela import HierRela
-from lib.model.hier_rela.lang.hier_lang import HierLang
+from lib.model.hier_rela.spatial.hier_spatial import HierSpatial
 from lib.model.hier_rela.visual.vgg16 import vgg16 as vgg16_rela
 from lib.model.hier_utils.helpers import *
 from lib.model.hier_utils.infer_tree import InferTree
@@ -33,7 +33,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='vrd', type=str)
+                        default='vg', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='../cfgs/vgg16.yml', type=str)
@@ -44,6 +44,24 @@ def parse_args():
                         help='whether use CUDA',
                         action='store_true',
                         default=True)
+    parser.add_argument('--vis_checksession', dest='vis_checksession',
+                        help='vis_checksession to load model',
+                        default=1, type=int)
+    parser.add_argument('--vis_checkepoch', dest='vis_checkepoch',
+                        help='vis_checkepoch to load network',
+                        default=10, type=int)
+    parser.add_argument('--vis_checkpoint', dest='vis_checkpoint',
+                        help='vis_checkpoint to load network',
+                        default=12959, type=int)
+    parser.add_argument('--spa_checksession', dest='spa_checksession',
+                        help='spa_checksession to load model',
+                        default=1, type=int)
+    parser.add_argument('--spa_checkepoch', dest='spa_checkepoch',
+                        help='spa_checkepoch to load network',
+                        default=10, type=int)
+    parser.add_argument('--spa_checkpoint', dest='spa_checkpoint',
+                        help='spa_checkpoint to load network',
+                        default=12959, type=int)
     parser.add_argument('--mode', dest='mode',
                         help='Do predicate recognition or relationship detection?',
                         action='store_true',
@@ -64,8 +82,8 @@ def load_model():
         args.imdb_name = "vg_2016_trainval"
         args.imdbval_name = "vg_2016_test"
         args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
-        from lib.datasets.vg200.label_hier.obj_hier import objnet
-        from lib.datasets.vg200.label_hier.pre_hier import prenet
+        from lib.datasets.vglsj.label_hier.obj_hier import objnet
+        from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
     elif args.dataset == "vrd":
         args.imdb_name = "vrd_2016_trainval"
@@ -97,28 +115,31 @@ def load_model():
     pre_vec_path = preconf.label_vec_path()
     hierVis = vgg16_rela(prenet, pre_vec_path, hierRCNN)
     hierVis.create_architecture()
-
-    # Load HierVis
-    load_name = '../data/pretrained_model/hier_rela_vis_%s.pth' % args.dataset
+    load_name = '../hier_rela/visual/new_output/vgg16/{}/hier_rela_vis_{}_{}_{}_{}.pth'.format(args.dataset, args.vis_checksession,
+                                                                                    args.vis_checkepoch,
+                                                                                    args.vis_checkpoint, args.dataset)
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
     hierVis.load_state_dict(checkpoint['model'])
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
+    hierVis.eval()
 
-    # Load HierLan
-    hierLan = HierLang(600 * 2, preconf.label_vec_path())
-    load_name = '../data/pretrained_model/hier_rela_lan_%s.pth' % args.dataset
+    spaCNN = HierSpatial(prenet, pre_vec_path)
+    load_name = '../hier_rela/spatial/output/vgg16/{}/hier_rela_spatial_{}_{}_{}_{}.pth'.format(args.dataset,
+                                                                                     args.spa_checksession,
+                                                                                     args.spa_checkepoch,
+                                                                                     args.spa_checkpoint,
+                                                                                     args.dataset)
     print("load checkpoint %s" % (load_name))
     checkpoint = torch.load(load_name)
-    hierLan.load_state_dict(checkpoint)
+    spaCNN.load_state_dict(checkpoint['model'])
+    spaCNN.eval()
 
     # get HierRela
-    hierRela = HierRela(hierVis, hierLan, objconf.label_vec_path())
+    hierRela = HierRela(hierVis, spaCNN)
     if args.cuda:
         hierRela.cuda()
-    hierVis.eval()
-    hierLan.eval()
     hierRela.eval()
     print('load model successfully!')
 
@@ -126,8 +147,8 @@ def load_model():
 def infer(batch, scale=True):
     with torch.no_grad():
         if args.dataset == "vg":
-            from lib.datasets.vg200.label_hier.obj_hier import objnet
-            from lib.datasets.vg200.label_hier.pre_hier import prenet
+            from lib.datasets.vglsj.label_hier.obj_hier import objnet
+            from lib.datasets.vglsj.label_hier.pre_hier import prenet
 
         elif args.dataset == "vrd":
             from lib.datasets.vrd.label_hier.obj_hier import objnet
@@ -137,6 +158,7 @@ def infer(batch, scale=True):
         im_data = torch.FloatTensor(1)
         im_info = torch.FloatTensor(1)
         relas_box = torch.FloatTensor(1)
+        spa_maps = torch.FloatTensor(1)
         relas_num = torch.LongTensor(1)
 
         # shift to cuda
@@ -144,13 +166,16 @@ def infer(batch, scale=True):
             im_data = im_data.cuda()
             im_info = im_info.cuda()
             relas_num = relas_num.cuda()
-            relas_box = relas_box.cuda()
+            spa_maps = spa_maps.cuda()
 
-        # make variable
-        im_data = Variable(im_data)
-        im_info = Variable(im_info)
-        relas_num = Variable(relas_num)
-        relas_box = Variable(relas_box)
+            relas_box = relas_box.cuda()
+        with torch.no_grad():
+            # make variable
+            im_data = Variable(im_data)
+            im_info = Variable(im_info)
+            relas_num = Variable(relas_num)
+            relas_box = Variable(relas_box)
+            spa_maps = Variable(spa_maps)
 
         det_roidb = det_infer(batch, scale=False)
         cond_roidb = gen_rela_conds(det_roidb)
@@ -172,17 +197,17 @@ def infer(batch, scale=True):
             rois_use = rois_use_uni.tolist()
 
             # Attention: resized image data
-            data = get_input_data(img, rois_use)
+            data = get_input_data(img, rois_use, mode='rela')
 
             im_data.data.resize_(data[0].size()).copy_(data[0])
             im_info.data.resize_(data[1].size()).copy_(data[1])
             relas_box.data.resize_(data[2].size()).copy_(data[2])
-            relas_num.data.resize_(data[3].size()).copy_(data[3])
-            relas_zero = np.array(rois_use)[:, -1]
+            spa_maps.data.resize_(data[3].size()).copy_(data[3])
+            relas_num.data.resize_(data[4].size()).copy_(data[4])
 
             with torch.no_grad():
                 rois, cls_score, \
-                _, rois_label, vis_score, lan_score = hierRela(im_data, im_info, relas_box, relas_num)
+                _, rois_label, vis_score, spa_score = hierRela(im_data, im_info, relas_box, spa_maps, relas_num)
 
             scores = cls_score.data
 
@@ -192,9 +217,6 @@ def infer(batch, scale=True):
             hit = torch.zeros(scores.size()[1], 1)
             for ppp in range(scores.size()[1]):
                 N_count += 1
-
-                if relas_zero[ppp] == 1:
-                    zero_N_count += 1
 
                 all_scores = scores[0][ppp].cpu().data.numpy()
 

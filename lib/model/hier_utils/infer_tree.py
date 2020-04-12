@@ -156,23 +156,6 @@ class InferTree:
             top_k.append([choice.index(), choice.score()])
         return top_k
 
-    def __top_down_search1(self, root, mode='hier'):
-        queue = [root]
-        root.set_cond_prob(1.0)
-        while len(queue) > 0:
-            node = queue.pop(0)
-            c_scores = []
-            if len(node.children()) == 0:
-                continue
-            else:
-                for c in node.children():
-                    c_scores.append(c.raw_score())
-                c_scores_v = Variable(Tensor(c_scores))
-                c_scores_s = softmax(c_scores_v, 0)
-                queue.append(node.children()[np.argmax(c_scores_s.data.numpy())])
-
-        return node
-
     def __top_down_search(self, root, mode='hier'):
         root.set_cond_prob(1.0)
         node = root

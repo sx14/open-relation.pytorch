@@ -2,7 +2,7 @@
 from graphviz import Graph
 
 dataset = 'vg'
-target = 'pre'
+target = 'obj'
 
 if dataset == 'vrd':
     from lib.datasets.vrd.label_hier.obj_hier import objnet

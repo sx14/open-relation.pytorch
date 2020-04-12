@@ -8,7 +8,7 @@ dataset = 'vg'
 
 if dataset == 'vg':
     DS_ROOT = VG_ROOT
-    from lib.datasets.vg200.label_hier.obj_hier import objnet
+    from lib.datasets.vglsj.label_hier.obj_hier import objnet
 
 else:
     DS_ROOT = VRD_ROOT
